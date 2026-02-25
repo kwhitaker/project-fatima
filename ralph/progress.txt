@@ -6,3 +6,12 @@
 ---
 Started: 2026-02-25
 ---
+
+## 2026-02-25 18:45 - US-001
+- Created `pyproject.toml` (uv/hatchling, fastapi, uvicorn, pytest, httpx, ruff, pyright)
+- Created `app/main.py` (FastAPI app with `/health` endpoint) and `tests/test_health.py`
+- Updated `AGENTS.md` with canonical `uv run` commands for install, dev server, lint, typecheck, and tests
+- Tests/validation run: `uv run pytest` → 1 passed; `uv run ruff check .` → clean
+- Files changed: `pyproject.toml`, `uv.lock`, `app/__init__.py`, `app/main.py`, `tests/__init__.py`, `tests/test_health.py`, `AGENTS.md`
+- Learnings: hatchling needs `[tool.hatch.build.targets.wheel] packages = ["app"]` when package name doesn't match project name; uv not pre-installed — installed via pip from mise Python
+---

@@ -14,7 +14,7 @@
         "Document the canonical test command in AGENTS.md"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Keep this story small; avoid adding Supabase integration yet."
     },
     {

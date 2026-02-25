@@ -175,7 +175,7 @@
         "Unit tests cover schema failures and duplicate card_key"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Budget/cap enforcement is in a separate story to keep scope small."
     },
     {

@@ -1,0 +1,82 @@
+{"card_key":"zombie_i","character_key":"zombie","name":"Zombie","version":"Shambling Dead","tier":1,"rarity":15,"is_named":false,"sides":{"n":6,"e":4,"s":3,"w":3},"set":"barovia_200y_v1","tags":["undead","generic"]}
+{"card_key":"skeleton_i","character_key":"skeleton","name":"Skeleton","version":"Rattling Bones","tier":1,"rarity":18,"is_named":false,"sides":{"n":5,"e":5,"s":4,"w":2},"set":"barovia_200y_v1","tags":["undead","generic"]}
+{"card_key":"ghoul_i","character_key":"ghoul","name":"Ghoul","version":"Grave-Hungry","tier":1,"rarity":28,"is_named":false,"sides":{"n":6,"e":3,"s":5,"w":2},"set":"barovia_200y_v1","tags":["undead","generic"]}
+{"card_key":"swarm_of_bats_i","character_key":"swarm_of_bats","name":"Swarm of Bats","version":"Ravenloft Vermin","tier":1,"rarity":22,"is_named":false,"sides":{"n":3,"e":6,"s":2,"w":5},"set":"barovia_200y_v1","tags":["beast","generic"]}
+{"card_key":"dire_wolf_i","character_key":"dire_wolf","name":"Dire Wolf","version":"Pack Hunter","tier":1,"rarity":35,"is_named":false,"sides":{"n":6,"e":4,"s":2,"w":4},"set":"barovia_200y_v1","tags":["beast","generic"]}
+{"card_key":"needle_blight_i","character_key":"needle_blight","name":"Needle Blight","version":"Vine and Thorn","tier":1,"rarity":33,"is_named":false,"sides":{"n":4,"e":4,"s":5,"w":3},"set":"barovia_200y_v1","tags":["plant","generic"]}
+{"card_key":"druid_of_yester_hill_i","character_key":"druid_of_yester_hill","name":"Druid of Yester Hill","version":"Storm-Chanter","tier":1,"rarity":58,"is_named":false,"sides":{"n":6,"e":4,"s":4,"w":4},"set":"barovia_200y_v1","tags":["humanoid","generic"]}
+{"card_key":"scarecrow_i","character_key":"scarecrow","name":"Scarecrow","version":"Field-Watcher","tier":1,"rarity":62,"is_named":false,"sides":{"n":7,"e":3,"s":4,"w":4},"set":"barovia_200y_v1","tags":["construct","generic"]}
+{"card_key":"animated_armor_i","character_key":"animated_armor","name":"Animated Armor","version":"Empty Knight","tier":1,"rarity":60,"is_named":false,"sides":{"n":4,"e":7,"s":3,"w":4},"set":"barovia_200y_v1","tags":["construct","generic"]}
+{"card_key":"vampire_spawn_i","character_key":"vampire_spawn","name":"Vampire Spawn","version":"Blood-Starved","tier":1,"rarity":66,"is_named":false,"sides":{"n":7,"e":4,"s":4,"w":3},"set":"barovia_200y_v1","tags":["undead","generic"]}
+{"card_key":"werewolf_i","character_key":"werewolf","name":"Werewolf","version":"Moon-Cursed","tier":1,"rarity":82,"is_named":false,"sides":{"n":8,"e":4,"s":4,"w":4},"set":"barovia_200y_v1","tags":["humanoid","beast","generic"]}
+{"card_key":"revenant_i","character_key":"revenant","name":"Revenant","version":"Vengeful Dead","tier":1,"rarity":84,"is_named":false,"sides":{"n":6,"e":6,"s":5,"w":3},"set":"barovia_200y_v1","tags":["undead","generic"]}
+
+{"card_key":"vivienne_kolyana_i","character_key":"vivienne_kolyana","name":"Vivienne Kolyana","version":"Purported Heir","tier":1,"rarity":63,"is_named":true,"sides":{"n":6,"e":5,"s":4,"w":3},"set":"barovia_200y_v1","tags":["npc","kolyana"]}
+
+{"card_key":"brazen_bell_ii","character_key":"brazen_bell","name":"Brazen Bell","version":"Devil Slayer","tier":2,"rarity":84,"is_named":true,"sides":{"n":7,"e":6,"s":6,"w":5},"set":"barovia_200y_v1","tags":["devil_slayers","martial"]}
+{"card_key":"bryly_ii","character_key":"bryly","name":"Bryly","version":"Devil Slayer","tier":2,"rarity":83,"is_named":true,"sides":{"n":6,"e":7,"s":5,"w":6},"set":"barovia_200y_v1","tags":["devil_slayers","bard"]}
+{"card_key":"cinaed_ii","character_key":"cinaed","name":"Cinaed","version":"Devil Slayer","tier":2,"rarity":85,"is_named":true,"sides":{"n":6,"e":6,"s":7,"w":5},"set":"barovia_200y_v1","tags":["devil_slayers","sorcerer"]}
+{"card_key":"howl_ii","character_key":"howl","name":"Howl","version":"Devil Slayer","tier":2,"rarity":86,"is_named":true,"sides":{"n":5,"e":6,"s":7,"w":6},"set":"barovia_200y_v1","tags":["devil_slayers","cleric"]}
+
+{"card_key":"decibelus_ii","character_key":"decibelus","name":"Decibelus","version":"Seneschal and Bodyguard","tier":2,"rarity":95,"is_named":true,"sides":{"n":9,"e":7,"s":6,"w":4},"set":"barovia_200y_v1","tags":["npc","retainer"]}
+
+{"card_key":"black_loretta_ii","character_key":"black_loretta","name":"Black Loretta","version":"Red Knives Leader","tier":2,"rarity":85,"is_named":true,"sides":{"n":8,"e":6,"s":5,"w":5},"set":"barovia_200y_v1","tags":["red_knives","gunslinger"]}
+{"card_key":"puck_ii","character_key":"puck","name":"Puck","version":"Red Knives Jester","tier":2,"rarity":83,"is_named":true,"sides":{"n":6,"e":8,"s":5,"w":5},"set":"barovia_200y_v1","tags":["red_knives","trickster"]}
+{"card_key":"sancho_ii","character_key":"sancho","name":"Sancho","version":"Bare-Knuckle Half-Giant","tier":2,"rarity":84,"is_named":true,"sides":{"n":7,"e":5,"s":7,"w":5},"set":"barovia_200y_v1","tags":["red_knives","bruiser"]}
+{"card_key":"mercucio_ii","character_key":"mercucio","name":"Mercucio","version":"Red Knives Sorcerer","tier":2,"rarity":86,"is_named":true,"sides":{"n":5,"e":7,"s":6,"w":6},"set":"barovia_200y_v1","tags":["red_knives","sorcerer"]}
+
+{"card_key":"muck_lord_ii","character_key":"muck_lord","name":"Muck Lord","version":"Legendary Catoblepas","tier":2,"rarity":94,"is_named":true,"sides":{"n":8,"e":8,"s":6,"w":4},"set":"barovia_200y_v1","tags":["monster","legendary"]}
+{"card_key":"sven_stormbjorn_i","character_key":"sven_stormbjorn","name":"Sven Stormbjorn","version":"Fallen Barbarian","tier":1,"rarity":59,"is_named":true,"sides":{"n":7,"e":4,"s":4,"w":3},"set":"barovia_200y_v1","tags":["pc","barbarian"]}
+{"card_key":"merilion_i","character_key":"merilion","name":"Merilion","version":"Elven Companion","tier":1,"rarity":64,"is_named":true,"sides":{"n":5,"e":6,"s":3,"w":4},"set":"barovia_200y_v1","tags":["pc","bard"]}
+
+{"card_key":"ismark_kolyana_i","character_key":"ismark_kolyana","name":"Ismark Kolyanovich","version":"The Lesser","tier":1,"rarity":56,"is_named":true,"sides":{"n":5,"e":4,"s":5,"w":4},"set":"barovia_200y_v1","tags":["npc","kolyana"]}
+{"card_key":"blinsky_i","character_key":"blinsky","name":"Blinksy","version":"Toymaker","tier":1,"rarity":26,"is_named":true,"sides":{"n":3,"e":5,"s":3,"w":5},"set":"barovia_200y_v1","tags":["npc","vallaki"]}
+{"card_key":"izek_strazni_i","character_key":"izek_strazni","name":"Izek Strazni","version":"Enforcer","tier":1,"rarity":80,"is_named":true,"sides":{"n":8,"e":5,"s":4,"w":3},"set":"barovia_200y_v1","tags":["npc","vallaki"]}
+{"card_key":"baron_vargas_i","character_key":"baron_vargas","name":"Baron Vargas Vallakovich","version":"All Will Be Well","tier":1,"rarity":57,"is_named":true,"sides":{"n":4,"e":6,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","vallaki"]}
+{"card_key":"lady_wachter_i","character_key":"lady_wachter","name":"Lady Fiona Wachter","version":"Power Broker","tier":1,"rarity":78,"is_named":true,"sides":{"n":6,"e":5,"s":5,"w":4},"set":"barovia_200y_v1","tags":["npc","vallaki"]}
+
+{"card_key":"davian_martikov_i","character_key":"davian_martikov","name":"Davian Martikov","version":"Wizard of Wines","tier":1,"rarity":77,"is_named":true,"sides":{"n":6,"e":6,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","martikov"]}
+{"card_key":"adrian_martikov_i","character_key":"adrian_martikov","name":"Adrian Martikov","version":"Winery Son","tier":1,"rarity":60,"is_named":true,"sides":{"n":5,"e":5,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","martikov"]}
+{"card_key":"elvir_martikov_i","character_key":"elvir_martikov","name":"Elvir Martikov","version":"Winery Son","tier":1,"rarity":61,"is_named":true,"sides":{"n":4,"e":6,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","martikov"]}
+{"card_key":"urwin_martikov_i","character_key":"urwin_martikov","name":"Urwin Martikov","version":"Keeper of the Feather","tier":1,"rarity":65,"is_named":true,"sides":{"n":5,"e":6,"s":4,"w":3},"set":"barovia_200y_v1","tags":["npc","martikov"]}
+
+{"card_key":"madam_eva_i","character_key":"madam_eva","name":"Madam Eva","version":"Tarokka Seer","tier":1,"rarity":91,"is_named":true,"sides":{"n":6,"e":6,"s":5,"w":5},"set":"barovia_200y_v1","tags":["npc","vistani"]}
+{"card_key":"arrigal_i","character_key":"arrigal","name":"Arrigal","version":"Vistani Knife","tier":1,"rarity":79,"is_named":true,"sides":{"n":6,"e":6,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","vistani"]}
+{"card_key":"kasimir_velikov_i","character_key":"kasimir_velikov","name":"Kasimir Velikov","version":"Dusk Elf Exile","tier":1,"rarity":76,"is_named":true,"sides":{"n":5,"e":6,"s":5,"w":4},"set":"barovia_200y_v1","tags":["npc","dusk_elf"]}
+
+{"card_key":"ezmerelda_ii","character_key":"ezmerelda","name":"Ezmerelda d'Avenir","version":"Monster Hunter","tier":2,"rarity":85,"is_named":true,"sides":{"n":7,"e":7,"s":6,"w":4},"set":"barovia_200y_v1","tags":["npc","hunter"]}
+{"card_key":"van_richten_ii","character_key":"van_richten","name":"Rudolph van Richten","version":"Rictavio","tier":2,"rarity":94,"is_named":true,"sides":{"n":8,"e":7,"s":6,"w":5},"set":"barovia_200y_v1","tags":["npc","hunter"]}
+
+{"card_key":"rahadin_ii","character_key":"rahadin","name":"Rahadin","version":"Chamberlain","tier":2,"rarity":95,"is_named":true,"sides":{"n":9,"e":6,"s":6,"w":5},"set":"barovia_200y_v1","tags":["npc","ravenloft"]}
+{"card_key":"baba_lysaga_ii","character_key":"baba_lysaga","name":"Baba Lysaga","version":"Witch of Berez","tier":2,"rarity":96,"is_named":true,"sides":{"n":9,"e":5,"s":7,"w":5},"set":"barovia_200y_v1","tags":["npc","witch"]}
+{"card_key":"morgantha_ii","character_key":"morgantha","name":"Morgantha","version":"Night Hag","tier":2,"rarity":95,"is_named":true,"sides":{"n":8,"e":8,"s":5,"w":5},"set":"barovia_200y_v1","tags":["npc","hag"]}
+{"card_key":"vasilka_i","character_key":"vasilka","name":"Vasilka","version":"Flesh Golem","tier":1,"rarity":81,"is_named":true,"sides":{"n":7,"e":5,"s":4,"w":4},"set":"barovia_200y_v1","tags":["npc","construct"]}
+{"card_key":"the_abbot_ii","character_key":"the_abbot","name":"The Abbot","version":"Fallen Deva","tier":2,"rarity":93,"is_named":true,"sides":{"n":9,"e":7,"s":5,"w":5},"set":"barovia_200y_v1","tags":["npc","holy"]}
+
+{"card_key":"parriwimple_i","character_key":"parriwimple","name":"Parriwimple","version":"Good Heart, Strong Hands","tier":1,"rarity":60,"is_named":true,"sides":{"n":6,"e":4,"s":5,"w":3},"set":"barovia_200y_v1","tags":["npc","barovia"]}
+{"card_key":"sergei_spirit_i","character_key":"sergei_von_zarovich","name":"Sergei von Zarovich","version":"Restless Spirit","tier":1,"rarity":90,"is_named":true,"sides":{"n":7,"e":6,"s":5,"w":4},"set":"barovia_200y_v1","tags":["npc","holy"]}
+{"card_key":"argynvost_ii","character_key":"argynvost","name":"Argynvost","version":"Silver Dragon's Oath","tier":2,"rarity":94,"is_named":true,"sides":{"n":9,"e":7,"s":7,"w":3},"set":"barovia_200y_v1","tags":["npc","dragon"]}
+
+{"card_key":"strahd_i","character_key":"strahd_von_zarovich","name":"Strahd von Zarovich","version":"Strahd I","tier":1,"rarity":86,"is_named":true,"sides":{"n":8,"e":5,"s":4,"w":3},"set":"barovia_200y_v1","tags":["boss","ravenloft"]}
+{"card_key":"strahd_ii","character_key":"strahd_von_zarovich","name":"Strahd von Zarovich","version":"Strahd II","tier":2,"rarity":95,"is_named":true,"sides":{"n":9,"e":7,"s":6,"w":4},"set":"barovia_200y_v1","tags":["boss","ravenloft"]}
+{"card_key":"strahd_iii","character_key":"strahd_von_zarovich","name":"Strahd von Zarovich","version":"Strahd III","tier":3,"rarity":100,"is_named":true,"sides":{"n":10,"e":9,"s":7,"w":6},"set":"barovia_200y_v1","tags":["boss","ravenloft"]}
+
+{"card_key":"blood_queen_ireena_i","character_key":"blood_queen_ireena","name":"Blood Queen Ireena","version":"Blood Queen I","tier":1,"rarity":82,"is_named":true,"sides":{"n":7,"e":5,"s":5,"w":3},"set":"barovia_200y_v1","tags":["boss","kolyana"]}
+{"card_key":"blood_queen_ireena_ii","character_key":"blood_queen_ireena","name":"Blood Queen Ireena","version":"Blood Queen II","tier":2,"rarity":94,"is_named":true,"sides":{"n":9,"e":7,"s":5,"w":5},"set":"barovia_200y_v1","tags":["boss","kolyana"]}
+{"card_key":"blood_queen_ireena_iii","character_key":"blood_queen_ireena","name":"Blood Queen Ireena","version":"Blood Queen III","tier":3,"rarity":99,"is_named":true,"sides":{"n":9,"e":8,"s":8,"w":7},"set":"barovia_200y_v1","tags":["boss","kolyana"]}
+
+{"card_key":"fatima_i","character_key":"fatima","name":"Fatima","version":"Essence-Bound I","tier":1,"rarity":78,"is_named":true,"sides":{"n":6,"e":6,"s":5,"w":3},"set":"barovia_200y_v1","tags":["boss","pc"]}
+{"card_key":"fatima_ii","character_key":"fatima","name":"Fatima","version":"Essence-Bound II","tier":2,"rarity":93,"is_named":true,"sides":{"n":9,"e":7,"s":6,"w":4},"set":"barovia_200y_v1","tags":["boss","pc"]}
+{"card_key":"fatima_iii","character_key":"fatima","name":"Fatima","version":"Essence-Bound III","tier":3,"rarity":98,"is_named":true,"sides":{"n":10,"e":8,"s":8,"w":6},"set":"barovia_200y_v1","tags":["boss","pc"]}
+
+{"card_key":"king_in_yellow_i","character_key":"king_in_yellow","name":"The King In Yellow","version":"Dark Power I","tier":1,"rarity":92,"is_named":true,"sides":{"n":7,"e":6,"s":5,"w":4},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+{"card_key":"king_in_yellow_ii","character_key":"king_in_yellow","name":"The King In Yellow","version":"Dark Power II","tier":2,"rarity":96,"is_named":true,"sides":{"n":9,"e":7,"s":5,"w":5},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+{"card_key":"king_in_yellow_iii","character_key":"king_in_yellow","name":"The King In Yellow","version":"Dark Power III","tier":3,"rarity":100,"is_named":true,"sides":{"n":10,"e":10,"s":6,"w":6},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+
+{"card_key":"the_conquerer_i","character_key":"the_conquerer","name":"The Conquerer","version":"Dark Power I","tier":1,"rarity":90,"is_named":true,"sides":{"n":6,"e":7,"s":5,"w":4},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+{"card_key":"the_conquerer_ii","character_key":"the_conquerer","name":"The Conquerer","version":"Dark Power II","tier":2,"rarity":95,"is_named":true,"sides":{"n":9,"e":6,"s":6,"w":5},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+{"card_key":"the_conquerer_iii","character_key":"the_conquerer","name":"The Conquerer","version":"Dark Power III","tier":3,"rarity":99,"is_named":true,"sides":{"n":10,"e":8,"s":7,"w":7},"set":"barovia_200y_v1","tags":["dark_power","amber_temple"]}
+
+{"card_key":"storm_shadow_i","character_key":"storm_shadow","name":"Storm Shadow","version":"Shadow Dragon I","tier":1,"rarity":88,"is_named":true,"sides":{"n":8,"e":5,"s":4,"w":3},"set":"barovia_200y_v1","tags":["dragon","shadow"]}
+{"card_key":"storm_shadow_ii","character_key":"storm_shadow","name":"Storm Shadow","version":"Shadow Dragon II","tier":2,"rarity":95,"is_named":true,"sides":{"n":9,"e":7,"s":6,"w":4},"set":"barovia_200y_v1","tags":["dragon","shadow"]}
+{"card_key":"storm_shadow_iii","character_key":"storm_shadow","name":"Storm Shadow","version":"Shadow Dragon III","tier":3,"rarity":99,"is_named":true,"sides":{"n":10,"e":9,"s":9,"w":4},"set":"barovia_200y_v1","tags":["dragon","shadow"]}

@@ -49,6 +49,16 @@ Started: 2026-02-25
 - Learnings: `use_archetype` validation must fire before Mists roll; guard `if state.players` lets playerless mechanical tests pass unchanged; `dataclass field(default=False)` needed for default after positional args
 ---
 
+## 2026-02-25 22:00 - US-007
+- Added `apply_skulker_boost(card, side)` to `archetypes.py`: returns card copy with chosen side +2; original unchanged
+- Added `ArchetypePowerArgumentError` to `errors.py` for missing/invalid archetype arguments
+- Updated `PlacementIntent` with `skulker_boost_side: str | None = None`; refactored archetype block in `apply_intent` from MARTIAL-only check to dispatching if/elif/else covering MARTIAL and SKULKER
+- Updated `test_martial.py`: changed SKULKER→CASTER in wrong-archetype test (SKULKER now has its own handler)
+- Tests/validation run: `uv run pytest` → 88 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/archetypes.py`, `app/rules/errors.py`, `app/rules/reducer.py`, `tests/test_skulker.py` (new), `tests/test_martial.py`
+- Learnings: moving `archetype_used` check before the archetype-type dispatch ensures all archetypes get `ArchetypeAlreadyUsedError` consistently; `model_dump()` + `CardSides(**dict)` is the clean pattern for selective field update; updating existing Martial test when a new archetype claims `use_archetype=True` is expected churn as handlers are added
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

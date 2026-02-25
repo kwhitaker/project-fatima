@@ -93,7 +93,7 @@
         "Unit tests cover side selection, effect scope, and once-per-game enforcement"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Choice is made at placement time (not after seeing results)."
     },
     {

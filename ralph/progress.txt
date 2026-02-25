@@ -39,3 +39,11 @@ Started: 2026-02-25
 - Files changed: `app/models/__init__.py`, `app/models/cards.py`, `app/models/game.py`, `tests/test_models.py`
 - Learnings: pydantic is available transitively via FastAPI; `[None] * 9` inferred as `list[None]` by pyright — must annotate as `list[BoardCell | None]` explicitly; `set` is valid as a pydantic field name (class annotation, no actual shadowing issue)
 ---
+
+## 2026-02-25 20:30 - US-005
+- Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
+- Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement
+- Tests/validation run: `uv run pytest` → 60 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/errors.py` (new), `app/rules/reducer.py`, `tests/test_turn_flow.py` (new)
+- Learnings: guard turn/hand validation on `if state.players:` to keep existing pure-mechanics tests (which omit players) passing without modification; occupied-cell check is always enforced; `list.remove()` removes only the first occurrence, preserving duplicates in hand correctly
+---

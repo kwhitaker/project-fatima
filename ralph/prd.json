@@ -67,7 +67,7 @@
         "Unit tests cover validation errors and successful placements"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Still no archetypes yet; focus on core turn invariants."
     },
     {

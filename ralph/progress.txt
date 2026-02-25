@@ -109,6 +109,14 @@ Started: 2026-02-25
 - Learnings: guard turn/hand validation on `if state.players:` to keep existing pure-mechanics tests (which omit players) passing without modification; occupied-cell check is always enforced; `list.remove()` removes only the first occurrence, preserving duplicates in hand correctly
 ---
 
+## 2026-02-25 03:00 - US-014
+- Added `rarity_bucket(rarity)` and `STAT_BUDGETS` lookup table to `app/rules/cards.py`; bucket ranges (1-49 common, 50-74 uncommon, 75-89 rare, 90-96 very_rare, 97-100 ultra) and 15 (tier, bucket) entries are centralized
+- Added `validate_card_balance(card)` returning list of human-readable error strings; loader now calls it after uniqueness check and reports errors with "Balance error:" prefix
+- Tests/validation run: `uv run pytest` → 207 passed (32 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/cards.py`, `tests/test_cards_balance.py` (new, 32 tests)
+- Learnings: existing VALID_CARD fixtures (tier=1, rarity=15/18, common (16,6)) already satisfy balance constraints — no old tests broke; balance check placed after uniqueness check means a card failing balance is not added to `seen_keys`, which lets a second valid occurrence of the same key be accepted; ruff F401 fires on unused imports in test files — remove before committing
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

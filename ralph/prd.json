@@ -189,7 +189,7 @@
         "Unit tests cover bucket boundaries and budget/cap failures"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Keep bucket and budget tables centralized and test-covered."
     },
     {

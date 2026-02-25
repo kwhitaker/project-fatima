@@ -15,3 +15,11 @@ class CardNotInHandError(InvalidMoveError):
 
 class OccupiedCellError(InvalidMoveError):
     """The target board cell is already occupied."""
+
+
+class ArchetypeAlreadyUsedError(InvalidMoveError):
+    """The player's once-per-game archetype power has already been spent."""
+
+
+class ArchetypeNotAvailableError(InvalidMoveError):
+    """The requested archetype power does not match the player's archetype."""

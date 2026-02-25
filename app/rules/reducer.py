@@ -6,13 +6,20 @@ All game logic flows through here. Randomness flows through the explicit rng
 argument (seeded Random instance) — never global random.*
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from random import Random
 
 from app.models.cards import CardDefinition
-from app.models.game import BoardCell, GameState
+from app.models.game import Archetype, BoardCell, GameState
+from app.rules.archetypes import rotate_card_once
 from app.rules.captures import resolve_captures
-from app.rules.errors import CardNotInHandError, OccupiedCellError, WrongPlayerTurnError
+from app.rules.errors import (
+    ArchetypeAlreadyUsedError,
+    ArchetypeNotAvailableError,
+    CardNotInHandError,
+    OccupiedCellError,
+    WrongPlayerTurnError,
+)
 
 
 @dataclass
@@ -20,6 +27,7 @@ class PlacementIntent:
     player_index: int
     card_key: str
     cell_index: int
+    use_archetype: bool = field(default=False)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -67,10 +75,26 @@ def apply_intent(
     if state.board[intent.cell_index] is not None:
         raise OccupiedCellError(f"Cell {intent.cell_index} is already occupied")
 
-    # --- Mists roll ---
+    # --- Archetype power: Martial rotation ---
     placed_card = card_lookup[intent.card_key]
     placed_owner = intent.player_index
+    archetype_activated = False
 
+    if intent.use_archetype and state.players:
+        player = state.players[intent.player_index]
+        if player.archetype != Archetype.MARTIAL:
+            raise ArchetypeNotAvailableError(
+                f"Player {intent.player_index} has archetype {player.archetype!r}, "
+                "not MARTIAL"
+            )
+        if player.archetype_used:
+            raise ArchetypeAlreadyUsedError(
+                f"Player {intent.player_index} has already used their archetype power"
+            )
+        placed_card = rotate_card_once(placed_card)
+        archetype_activated = True
+
+    # --- Mists roll ---
     mists_modifier = 0
     if rng is not None:
         roll = rng.randint(1, 6)
@@ -99,8 +123,11 @@ def apply_intent(
         player = state.players[intent.player_index]
         new_hand = list(player.hand)
         new_hand.remove(intent.card_key)
+        player_updates: dict[str, object] = {"hand": new_hand}
+        if archetype_activated:
+            player_updates["archetype_used"] = True
         new_players = list(state.players)
-        new_players[intent.player_index] = player.model_copy(update={"hand": new_hand})
+        new_players[intent.player_index] = player.model_copy(update=player_updates)
         updates["players"] = new_players
         updates["current_player_index"] = (intent.player_index + 1) % 2
 

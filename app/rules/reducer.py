@@ -82,6 +82,7 @@ def apply_intent(
     placed_owner = intent.player_index
     archetype_activated = False
     caster_reroll = False
+    devout_negate_fog = False
 
     if intent.use_archetype and state.players:
         player = state.players[intent.player_index]
@@ -103,6 +104,9 @@ def apply_intent(
         elif player.archetype == Archetype.CASTER:
             caster_reroll = True
             archetype_activated = True
+        elif player.archetype == Archetype.DEVOUT:
+            devout_negate_fog = True
+            archetype_activated = True
         else:
             raise ArchetypeNotAvailableError(
                 f"Player {intent.player_index} has archetype {player.archetype!r}, "
@@ -116,6 +120,8 @@ def apply_intent(
         if caster_reroll:
             roll = rng.randint(1, 6)  # second result is used
         mists_modifier = mists_modifier_from_roll(roll)
+        if devout_negate_fog and mists_modifier == -1:
+            mists_modifier = 0  # Devout treats Fog as no effect
 
     # --- Board update ---
     new_board: list[BoardCell | None] = list(state.board)

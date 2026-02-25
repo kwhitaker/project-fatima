@@ -9,6 +9,33 @@ This file captures agreed technology decisions for the Project Fatima card game 
 - Auth between client and API: Supabase access token (JWT) in `Authorization: Bearer <token>`.
   - Note: we may later swap to a cookie/session flow, but JWT is MVP.
 
+## Frontend (MVP UI)
+
+- App type: static SPA.
+- Framework/build: SolidJS + Vite + TypeScript.
+  - Bun is the package manager/runtime; Vite remains the bundler/dev server.
+- Styling: Tailwind CSS.
+  - Define core design tokens as CSS variables early to keep re-skinning cheap later.
+- Components: small in-repo component set styled with Tailwind + headless a11y primitives (e.g. Kobalte).
+  - Skip shadcn/ui for MVP (React-first); re-evaluate if we switch to React.
+- Auth: Supabase Auth magic link.
+  - Client obtains the Supabase access token and calls FastAPI with `Authorization: Bearer <token>`.
+- Dev ergonomics: Vite dev server proxies `/api` to FastAPI at `http://localhost:8000` to avoid CORS.
+- Realtime: subscribe to Supabase Realtime inserts on `game_events` filtered by `game_id`.
+  - On event receipt: refetch `GET /games/{game_id}` (MVP-simple).
+- UI state model: snapshot-first rendering from `GET /games/{game_id}`; no game rules implemented client-side.
+
+## Frontend Testing (MVP UI)
+
+- Unit/component tests: Vitest + `@testing-library/solid`.
+  - Prefer `happy-dom` for speed; fall back to `jsdom` if needed.
+  - Prefer mocking `/api` at the network boundary (MSW) vs stubbing internals.
+- Smoke/E2E: Playwright (`@playwright/test`).
+  - MVP CI target: Chromium only (add Firefox/WebKit later if needed).
+  - Prefer running against `vite preview` (built app) for stability.
+- CLI red/green commands (via Bun scripts):
+  - `bun run test:unit` (watch), `bun run test:unit:ci`, `bun run test:smoke`, `bun run test:ui`.
+
 ## Game Model
 
 - 2 players per game.

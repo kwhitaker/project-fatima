@@ -81,6 +81,7 @@ def apply_intent(
     placed_card = card_lookup[intent.card_key]
     placed_owner = intent.player_index
     archetype_activated = False
+    caster_reroll = False
 
     if intent.use_archetype and state.players:
         player = state.players[intent.player_index]
@@ -99,6 +100,9 @@ def apply_intent(
                 )
             placed_card = apply_skulker_boost(placed_card, intent.skulker_boost_side)
             archetype_activated = True
+        elif player.archetype == Archetype.CASTER:
+            caster_reroll = True
+            archetype_activated = True
         else:
             raise ArchetypeNotAvailableError(
                 f"Player {intent.player_index} has archetype {player.archetype!r}, "
@@ -109,6 +113,8 @@ def apply_intent(
     mists_modifier = 0
     if rng is not None:
         roll = rng.randint(1, 6)
+        if caster_reroll:
+            roll = rng.randint(1, 6)  # second result is used
         mists_modifier = mists_modifier_from_roll(roll)
 
     # --- Board update ---

@@ -278,7 +278,7 @@ class TestMartialWrongArchetype:
         card = make_card("card_a")
         state = make_state(
             p0_hand=["card_a"],
-            p0_archetype=Archetype.CASTER,
+            p0_archetype=Archetype.DEVOUT,
         )
         intent = PlacementIntent(
             player_index=0, card_key="card_a", cell_index=0, use_archetype=True

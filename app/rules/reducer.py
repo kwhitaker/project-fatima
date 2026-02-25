@@ -11,11 +11,12 @@ from random import Random
 
 from app.models.cards import CardDefinition
 from app.models.game import Archetype, BoardCell, GameState
-from app.rules.archetypes import rotate_card_once
+from app.rules.archetypes import apply_skulker_boost, rotate_card_once
 from app.rules.captures import resolve_captures
 from app.rules.errors import (
     ArchetypeAlreadyUsedError,
     ArchetypeNotAvailableError,
+    ArchetypePowerArgumentError,
     CardNotInHandError,
     OccupiedCellError,
     WrongPlayerTurnError,
@@ -28,6 +29,7 @@ class PlacementIntent:
     card_key: str
     cell_index: int
     use_archetype: bool = field(default=False)
+    skulker_boost_side: str | None = field(default=None)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -75,24 +77,33 @@ def apply_intent(
     if state.board[intent.cell_index] is not None:
         raise OccupiedCellError(f"Cell {intent.cell_index} is already occupied")
 
-    # --- Archetype power: Martial rotation ---
+    # --- Archetype power dispatch ---
     placed_card = card_lookup[intent.card_key]
     placed_owner = intent.player_index
     archetype_activated = False
 
     if intent.use_archetype and state.players:
         player = state.players[intent.player_index]
-        if player.archetype != Archetype.MARTIAL:
-            raise ArchetypeNotAvailableError(
-                f"Player {intent.player_index} has archetype {player.archetype!r}, "
-                "not MARTIAL"
-            )
         if player.archetype_used:
             raise ArchetypeAlreadyUsedError(
                 f"Player {intent.player_index} has already used their archetype power"
             )
-        placed_card = rotate_card_once(placed_card)
-        archetype_activated = True
+        if player.archetype == Archetype.MARTIAL:
+            placed_card = rotate_card_once(placed_card)
+            archetype_activated = True
+        elif player.archetype == Archetype.SKULKER:
+            if intent.skulker_boost_side not in {"n", "e", "s", "w"}:
+                raise ArchetypePowerArgumentError(
+                    f"Skulker boost requires skulker_boost_side in {{n,e,s,w}}, "
+                    f"got {intent.skulker_boost_side!r}"
+                )
+            placed_card = apply_skulker_boost(placed_card, intent.skulker_boost_side)
+            archetype_activated = True
+        else:
+            raise ArchetypeNotAvailableError(
+                f"Player {intent.player_index} has archetype {player.archetype!r}, "
+                "which has no active placement power implemented"
+            )
 
     # --- Mists roll ---
     mists_modifier = 0

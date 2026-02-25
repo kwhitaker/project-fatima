@@ -25,3 +25,14 @@ def rotate_card_once(card: CardDefinition) -> CardDefinition:
         w=card.sides.s,
     )
     return card.model_copy(update={"sides": rotated_sides})
+
+
+def apply_skulker_boost(card: CardDefinition, side: str) -> CardDefinition:
+    """Return a copy of *card* with *side* increased by 2 for this placement.
+
+    The boost affects comparisons only; the original card's printed stats
+    are never mutated. *side* must be one of "n", "e", "s", "w".
+    """
+    sides_dict = card.sides.model_dump()
+    sides_dict[side] += 2
+    return card.model_copy(update={"sides": CardSides(**sides_dict)})

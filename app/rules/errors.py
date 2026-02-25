@@ -23,3 +23,7 @@ class ArchetypeAlreadyUsedError(InvalidMoveError):
 
 class ArchetypeNotAvailableError(InvalidMoveError):
     """The requested archetype power does not match the player's archetype."""
+
+
+class ArchetypePowerArgumentError(InvalidMoveError):
+    """A required argument for the archetype power is missing or invalid."""

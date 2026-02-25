@@ -274,11 +274,11 @@ class TestMartialOncePerGame:
 
 class TestMartialWrongArchetype:
     def test_non_martial_archetype_cannot_use_rotation(self):
-        """Player with Skulker archetype cannot request Martial rotation."""
+        """Player with an unimplemented archetype raises ArchetypeNotAvailableError."""
         card = make_card("card_a")
         state = make_state(
             p0_hand=["card_a"],
-            p0_archetype=Archetype.SKULKER,
+            p0_archetype=Archetype.CASTER,
         )
         intent = PlacementIntent(
             player_index=0, card_key="card_a", cell_index=0, use_archetype=True

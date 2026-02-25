@@ -40,6 +40,15 @@ Started: 2026-02-25
 - Learnings: pydantic is available transitively via FastAPI; `[None] * 9` inferred as `list[None]` by pyright — must annotate as `list[BoardCell | None]` explicitly; `set` is valid as a pydantic field name (class annotation, no actual shadowing issue)
 ---
 
+## 2026-02-25 21:00 - US-006
+- Created `app/rules/archetypes.py`: pure `rotate_card_once(card)` (new.n=old.w, new.e=old.n, new.s=old.e, new.w=old.s)
+- Added `ArchetypeAlreadyUsedError` and `ArchetypeNotAvailableError` to `errors.py`
+- Updated `PlacementIntent` with `use_archetype: bool = False`; reducer handles Martial validation + rotation before Mists/captures; sets `archetype_used=True` in player state
+- Tests/validation run: `uv run pytest` → 73 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/archetypes.py` (new), `app/rules/errors.py`, `app/rules/reducer.py`, `tests/test_martial.py` (new)
+- Learnings: `use_archetype` validation must fire before Mists roll; guard `if state.players` lets playerless mechanical tests pass unchanged; `dataclass field(default=False)` needed for default after positional args
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

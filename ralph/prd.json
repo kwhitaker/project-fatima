@@ -80,7 +80,7 @@
         "Unit tests cover rotation behavior and once-per-game enforcement"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Default: rotation occurs after placement selection and before Mists/captures are evaluated."
     },
     {

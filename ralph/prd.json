@@ -146,7 +146,7 @@
         "Unit tests cover win/lose outcomes and tie detection"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Sudden Death comes in the next story."
     },
     {

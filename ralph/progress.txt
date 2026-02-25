@@ -85,6 +85,14 @@ Started: 2026-02-25
 - Learnings: Presence boost is applied inside the adjacency loop per-direction (not as a global modifier like mists); `placed_side == presence_direction` is the guard; since all archetypes are now implemented, the "wrong archetype" test pattern is fully retired — the `else` branch can only be reached with `archetype=None`
 ---
 
+## 2026-02-25 00:30 - US-011
+- Added `compute_round_result(board)` to `reducer.py`: counts per-player cells, returns `GameResult` (winner or draw)
+- Updated `apply_intent`: after board update, checks `all(cell is not None for cell in new_board)`; if full, sets `result` and `status=COMPLETE`
+- Tests/validation run: `uv run pytest` → 129 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/reducer.py`, `tests/test_scoring.py` (new)
+- Learnings: `list[BoardCell]` is not assignable to `list[BoardCell | None]` due to pyright invariance — annotate the first sub-list as `list[BoardCell | None]` before concatenation; tie (equal counts) is mathematically impossible with 9 cells in standard play but the defensive branch is tested by calling `compute_round_result` directly with a 4-4 board
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

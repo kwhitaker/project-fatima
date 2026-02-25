@@ -106,7 +106,7 @@
         "Unit tests cover reroll behavior and once-per-game enforcement"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Reroll applies only to Mists and only on that placement."
     },
     {

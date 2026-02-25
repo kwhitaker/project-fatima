@@ -59,6 +59,15 @@ Started: 2026-02-25
 - Learnings: moving `archetype_used` check before the archetype-type dispatch ensures all archetypes get `ArchetypeAlreadyUsedError` consistently; `model_dump()` + `CardSides(**dict)` is the clean pattern for selective field update; updating existing Martial test when a new archetype claims `use_archetype=True` is expected churn as handlers are added
 ---
 
+## 2026-02-25 23:00 - US-008
+- Added `elif player.archetype == Archetype.CASTER` branch in `apply_intent` archetype dispatch: sets `caster_reroll = True` and `archetype_activated = True`
+- In Mists roll section: if `caster_reroll`, call `rng.randint` a second time; second result is used as the modifier input
+- Updated `test_martial.py`: changed CASTER→DEVOUT in wrong-archetype test (CASTER now has its own handler)
+- Tests/validation run: `uv run pytest` → 97 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/reducer.py`, `tests/test_caster.py` (new), `tests/test_martial.py`
+- Learnings: the `caster_reroll` flag must be initialized before the archetype dispatch block so it is always in scope for the Mists roll section; `rng.randint.side_effect = [a, b]` allows pinning both rolls in sequence; updating the "wrong archetype" test is expected churn each time a new archetype handler is added — update to the next unimplemented archetype (DEVOUT for US-009)
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

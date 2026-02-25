@@ -62,6 +62,48 @@ def compute_round_result(board: list[BoardCell | None]) -> GameResult:
     return GameResult(winner=None, is_draw=True)
 
 
+def begin_sudden_death_round(state: GameState) -> GameState:
+    """Transition a tied board-full state into a new Sudden Death round.
+
+    If the cap (3 SD rounds already used) is reached, returns a COMPLETE state
+    with a draw result instead of starting a new round.
+
+    Rebuilds each player's hand from the cards they own on the current board.
+    Resets the board and current_player_index; preserves archetype_used (once-per-game).
+
+    Does NOT bump state_version — the caller is responsible for that.
+    """
+    if state.sudden_death_rounds_used >= 3:
+        return state.model_copy(
+            update={
+                "result": GameResult(winner=None, is_draw=True),
+                "status": GameStatus.COMPLETE,
+            }
+        )
+
+    sd_hands: list[list[str]] = [[], []]
+    for bcel in state.board:
+        if bcel is not None:
+            sd_hands[bcel.owner].append(bcel.card_key)
+
+    new_players = [
+        p.model_copy(update={"hand": sd_hands[i]})
+        for i, p in enumerate(state.players)
+    ]
+    empty_board: list[BoardCell | None] = [None] * 9
+    return state.model_copy(
+        update={
+            "round_number": state.round_number + 1,
+            "sudden_death_rounds_used": state.sudden_death_rounds_used + 1,
+            "board": empty_board,
+            "players": new_players,
+            "current_player_index": 0,
+            "result": None,
+            "status": GameStatus.ACTIVE,
+        }
+    )
+
+
 def apply_intent(
     state: GameState,
     intent: PlacementIntent,
@@ -182,7 +224,13 @@ def apply_intent(
 
     # --- End-of-round check ---
     if all(cell is not None for cell in new_board):
-        updates["result"] = compute_round_result(new_board)
+        round_result = compute_round_result(new_board)
+        if round_result.is_draw and state.players:
+            # Sudden Death: apply all placement updates first, then reset for the new round.
+            # begin_sudden_death_round rebuilds hands from the board and handles the SD cap.
+            post_placement = state.model_copy(update=updates)
+            return begin_sudden_death_round(post_placement)
+        updates["result"] = round_result
         updates["status"] = GameStatus.COMPLETE
 
     return state.model_copy(update=updates)

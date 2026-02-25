@@ -24,6 +24,14 @@ Started: 2026-02-25
 - Learnings: helper wrapper `rc()` in test file keeps call sites under 100 chars without losing clarity; `model_copy(update=...)` is the Pydantic v2 immutable-update pattern; board adjacency direction pairs: placed card uses direction side, neighbor uses opposite (N↔S, E↔W)
 ---
 
+## 2026-02-25 20:00 - US-004
+- Added `mists_modifier_from_roll(roll: int) -> int` (public) to `reducer.py`: 1→-1, 6→+1, 2-5→0
+- Updated `apply_intent` to roll `rng.randint(1, 6)` when rng is provided; passes modifier to `resolve_captures`; rng=None → modifier=0 for backward compat
+- Tests/validation run: `uv run pytest` → 48 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/reducer.py`, `tests/test_mists.py`
+- Learnings: `captures.py` already had `mists_modifier` param from US-003 with forward comment; ruff I001 import-sort triggered by stdlib before third-party ordering; `MagicMock().randint.return_value` lets tests pin the roll without a real Random instance
+---
+
 ## 2026-02-25 19:00 - US-002
 - Created `app/models/cards.py` (CardSides, CardDefinition with pydantic validation)
 - Created `app/models/game.py` (Archetype, GameStatus enums; BoardCell, PlayerState, GameResult, GameState models)

@@ -54,7 +54,7 @@
         "Unit tests cover all roll cases using a seeded RNG"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Modifier affects comparisons only; printed stats do not change."
     },
     {

@@ -40,7 +40,7 @@
         "Deterministic outcomes for a given input state"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "This should live in the pure rules engine reducer; no DB/API yet."
     },
     {

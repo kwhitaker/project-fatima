@@ -16,6 +16,14 @@ Started: 2026-02-25
 - Learnings: hatchling needs `[tool.hatch.build.targets.wheel] packages = ["app"]` when package name doesn't match project name; uv not pre-installed — installed via pip from mise Python
 ---
 
+## 2026-02-25 19:30 - US-003
+- Created `app/rules/captures.py`: pure `resolve_captures()` using a static adjacency table; `mists_modifier` param ready for US-004
+- Created `app/rules/reducer.py`: `PlacementIntent` dataclass + `apply_intent()` (basic: places card, resolves captures, bumps state_version, no Mists/turn-validation yet)
+- Tests/validation run: `uv run pytest` → 35 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/__init__.py`, `app/rules/captures.py`, `app/rules/reducer.py`, `tests/test_captures.py`
+- Learnings: helper wrapper `rc()` in test file keeps call sites under 100 chars without losing clarity; `model_copy(update=...)` is the Pydantic v2 immutable-update pattern; board adjacency direction pairs: placed card uses direction side, neighbor uses opposite (N↔S, E↔W)
+---
+
 ## 2026-02-25 19:00 - US-002
 - Created `app/models/cards.py` (CardSides, CardDefinition with pydantic validation)
 - Created `app/models/game.py` (Archetype, GameStatus enums; BoardCell, PlayerState, GameResult, GameState models)

@@ -11,10 +11,10 @@ This file is for coding agents working in this repo.
 
 ## Repo Status (what exists today)
 
-- This repo is currently mostly planning + game design docs and data.
+- FastAPI skeleton in `app/main.py` with health endpoint.
+- `pyproject.toml` with uv/hatchling build; dev extras: pytest, httpx, ruff, pyright.
 - Key docs/data: `TECH_DECISIONS.md`, `MVP_PLAN_OVERVIEW.md`, `GAME_RULES_OVERVIEW.md`, `CARDS_SPEC.md`, `cards.jsonl`.
 - Agent loop tooling exists in `ralph/` (see `ralph/README.md` and `ralph/CLAUDE.md`).
-- No Python package/app layout yet (no `pyproject.toml`, no `app/`, no `tests/`).
 - No Cursor rules found in `.cursor/rules/` or `.cursorrules`.
 - No Copilot instructions found in `.github/copilot-instructions.md`.
 
@@ -34,42 +34,37 @@ This repo includes a Claude Code loop runner under `ralph/`.
 - Each iteration should: do ONE story, run checks from this file, commit, update `ralph/prd.json`, append to `ralph/progress.txt`.
 
 ## Build / Lint / Test Commands
-There is no runnable app or test suite yet. The commands below are the intended defaults for the upcoming FastAPI + pytest backend; update this section once the scaffold lands.
 
-### Install / bootstrap (choose the one that matches the repo once added)
-- If using uv (recommended): `uv sync` (or `uv pip install -r requirements.txt`)
-- If using pip: `python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`
-- If using poetry: `poetry install`
+### Install / bootstrap
+```bash
+uv sync --extra dev
+```
 
 ### Run the app (FastAPI/Uvicorn)
-- Dev server (typical): `uvicorn app.main:app --reload`
-- Alternate module path: `uvicorn <package>.main:app --reload`
-- Factory function (if used): `uvicorn app.main:create_app --factory --reload`
+```bash
+uv run uvicorn app.main:app --reload
+```
 
-### Lint / format (recommended defaults)
-- Lint (ruff): `ruff check .`
-- Format (ruff): `ruff format .`
-- Autofix (ruff): `ruff check . --fix`
-- If/when pre-commit is configured: `pre-commit run -a`
+### Lint / format
+```bash
+uv run ruff check .
+uv run ruff format .
+uv run ruff check . --fix   # autofix
+```
 
-### Typecheck (pick one once configured)
-
-- pyright: `pyright`
+### Typecheck
+```bash
+uv run pyright
+```
 
 ### Tests (pytest)
-
-- All tests: `pytest` (or `pytest -q`)
-- Stop on first failure: `pytest -x` (or `pytest --maxfail=1`)
-- Show stdout/stderr: `pytest -s`
-
-Run a single test (most important):
-- Single file: `pytest tests/test_something.py`
-- Single test function: `pytest tests/test_something.py::test_happy_path`
-- Single test class method: `pytest tests/test_api.py::TestAuth::test_login`
-- By name substring: `pytest -k "login and not slow"`
-- By marker: `pytest -m "unit"`
-
-Debugging collection/import issues: `pytest -q --maxfail=1 --disable-warnings`
+```bash
+uv run pytest                              # all tests
+uv run pytest tests/test_something.py     # single file
+uv run pytest tests/test_something.py::test_happy_path  # single test
+uv run pytest -x                          # stop on first failure
+uv run pytest -k "capture and not slow"   # by name substring
+```
 
 ## Code Style Guidelines (Python)
 

@@ -161,7 +161,7 @@
         "Unit tests cover the transition, card carryover, and cap behavior"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Same game_id; round_number increments; cap=3 then draw."
     },
     {

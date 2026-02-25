@@ -93,6 +93,14 @@ Started: 2026-02-25
 - Learnings: `list[BoardCell]` is not assignable to `list[BoardCell | None]` due to pyright invariance — annotate the first sub-list as `list[BoardCell | None]` before concatenation; tie (equal counts) is mathematically impossible with 9 cells in standard play but the defensive branch is tested by calling `compute_round_result` directly with a 4-4 board
 ---
 
+## 2026-02-25 01:00 - US-012
+- Added `begin_sudden_death_round(state)` to `reducer.py`: rebuilds hands from board ownership, increments `round_number`/`sudden_death_rounds_used`, resets board + `current_player_index=0`; handles SD cap (>=3 rounds → COMPLETE draw); does NOT bump `state_version` (caller's responsibility)
+- Updated `apply_intent` end-of-round check: on draw with players present, applies placement updates then delegates to `begin_sudden_death_round`; non-draw path unchanged
+- Tests/validation run: `uv run pytest` → 153 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/reducer.py`, `tests/test_sudden_death.py` (new, 24 tests)
+- Learnings: a genuine tie at board-full is mathematically impossible with 9 cells/2 players (9 is odd) — test the SD logic directly via `begin_sudden_death_round` rather than driving through `apply_intent`; pyright list invariance: annotate the first sub-list as `list[BoardCell | None]` before concatenation; preserve `archetype_used` in SD (once-per-game semantics)
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

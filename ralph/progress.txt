@@ -76,6 +76,15 @@ Started: 2026-02-25
 - Learnings: Devout applies after the Mists roll result is known, not before; the negation is a post-roll guard (`if devout_negate_fog and mists_modifier == -1`) — keeps the flag initialization pattern consistent with `caster_reroll`; updating the wrong-archetype test to the next unimplemented archetype (PRESENCE) is expected churn each time a new handler is added
 ---
 
+## 2026-02-25 23:55 - US-010
+- Added `presence_boost_direction: str | None` to `PlacementIntent`; PRESENCE branch in archetype dispatch sets `presence_direction_boost` and validates the direction arg
+- Extended `resolve_captures` with `presence_direction` param: applies +1 to placed side value only for the matching comparison; stacks with `mists_modifier`
+- Removed stale `test_non_martial_archetype_cannot_use_rotation` test (used PRESENCE as unimplemented archetype; all 5 archetypes now handled)
+- Tests/validation run: `uv run pytest` → 119 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/captures.py`, `app/rules/reducer.py`, `tests/test_presence.py` (new), `tests/test_martial.py`
+- Learnings: Presence boost is applied inside the adjacency loop per-direction (not as a global modifier like mists); `placed_side == presence_direction` is the guard; since all archetypes are now implemented, the "wrong archetype" test pattern is fully retired — the `else` branch can only be reached with `archetype=None`
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

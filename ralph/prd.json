@@ -133,7 +133,7 @@
         "Unit tests cover the single-comparison scope and once-per-game enforcement"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Default: applied as +1 to placed side value for the chosen comparison before evaluating capture."
     },
     {

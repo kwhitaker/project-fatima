@@ -3,79 +3,73 @@
 This file is for coding agents working in this repo.
 
 ## AI Instructions
-
 - Be concise and direct in your communication.
 - Do not write useless/redundant comments for easily understood functions, variables, etc.
 - Reserve comments for obtuse code, exceptions, gotchas, and non-obvious tradeoffs.
 - When writing comments, prefer concision over grammatical correctness.
-- Functions and variables should be self-documenting.
 - When you present a plan and still need more info to proceed safely, end with 2-5 leading questions.
 
 ## Repo Status (what exists today)
 
-- Only `README.md` and `.gitignore` are present.
-- No Python package/app layout, no `pyproject.toml`, and no test/lint tooling configs were found.
-- No Cursor rules were found in `.cursor/rules/` or `.cursorrules`.
-- No Copilot instructions were found in `.github/copilot-instructions.md`.
+- This repo is currently mostly planning + game design docs and data.
+- Key docs/data: `TECH_DECISIONS.md`, `MVP_PLAN_OVERVIEW.md`, `GAME_RULES_OVERVIEW.md`, `CARDS_SPEC.md`, `cards.jsonl`.
+- Agent loop tooling exists in `ralph/` (see `ralph/README.md` and `ralph/CLAUDE.md`).
+- No Python package/app layout yet (no `pyproject.toml`, no `app/`, no `tests/`).
+- No Cursor rules found in `.cursor/rules/` or `.cursorrules`.
+- No Copilot instructions found in `.github/copilot-instructions.md`.
 
 If you add any of the above, update this doc with the canonical commands.
 
 ## Tooling: mise
-
 We intend to use `mise` for tool/runtime version management.
-
 - Install: https://mise.jdx.dev/installing-mise.html
 - After cloning (once `.mise.toml` / tools are defined): `mise install`
 - Activate in shell: follow mise docs for your shell (`mise activate` is commonly used).
+- Tip: prefer `mise x -- <cmd>` when you need a specific tool version.
 
-Tip for agents: prefer `mise x -- <cmd>` when you need a specific tool version.
+## Ralph (autonomous loop)
+This repo includes a Claude Code loop runner under `ralph/`.
+- Run: `./ralph/ralph.sh 10`
+- Prereqs: `jq`, and `claude` (Claude Code) installed/authenticated.
+- Each iteration should: do ONE story, run checks from this file, commit, update `ralph/prd.json`, append to `ralph/progress.txt`.
 
 ## Build / Lint / Test Commands
-
-Because the repo currently lacks config, the commands below are the expected defaults for a
-FastAPI + pytest Python project. Adjust them once the actual toolchain is committed.
+There is no runnable app or test suite yet. The commands below are the intended defaults for the upcoming FastAPI + pytest backend; update this section once the scaffold lands.
 
 ### Install / bootstrap (choose the one that matches the repo once added)
-
-- If using uv: `uv sync` (or `uv pip install -r requirements.txt`)
+- If using uv (recommended): `uv sync` (or `uv pip install -r requirements.txt`)
 - If using pip: `python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt`
 - If using poetry: `poetry install`
 
 ### Run the app (FastAPI/Uvicorn)
-
 - Dev server (typical): `uvicorn app.main:app --reload`
 - Alternate module path: `uvicorn <package>.main:app --reload`
+- Factory function (if used): `uvicorn app.main:create_app --factory --reload`
 
 ### Lint / format (recommended defaults)
-
 - Lint (ruff): `ruff check .`
 - Format (ruff): `ruff format .`
 - Autofix (ruff): `ruff check . --fix`
+- If/when pre-commit is configured: `pre-commit run -a`
 
 ### Typecheck (pick one once configured)
 
-- mypy: `mypy .`
 - pyright: `pyright`
 
 ### Tests (pytest)
 
-- All tests: `pytest`
-- Quiet: `pytest -q`
-- Stop on first failure: `pytest -x`
-- Fail fast with max failures: `pytest --maxfail=1`
+- All tests: `pytest` (or `pytest -q`)
+- Stop on first failure: `pytest -x` (or `pytest --maxfail=1`)
 - Show stdout/stderr: `pytest -s`
 
 Run a single test (most important):
-
 - Single file: `pytest tests/test_something.py`
 - Single test function: `pytest tests/test_something.py::test_happy_path`
 - Single test class method: `pytest tests/test_api.py::TestAuth::test_login`
 - By name substring: `pytest -k "login and not slow"`
 - By marker: `pytest -m "unit"`
 
-If you need coverage (once configured):
-
-- `pytest --cov --cov-report=term-missing`
+Debugging collection/import issues: `pytest -q --maxfail=1 --disable-warnings`
 
 ## Code Style Guidelines (Python)
 
@@ -99,7 +93,7 @@ If you need coverage (once configured):
 - Prefer `| None` over `Optional[...]` on Python 3.10+.
 - Avoid `Any` unless bridging an untyped dependency; localize it.
 - If/when using Pydantic/FastAPI:
-  - Use Pydantic models for request/response bodies.
+  - Use Pydantic models at the API boundary (request/response + settings), not deep in the rules engine.
   - Keep API schemas stable; version or migrate deliberately.
 
 ### Naming
@@ -117,6 +111,12 @@ If you introduce code, keep boundaries clear:
 - `app/` (or `src/<package>/`) for application code
 - `tests/` for pytest tests
 - Separate layers: API (FastAPI routers), services, data access, domain models
+
+Rules engine guidance (MVP):
+
+- Keep the reducer pure: `next_state = apply_intent(state, intent, rng)`.
+- Make state JSON-serializable (event log + snapshot storage).
+- Derive randomness from an explicit seed; do not call global `random.*` inside core logic.
 
 ### Error handling
 
@@ -152,3 +152,7 @@ If you introduce code, keep boundaries clear:
 - Keep diffs minimal; avoid drive-by refactors.
 - Do not add new tooling/config files unless the task calls for it.
 - Never commit secrets; `.env` and virtualenvs are ignored.
+
+If Cursor/Copilot rules are added later:
+
+- Mirror the key constraints here so non-editor agents see them too.

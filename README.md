@@ -9,6 +9,25 @@ We use [mise](https://mise.jdx.dev) to manage runtime/tool versions for consiste
 - Install mise: https://mise.jdx.dev/installing-mise.html
 - After cloning, enable mise for your shell and install pinned tools (if configured): `mise install`
 
+## Ralph (autonomous agent loop)
+
+This repo includes a Ralph-style autonomous loop runner under `ralph/` that iterates through one user story at a time.
+
+Prereqs:
+- `jq`
+- `claude` (Claude Code) installed and authenticated
+
+Run (from repo root):
+
+```bash
+chmod +x ralph/ralph.sh
+./ralph/ralph.sh 10
+```
+
+Notes:
+- The backlog lives in `ralph/prd.json`; progress is appended to `ralph/progress.txt`.
+- Each iteration should complete exactly ONE story, run the repo checks documented in `AGENTS.md`, then commit.
+
 ## Tech Stack
 
 Backend:

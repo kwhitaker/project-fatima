@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from random import Random
 
 from app.models.cards import CardDefinition
-from app.models.game import Archetype, BoardCell, GameState
+from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus
 from app.rules.archetypes import apply_skulker_boost, rotate_card_once
 from app.rules.captures import resolve_captures
 from app.rules.errors import (
@@ -45,6 +45,21 @@ def mists_modifier_from_roll(roll: int) -> int:
     if roll == 6:
         return 1
     return 0
+
+
+def compute_round_result(board: list[BoardCell | None]) -> GameResult:
+    """Return the result of a completed round from the current board state.
+
+    Counts cells owned by each player. The player with more cells wins.
+    Equal counts resolve as a draw (triggers Sudden Death in the next story).
+    """
+    p0 = sum(1 for cell in board if cell is not None and cell.owner == 0)
+    p1 = sum(1 for cell in board if cell is not None and cell.owner == 1)
+    if p0 > p1:
+        return GameResult(winner=0, is_draw=False)
+    if p1 > p0:
+        return GameResult(winner=1, is_draw=False)
+    return GameResult(winner=None, is_draw=True)
 
 
 def apply_intent(
@@ -164,5 +179,10 @@ def apply_intent(
         new_players[intent.player_index] = player.model_copy(update=player_updates)
         updates["players"] = new_players
         updates["current_player_index"] = (intent.player_index + 1) % 2
+
+    # --- End-of-round check ---
+    if all(cell is not None for cell in new_board):
+        updates["result"] = compute_round_result(new_board)
+        updates["status"] = GameStatus.COMPLETE
 
     return state.model_copy(update=updates)

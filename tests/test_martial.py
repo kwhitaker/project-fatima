@@ -273,19 +273,6 @@ class TestMartialOncePerGame:
 
 
 class TestMartialWrongArchetype:
-    def test_non_martial_archetype_cannot_use_rotation(self):
-        """Player with an unimplemented archetype raises ArchetypeNotAvailableError."""
-        card = make_card("card_a")
-        state = make_state(
-            p0_hand=["card_a"],
-            p0_archetype=Archetype.PRESENCE,
-        )
-        intent = PlacementIntent(
-            player_index=0, card_key="card_a", cell_index=0, use_archetype=True
-        )
-        with pytest.raises(ArchetypeNotAvailableError):
-            apply_intent(state, intent, {"card_a": card})
-
     def test_no_archetype_cannot_use_rotation(self):
         """Player with no archetype cannot request use_archetype=True."""
         card = make_card("card_a")

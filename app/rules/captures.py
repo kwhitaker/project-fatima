@@ -36,12 +36,16 @@ def resolve_captures(
     placed_owner: int,
     card_lookup: dict[str, CardDefinition],
     mists_modifier: int = 0,
+    presence_direction: str | None = None,
 ) -> list[BoardCell | None]:
     """Return a new board with ownership flipped for captured adjacent cards.
 
     A card is captured when placed card's touching side (+ mists_modifier)
     is strictly greater than the adjacent card's opposing side.
     Printed stats never change; mists_modifier affects comparisons only.
+
+    If presence_direction is set (one of n/e/s/w), that single comparison
+    gets an additional +1 on the placed card's value (Presence archetype).
     """
     new_board: list[BoardCell | None] = list(board)
 
@@ -52,6 +56,8 @@ def resolve_captures(
 
         neighbor_def = card_lookup[neighbor_cell.card_key]
         placed_value = getattr(placed_card.sides, placed_side) + mists_modifier
+        if presence_direction and placed_side == presence_direction:
+            placed_value += 1
         neighbor_value = getattr(neighbor_def.sides, neighbor_side)
 
         if placed_value > neighbor_value:

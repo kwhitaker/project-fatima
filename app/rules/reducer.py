@@ -30,6 +30,7 @@ class PlacementIntent:
     cell_index: int
     use_archetype: bool = field(default=False)
     skulker_boost_side: str | None = field(default=None)
+    presence_boost_direction: str | None = field(default=None)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -83,6 +84,7 @@ def apply_intent(
     archetype_activated = False
     caster_reroll = False
     devout_negate_fog = False
+    presence_direction_boost: str | None = None
 
     if intent.use_archetype and state.players:
         player = state.players[intent.player_index]
@@ -106,6 +108,14 @@ def apply_intent(
             archetype_activated = True
         elif player.archetype == Archetype.DEVOUT:
             devout_negate_fog = True
+            archetype_activated = True
+        elif player.archetype == Archetype.PRESENCE:
+            if intent.presence_boost_direction not in {"n", "e", "s", "w"}:
+                raise ArchetypePowerArgumentError(
+                    f"Presence boost requires presence_boost_direction in {{n,e,s,w}}, "
+                    f"got {intent.presence_boost_direction!r}"
+                )
+            presence_direction_boost = intent.presence_boost_direction
             archetype_activated = True
         else:
             raise ArchetypeNotAvailableError(
@@ -134,6 +144,7 @@ def apply_intent(
         placed_owner,
         card_lookup,
         mists_modifier=mists_modifier,
+        presence_direction=presence_direction_boost,
     )
 
     # --- Build state delta ---

@@ -120,7 +120,7 @@
         "Unit tests cover Fog negation and once-per-game enforcement"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Devout does not turn Fog into Omen; it neutralizes the -1."
     },
     {

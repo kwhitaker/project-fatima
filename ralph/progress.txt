@@ -68,6 +68,14 @@ Started: 2026-02-25
 - Learnings: the `caster_reroll` flag must be initialized before the archetype dispatch block so it is always in scope for the Mists roll section; `rng.randint.side_effect = [a, b]` allows pinning both rolls in sequence; updating the "wrong archetype" test is expected churn each time a new archetype handler is added — update to the next unimplemented archetype (DEVOUT for US-009)
 ---
 
+## 2026-02-25 23:30 - US-009
+- Added `devout_negate_fog` flag in `apply_intent`; DEVOUT branch sets it; post-roll logic zeros modifier when `devout_negate_fog and mists_modifier == -1`
+- Updated `test_martial.py` wrong-archetype test: DEVOUT → PRESENCE (DEVOUT now has its own handler)
+- Tests/validation run: `uv run pytest` → 108 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/reducer.py`, `tests/test_devout.py` (new), `tests/test_martial.py`
+- Learnings: Devout applies after the Mists roll result is known, not before; the negation is a post-roll guard (`if devout_negate_fog and mists_modifier == -1`) — keeps the flag initialization pattern consistent with `caster_reroll`; updating the wrong-archetype test to the next unimplemented archetype (PRESENCE) is expected churn each time a new handler is added
+---
+
 ## 2026-02-25 20:30 - US-005
 - Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
 - Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement

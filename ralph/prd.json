@@ -203,7 +203,7 @@
         "Unit tests cover each rule failure"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Copy limits are a separate story."
     },
     {

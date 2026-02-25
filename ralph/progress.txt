@@ -117,6 +117,13 @@ Started: 2026-02-25
 - Learnings: existing VALID_CARD fixtures (tier=1, rarity=15/18, common (16,6)) already satisfy balance constraints — no old tests broke; balance check placed after uniqueness check means a card failing balance is not added to `seen_keys`, which lets a second valid occurrence of the same key be accepted; ruff F401 fires on unused imports in test files — remove before committing
 ---
 
+## 2026-02-25 04:00 - US-015
+- Created `app/rules/deck.py`: `validate_deck(cards)` checks size==10, named uniqueness by `character_key` (when `is_named`), and rarity slots (ultra≤1, very_rare≤2, rare≤3); returns list of error strings
+- Tests/validation run: `uv run pytest` → 227 passed (20 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/deck.py` (new), `tests/test_deck_validator.py` (new, 20 tests)
+- Learnings: "very_rare" contains "rare" as a substring — test assertions checking for "rare" must use `"very_rare" not in e` guard to avoid false positives; `rarity_bucket()` from `cards.py` is reused to classify cards for slot counting; bucket iteration order in `_RARITY_SLOT_LIMITS` doesn't affect correctness since all buckets are checked independently
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

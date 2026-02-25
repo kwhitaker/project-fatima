@@ -15,3 +15,11 @@ Started: 2026-02-25
 - Files changed: `pyproject.toml`, `uv.lock`, `app/__init__.py`, `app/main.py`, `tests/__init__.py`, `tests/test_health.py`, `AGENTS.md`
 - Learnings: hatchling needs `[tool.hatch.build.targets.wheel] packages = ["app"]` when package name doesn't match project name; uv not pre-installed — installed via pip from mise Python
 ---
+
+## 2026-02-25 19:00 - US-002
+- Created `app/models/cards.py` (CardSides, CardDefinition with pydantic validation)
+- Created `app/models/game.py` (Archetype, GameStatus enums; BoardCell, PlayerState, GameResult, GameState models)
+- Tests/validation run: `uv run pytest` → 19 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/models/__init__.py`, `app/models/cards.py`, `app/models/game.py`, `tests/test_models.py`
+- Learnings: pydantic is available transitively via FastAPI; `[None] * 9` inferred as `list[None]` by pyright — must annotate as `list[BoardCell | None]` explicitly; `set` is valid as a pydantic field name (class annotation, no actual shadowing issue)
+---

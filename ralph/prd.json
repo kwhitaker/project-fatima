@@ -27,7 +27,7 @@
         "Unit tests cover basic model validation (side ranges, required fields)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer pydantic."
     },
     {

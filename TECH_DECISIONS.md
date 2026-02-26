@@ -12,12 +12,11 @@ This file captures agreed technology decisions for the Project Fatima card game 
 ## Frontend (MVP UI)
 
 - App type: static SPA.
-- Framework/build: SolidJS + Vite + TypeScript.
+- Framework/build: React + Vite + TypeScript.
   - Bun is the package manager/runtime; Vite remains the bundler/dev server.
 - Styling: Tailwind CSS.
   - Define core design tokens as CSS variables early to keep re-skinning cheap later.
-- Components: small in-repo component set styled with Tailwind + headless a11y primitives (e.g. Kobalte).
-  - Skip shadcn/ui for MVP (React-first); re-evaluate if we switch to React.
+- Components: shadcn/ui (Radix UI + Tailwind) as the default component set.
 - Auth: Supabase Auth magic link.
   - Client obtains the Supabase access token and calls FastAPI with `Authorization: Bearer <token>`.
 - Dev ergonomics: Vite dev server proxies `/api` to FastAPI at `http://localhost:8000` to avoid CORS.
@@ -27,7 +26,7 @@ This file captures agreed technology decisions for the Project Fatima card game 
 
 ## Frontend Testing (MVP UI)
 
-- Unit/component tests: Vitest + `@testing-library/solid`.
+- Unit/component tests: Vitest + `@testing-library/react`.
   - Prefer `happy-dom` for speed; fall back to `jsdom` if needed.
   - Prefer mocking `/api` at the network boundary (MSW) vs stubbing internals.
 - Smoke/E2E: Playwright (`@playwright/test`).

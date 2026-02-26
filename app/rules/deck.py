@@ -1,4 +1,4 @@
-"""Deck validator: size, named character uniqueness, and rarity slot limits.
+"""Deck validator: size, named character uniqueness, rarity slot limits, copy limits.
 
 Operates on a list of CardDefinition objects already loaded and schema-validated
 by load_cards_from_lines / load_cards_from_file.  Returns a list of human-readable
@@ -13,6 +13,16 @@ _RARITY_SLOT_LIMITS: dict[str, int] = {
     "ultra": 1,
     "very_rare": 2,
     "rare": 3,
+}
+
+# Copy limits per card_key, driven by rarity bucket.
+# Default: common/uncommon allow 2 copies; higher buckets allow 1.
+COPY_LIMITS: dict[str, int] = {
+    "common": 2,
+    "uncommon": 2,
+    "rare": 1,
+    "very_rare": 1,
+    "ultra": 1,
 }
 
 
@@ -53,5 +63,19 @@ def validate_deck(cards: list[CardDefinition]) -> list[str]:
         count = slot_counts.get(bucket, 0)
         if count > limit:
             errors.append(f"Too many {bucket} cards: {count} in deck, max {limit}")
+
+    # --- copy limits ---
+    key_counts: dict[str, int] = {}
+    key_bucket: dict[str, str] = {}
+    for card in cards:
+        key_counts[card.card_key] = key_counts.get(card.card_key, 0) + 1
+        key_bucket[card.card_key] = rarity_bucket(card.rarity)
+    for card_key, count in key_counts.items():
+        limit = COPY_LIMITS[key_bucket[card_key]]
+        if count > limit:
+            errors.append(
+                f"Copy limit exceeded for '{card_key}': {count} copies in deck, "
+                f"max {limit} for {key_bucket[card_key]} bucket"
+            )
 
     return errors

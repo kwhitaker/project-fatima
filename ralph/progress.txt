@@ -157,6 +157,15 @@ Started: 2026-02-25
 - Learnings: `Protocol` with `...` body for method stubs still needs proper return type and body (`...`); ruff I001 fires when `import pytest` is not separated from local imports by a blank line; `MemoryGameStore.get_events("missing")` returns `[]` (not KeyError) since it's a read-only operation — `append_event` raises `KeyError` for unknown games
 ---
 
+## 2026-02-26 03:00 - US-020
+- Created `app/dependencies.py`: `get_game_store`/`get_card_store` DI providers; tests override via `app.dependency_overrides`
+- Created `app/routers/games.py`: 5 endpoints (POST /games, /{id}/join, /{id}/archetype, GET /{id}, POST /{id}/moves) with 404/400/403/409/422 error translation
+- Created `app/services/game_service.py`: orchestration (create_game, join_game, select_archetype, submit_move); decks generated on 2nd join; per-move RNG derived from `seed + state_version`
+- Tests/validation run: `uv run pytest` → 299 passed (11 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/dependencies.py` (new), `app/routers/__init__.py` (new), `app/routers/games.py` (new), `app/services/__init__.py` (new), `app/services/game_service.py` (new), `app/main.py`, `tests/test_api.py` (new, 11 tests)
+- Learnings: `app.dependency_overrides[fn] = lambda: store` in pytest fixture + `app.dependency_overrides.clear()` in teardown is the clean FastAPI integration test pattern; `PermissionError` (Python built-in) works fine as a domain signal for 403 in this server-only context; `ConflictError` must be caught separately from `InvalidMoveError` in the router since they have different status codes (409 vs 422)
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

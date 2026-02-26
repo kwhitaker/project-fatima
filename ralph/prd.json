@@ -269,7 +269,7 @@
         "pytest passes"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Auth can be a simple test-only stub initially; tighten later."
     },
     {

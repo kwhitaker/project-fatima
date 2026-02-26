@@ -32,6 +32,7 @@ This repo includes a Claude Code loop runner under `ralph/`.
 - Run: `./ralph/ralph.sh 10`
 - Prereqs: `jq`, and `claude` (Claude Code) installed/authenticated.
 - Each iteration should: do ONE story, run checks from this file, commit, update `ralph/prd.json`, append to `ralph/progress.txt`.
+- Prior API MVP backlog is archived in `ralph/prd.json.api-mvp`.
 
 ## Build / Lint / Test Commands
 

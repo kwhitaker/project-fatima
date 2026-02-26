@@ -25,7 +25,8 @@ chmod +x ralph/ralph.sh
 ```
 
 Notes:
-- The backlog lives in `ralph/prd.json`; progress is appended to `ralph/progress.txt`.
+- Active backlog lives in `ralph/prd.json`; progress is appended to `ralph/progress.txt`.
+- Prior API MVP backlog is archived in `ralph/prd.json.api-mvp`.
 - Each iteration should complete exactly ONE story, run the repo checks documented in `AGENTS.md`, then commit.
 
 ## Tech Stack

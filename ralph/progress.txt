@@ -174,6 +174,14 @@ Started: 2026-02-25
 - Learnings: ruff I001 fires when stdlib-only and first-party imports are not separated by a blank line — run `ruff check --fix` to auto-resolve; pydantic `ValidationError.errors()` returns a list of dicts with `loc` (tuple) and `msg` (str) — join loc with "." for readable field path; duplicate detection needs to continue (not raise) so all subsequent dupes are also reported
 ---
 
+## 2026-02-26 05:00 - US-022
+- Created `app/store/supabase_store.py`: `SupabaseGameStore` backed by Supabase REST API; injects `supabase.Client` (lazy import in constructor when `client=None`); optimistic lock via `UPDATE ... WHERE state_version = expected_version` returning 0 rows → ConflictError / KeyError; seq derived from max existing event seq
+- Added `supabase>=2.10.0,<2.20.0` to production deps (2.18.1 resolved; avoids pyiceberg build issue in ≥2.20 and httpx conflict in <2.10)
+- Tests/validation run: `uv run --extra dev pytest` → 325 passed (18 new); `ruff check .` → clean; `ruff format .` → reformatted 13 pre-existing files; `pyright` → 0 errors
+- Files changed: `app/store/supabase_store.py` (new), `tests/test_supabase_store.py` (new, 18 tests), `pyproject.toml`, `uv.lock` + 13 pre-existing files reformatted
+- Learnings: supabase 2.20+ pulls in `storage3` which pulls `pyiceberg` requiring C++ compiler (build fails); version 2.10–2.19 is compatible with `httpx>=0.28`; MagicMock `table.side_effect = lambda n: games_table if n == "games" else events_table` cleanly routes fluent builder per-table; `TYPE_CHECKING` guard avoids runtime import of `supabase` package while keeping pyright happy
+---
+
 ## 2026-02-26 04:00 - US-021
 - Created `supabase/migrations/001_initial_schema.sql`: profiles, games (current_state jsonb, state_version, seed), game_events (seq, UNIQUE(game_id,seq)) with an index on (game_id, seq)
 - Added RLS via `ENABLE ROW LEVEL SECURITY` + SELECT policies for participants; no client INSERT/UPDATE/DELETE policies (service role key owns writes)

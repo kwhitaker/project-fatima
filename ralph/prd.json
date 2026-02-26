@@ -297,7 +297,7 @@
         "Unit tests cover store behavior via mocks/fakes (no real Supabase credentials in repo)"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": "Keep it injectable so integration tests can still use in-memory store."
     },
     {

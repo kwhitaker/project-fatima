@@ -225,6 +225,15 @@ Started: 2026-02-25
 - Learnings: BFS owner check uses `placed_owner` closure variable (not `new_board[src].owner`) so tests calling `resolve_captures` directly without pre-placing the card still work; once a card is flipped to `placed_owner` it won't be recaptured (owner guard fires); combo cards are enqueued with `(neighbor_def, 0, None)` — no modifier leakage
 ---
 
+## 2026-02-26 11:00 - US-026
+- Created `tests/test_error_responses.py` (19 tests): 8×422, 5×404, 3×403, 3×409; each test asserts both the status code and that the response body contains a `detail` key
+- Router already returned the correct codes for all error classes; no router changes needed
+- Tests/validation run: `uv run pytest` → 414 passed; `uv run ruff check .` → clean
+- Files changed: `tests/test_error_responses.py` (new)
+- Learnings: existing routers mapped KeyError→404, PermissionError→403, ConflictError→409, InvalidMoveError→422 correctly; FastAPI's built-in Pydantic validation already returns 422 with a `detail` list; `_assert_error` helper centralizes the status-code + body-key check to keep tests concise
+
+---
+
 ## 2026-02-26 07:00 - US-024
 - Created `supabase/migrations/002_cards_schema.sql`: cards table with canonical columns (card_key PK, character_key, name, version, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb) plus CHECK constraints and RLS (public SELECT policy)
 - Created `scripts/seed_cards.py`: `card_to_row()` + `seed_cards(client, file)` functions; `__main__` block uses SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY env vars; no secrets committed

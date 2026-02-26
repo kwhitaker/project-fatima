@@ -353,7 +353,7 @@
         "pytest passes"
       ],
       "priority": 28,
-      "passes": false,
+      "passes": true,
       "notes": "Keep error bodies stable and minimal; avoid leaking internal details."
     },
     {

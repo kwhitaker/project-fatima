@@ -216,7 +216,7 @@
         "Deck validator returns actionable error messages"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Default: common/uncommon allow 2 copies; higher buckets allow 1 (adjustable lookup)."
     },
     {

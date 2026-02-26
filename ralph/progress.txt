@@ -124,6 +124,14 @@ Started: 2026-02-25
 - Learnings: "very_rare" contains "rare" as a substring — test assertions checking for "rare" must use `"very_rare" not in e` guard to avoid false positives; `rarity_bucket()` from `cards.py` is reused to classify cards for slot counting; bucket iteration order in `_RARITY_SLOT_LIMITS` doesn't affect correctness since all buckets are checked independently
 ---
 
+## 2026-02-26 00:00 - US-016
+- Added `COPY_LIMITS` dict to `app/rules/deck.py`: common/uncommon → 2 copies; rare/very_rare/ultra → 1 copy
+- Extended `validate_deck` with copy-limit check: groups cards by `card_key`, looks up limit via `rarity_bucket`, emits actionable error if exceeded
+- Tests/validation run: `uv run pytest` → 240 passed (13 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/deck.py`, `tests/test_deck_copy_limits.py` (new, 13 tests)
+- Learnings: "copies" does NOT contain the substring "copy" — error messages for tests filtering on "copy" must use "copy" literally (not "copies"); slot-limit and copy-limit errors coexist independently in the errors list
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

@@ -71,9 +71,7 @@ def select_archetype(
     game_store: GameStoreDep,
 ) -> GameState:
     try:
-        return game_service.select_archetype(
-            game_store, game_id, body.player_id, body.archetype
-        )
+        return game_service.select_archetype(game_store, game_id, body.player_id, body.archetype)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:

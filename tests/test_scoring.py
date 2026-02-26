@@ -54,9 +54,7 @@ class TestComputeRoundResult:
     def test_tie_detection(self):
         """Equal ownership (4 vs 4) → is_draw=True, winner=None."""
         board: list[BoardCell | None] = (
-            [cell(f"c{i}", 0) for i in range(4)]
-            + [cell(f"c{i}", 1) for i in range(4, 8)]
-            + [None]
+            [cell(f"c{i}", 0) for i in range(4)] + [cell(f"c{i}", 1) for i in range(4, 8)] + [None]
         )
         result = compute_round_result(board)
         assert result == GameResult(winner=None, is_draw=True)
@@ -88,9 +86,7 @@ def _make_almost_full_state(last_placer: int) -> tuple[GameState, dict[str, Card
       cell  8   → empty (the final placement cell)
     """
     board: list[BoardCell | None] = (
-        [cell(f"c{i}", 0) for i in range(4)]
-        + [cell(f"c{i}", 1) for i in range(4, 8)]
-        + [None]
+        [cell(f"c{i}", 0) for i in range(4)] + [cell(f"c{i}", 1) for i in range(4, 8)] + [None]
     )
     cards: dict[str, CardDefinition] = {f"c{i}": make_card(f"c{i}") for i in range(8)}
     cards["last"] = make_card("last")
@@ -177,9 +173,7 @@ class TestEndOfRoundViaReducer:
         # After capture: p0 = 4 (cells 0-3) + 1 (cell 5 captured) + 1 (cell 8 placed) = 6
         # p1 = 4 (cells 4-7) - 1 (cell 5 lost) = 3 → p0 wins
         board: list[BoardCell | None] = (
-            [cell(f"c{i}", 0) for i in range(4)]
-            + [cell(f"c{i}", 1) for i in range(4, 8)]
-            + [None]
+            [cell(f"c{i}", 0) for i in range(4)] + [cell(f"c{i}", 1) for i in range(4, 8)] + [None]
         )
         cards: dict[str, CardDefinition] = {
             f"c{i}": make_card(f"c{i}", n=5, e=5, s=5, w=5) for i in range(8)

@@ -84,9 +84,7 @@ class TestMemoryGameStore:
         store = MemoryGameStore()
         store.create_game("g1", make_state("g1", version=0))
         with pytest.raises(ConflictError):
-            store.append_event(
-                "g1", "move", {}, expected_version=5, new_state=make_state("g1", 1)
-            )
+            store.append_event("g1", "move", {}, expected_version=5, new_state=make_state("g1", 1))
 
     def test_append_event_to_missing_game_raises_key_error(self) -> None:
         store = MemoryGameStore()
@@ -99,18 +97,14 @@ class TestMemoryGameStore:
         store = MemoryGameStore()
         store.create_game("g1", make_state("g1", version=0))
         with pytest.raises(ConflictError):
-            store.append_event(
-                "g1", "bad", {}, expected_version=99, new_state=make_state("g1", 1)
-            )
+            store.append_event("g1", "bad", {}, expected_version=99, new_state=make_state("g1", 1))
         assert store.get_game("g1").state_version == 0  # type: ignore[union-attr]
 
     def test_correct_version_succeeds_after_failed_attempt(self) -> None:
         store = MemoryGameStore()
         store.create_game("g1", make_state("g1", version=0))
         with pytest.raises(ConflictError):
-            store.append_event(
-                "g1", "bad", {}, expected_version=99, new_state=make_state("g1", 1)
-            )
+            store.append_event("g1", "bad", {}, expected_version=99, new_state=make_state("g1", 1))
         # Correct version should still succeed
         store.append_event("g1", "good", {}, expected_version=0, new_state=make_state("g1", 1))
         assert store.get_game("g1").state_version == 1  # type: ignore[union-attr]

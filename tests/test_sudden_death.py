@@ -212,12 +212,15 @@ class TestSuddenDeathCap:
         assert new_state.sudden_death_rounds_used == 3
         assert new_state.round_number == 4
 
-    @pytest.mark.parametrize("used,expected_status", [
-        (0, GameStatus.ACTIVE),
-        (1, GameStatus.ACTIVE),
-        (2, GameStatus.ACTIVE),
-        (3, GameStatus.COMPLETE),
-    ])
+    @pytest.mark.parametrize(
+        "used,expected_status",
+        [
+            (0, GameStatus.ACTIVE),
+            (1, GameStatus.ACTIVE),
+            (2, GameStatus.ACTIVE),
+            (3, GameStatus.COMPLETE),
+        ],
+    )
     def test_cap_boundary_parametrized(self, used: int, expected_status: GameStatus):
         state = make_full_board_state(sudden_death_rounds_used=used)
         new_state = begin_sudden_death_round(state)

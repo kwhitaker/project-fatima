@@ -36,12 +36,8 @@ def join_game(
     if len(new_players) == 2:
         cards = card_store.list_cards()
         deck_a, deck_b = generate_matched_decks(cards, seed=state.seed)
-        new_players[0] = new_players[0].model_copy(
-            update={"hand": [c.card_key for c in deck_a]}
-        )
-        new_players[1] = new_players[1].model_copy(
-            update={"hand": [c.card_key for c in deck_b]}
-        )
+        new_players[0] = new_players[0].model_copy(update={"hand": [c.card_key for c in deck_a]})
+        new_players[1] = new_players[1].model_copy(update={"hand": [c.card_key for c in deck_b]})
         new_status = GameStatus.ACTIVE
     else:
         new_status = state.status
@@ -69,9 +65,7 @@ def select_archetype(
     state = game_store.get_game(game_id)
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")
-    player_index = next(
-        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
-    )
+    player_index = next((i for i, p in enumerate(state.players) if p.player_id == player_id), None)
     if player_index is None:
         raise PermissionError(f"Player {player_id!r} is not in this game")
     player = state.players[player_index]
@@ -111,9 +105,7 @@ def submit_move(
     state = game_store.get_game(game_id)
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")
-    player_index = next(
-        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
-    )
+    player_index = next((i for i, p in enumerate(state.players) if p.player_id == player_id), None)
     if player_index is None:
         raise PermissionError(f"Player {player_id!r} is not in this game")
     if state.state_version != expected_version:

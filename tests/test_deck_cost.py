@@ -23,23 +23,23 @@ def _card(*, card_key: str = "c", tier: int, rarity: int, sides: CardSides) -> C
 
 
 # Sides per (tier, bucket) — meet budget and cap exactly.
-T1_COMMON = CardSides(n=6, e=4, s=3, w=3)    # T1 common:    budget=16, cap=6
+T1_COMMON = CardSides(n=6, e=4, s=3, w=3)  # T1 common:    budget=16, cap=6
 T1_UNCOMMON = CardSides(n=6, e=5, s=4, w=3)  # T1 uncommon:  budget=18, cap=7
-T1_RARE = CardSides(n=7, e=5, s=5, w=3)      # T1 rare:      budget=20, cap=8
-T1_VR = CardSides(n=7, e=6, s=5, w=4)        # T1 very_rare: budget=22, cap=9
-T1_ULTRA = CardSides(n=8, e=6, s=6, w=4)     # T1 ultra:     budget=24, cap=9
+T1_RARE = CardSides(n=7, e=5, s=5, w=3)  # T1 rare:      budget=20, cap=8
+T1_VR = CardSides(n=7, e=6, s=5, w=4)  # T1 very_rare: budget=22, cap=9
+T1_ULTRA = CardSides(n=8, e=6, s=6, w=4)  # T1 ultra:     budget=24, cap=9
 
-T2_COMMON = CardSides(n=7, e=5, s=5, w=3)    # T2 common:    budget=20, cap=7
+T2_COMMON = CardSides(n=7, e=5, s=5, w=3)  # T2 common:    budget=20, cap=7
 T2_UNCOMMON = CardSides(n=7, e=6, s=5, w=4)  # T2 uncommon:  budget=22, cap=8
-T2_RARE = CardSides(n=7, e=7, s=6, w=4)      # T2 rare:      budget=24, cap=9
-T2_VR = CardSides(n=8, e=7, s=7, w=4)        # T2 very_rare: budget=26, cap=10
-T2_ULTRA = CardSides(n=9, e=8, s=7, w=4)     # T2 ultra:     budget=28, cap=10
+T2_RARE = CardSides(n=7, e=7, s=6, w=4)  # T2 rare:      budget=24, cap=9
+T2_VR = CardSides(n=8, e=7, s=7, w=4)  # T2 very_rare: budget=26, cap=10
+T2_ULTRA = CardSides(n=9, e=8, s=7, w=4)  # T2 ultra:     budget=28, cap=10
 
-T3_COMMON = CardSides(n=7, e=7, s=6, w=4)    # T3 common:    budget=24, cap=8
+T3_COMMON = CardSides(n=7, e=7, s=6, w=4)  # T3 common:    budget=24, cap=8
 T3_UNCOMMON = CardSides(n=8, e=7, s=7, w=4)  # T3 uncommon:  budget=26, cap=9
-T3_RARE = CardSides(n=8, e=8, s=7, w=5)      # T3 rare:      budget=28, cap=10
-T3_VR = CardSides(n=9, e=8, s=8, w=5)        # T3 very_rare: budget=30, cap=10
-T3_ULTRA = CardSides(n=10, e=9, s=7, w=6)    # T3 ultra:     budget=32, cap=10
+T3_RARE = CardSides(n=8, e=8, s=7, w=5)  # T3 rare:      budget=28, cap=10
+T3_VR = CardSides(n=9, e=8, s=8, w=5)  # T3 very_rare: budget=30, cap=10
+T3_ULTRA = CardSides(n=10, e=9, s=7, w=6)  # T3 ultra:     budget=32, cap=10
 
 
 # ---------------------------------------------------------------------------

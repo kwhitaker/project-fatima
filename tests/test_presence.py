@@ -104,9 +104,7 @@ class TestPresenceBoost:
             use_archetype=True,
             presence_boost_direction="n",
         )
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
 
         assert next_state.board[1] is not None
         assert next_state.board[1].owner == 0, "Neighbor north should be captured"
@@ -164,9 +162,7 @@ class TestPresenceBoost:
             use_archetype=True,
             presence_boost_direction="e",
         )
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
 
         assert next_state.board[4] is not None
         assert next_state.board[4].owner == 0, "East neighbor should be captured"
@@ -190,9 +186,7 @@ class TestPresenceBoost:
             cell_index=4,
             use_archetype=False,
         )
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
 
         assert next_state.board[1] is not None
         assert next_state.board[1].owner == 1, "Tie without Presence: no capture"
@@ -246,9 +240,7 @@ class TestPresenceBoost:
             presence_boost_direction="n",
         )
         rng = mock_rng(6)  # Omen roll: +1
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}, rng
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
         assert next_state.board[1] is not None
         assert next_state.board[1].owner == 0, "Presence + Omen combined: capture expected"

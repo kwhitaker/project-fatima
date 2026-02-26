@@ -17,7 +17,7 @@ from app.rules.deck import (
 # ---------------------------------------------------------------------------
 
 _SIDES_T1_COMMON = CardSides(n=4, e=4, s=4, w=4)  # sum=16 == budget, all <= cap=6
-_SIDES_T1_RARE = CardSides(n=7, e=5, s=5, w=3)    # sum=20 == budget, all <= cap=8
+_SIDES_T1_RARE = CardSides(n=7, e=5, s=5, w=3)  # sum=20 == budget, all <= cap=8
 _SIDES_T3_ULTRA = CardSides(n=10, e=9, s=7, w=6)  # sum=32 == budget, all <= cap=10
 
 
@@ -158,10 +158,9 @@ def test_too_small_pool_raises() -> None:
 
 def test_rare_slot_limit_honored() -> None:
     # 8 rare + 20 common: each deck may hold at most 3 rare cards
-    pool = (
-        [_card(f"rare{i}", tier=1, rarity=80, sides=_SIDES_T1_RARE) for i in range(8)]
-        + _make_pool(20)
-    )
+    pool = [
+        _card(f"rare{i}", tier=1, rarity=80, sides=_SIDES_T1_RARE) for i in range(8)
+    ] + _make_pool(20)
     a, b = generate_matched_decks(pool, seed=42)
     assert sum(1 for c in a if rarity_bucket(c.rarity) == "rare") <= 3
     assert sum(1 for c in b if rarity_bucket(c.rarity) == "rare") <= 3

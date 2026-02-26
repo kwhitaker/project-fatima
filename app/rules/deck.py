@@ -182,8 +182,6 @@ def generate_matched_decks(
 
     cost_diff = abs(deck_cost(deck_a) - deck_cost(deck_b))
     if cost_diff > tolerance:
-        raise DeckGenerationError(
-            f"Deck cost imbalance {cost_diff} exceeds tolerance {tolerance}"
-        )
+        raise DeckGenerationError(f"Deck cost imbalance {cost_diff} exceeds tolerance {tolerance}")
 
     return deck_a, deck_b

@@ -86,10 +86,7 @@ def begin_sudden_death_round(state: GameState) -> GameState:
         if bcel is not None:
             sd_hands[bcel.owner].append(bcel.card_key)
 
-    new_players = [
-        p.model_copy(update={"hand": sd_hands[i]})
-        for i, p in enumerate(state.players)
-    ]
+    new_players = [p.model_copy(update={"hand": sd_hands[i]}) for i, p in enumerate(state.players)]
     empty_board: list[BoardCell | None] = [None] * 9
     return state.model_copy(
         update={

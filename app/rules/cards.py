@@ -76,15 +76,13 @@ def validate_card_balance(card: CardDefinition) -> list[str]:
 
     if total < sum_budget:
         messages.append(
-            f"sides sum {total} is below budget {sum_budget} "
-            f"for tier {card.tier} {bucket}"
+            f"sides sum {total} is below budget {sum_budget} for tier {card.tier} {bucket}"
         )
 
     for name, val in zip("nesw", side_values):
         if val > side_cap:
             messages.append(
-                f"side '{name}' value {val} exceeds cap {side_cap} "
-                f"for tier {card.tier} {bucket}"
+                f"side '{name}' value {val} exceeds cap {side_cap} for tier {card.tier} {bucket}"
             )
 
     return messages
@@ -122,9 +120,7 @@ def load_cards_from_lines(
         try:
             obj = json.loads(stripped)
         except json.JSONDecodeError as exc:
-            errors.append(
-                CardLoadError(line=lineno, message=f"Invalid JSON: {exc.msg}")
-            )
+            errors.append(CardLoadError(line=lineno, message=f"Invalid JSON: {exc.msg}"))
             continue
 
         # --- Pydantic schema validation ---
@@ -132,9 +128,7 @@ def load_cards_from_lines(
             card = CardDefinition.model_validate(obj)
         except PydanticValidationError as exc:
             # Collect field names from the first error location for the message.
-            field_names = ", ".join(
-                ".".join(str(loc) for loc in e["loc"]) for e in exc.errors()
-            )
+            field_names = ", ".join(".".join(str(loc) for loc in e["loc"]) for e in exc.errors())
             errors.append(
                 CardLoadError(
                     line=lineno,

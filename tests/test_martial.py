@@ -149,9 +149,7 @@ class TestMartialRotationInReducer:
             cell_index=4,
             use_archetype=True,
         )
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
         assert next_state.board[1] is not None
         assert next_state.board[1].owner == 0, "Neighbor should be captured"
 
@@ -174,9 +172,7 @@ class TestMartialRotationInReducer:
             cell_index=4,
             use_archetype=False,
         )
-        next_state = apply_intent(
-            state, intent, {"placed": placed, "neighbor": neighbor}
-        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
         assert next_state.board[1] is not None
         assert next_state.board[1].owner == 1, "Neighbor should NOT be captured"
 

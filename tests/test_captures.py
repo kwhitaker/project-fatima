@@ -193,8 +193,12 @@ class TestResolveCaptures:
         lookup = {"enemy": enemy, "mid": placed}
 
         result = rc(
-            board, placed_index=1, placed_card=placed, placed_owner=0,
-            lookup=lookup, mists_modifier=1,
+            board,
+            placed_index=1,
+            placed_card=placed,
+            placed_owner=0,
+            lookup=lookup,
+            mists_modifier=1,
         )
 
         assert result[0] is not None
@@ -211,8 +215,12 @@ class TestResolveCaptures:
         lookup = {"enemy": enemy, "mid": placed}
 
         result = rc(
-            board, placed_index=1, placed_card=placed, placed_owner=0,
-            lookup=lookup, mists_modifier=-1,
+            board,
+            placed_index=1,
+            placed_card=placed,
+            placed_owner=0,
+            lookup=lookup,
+            mists_modifier=-1,
         )
 
         assert result[0] is not None

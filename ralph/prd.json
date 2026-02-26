@@ -367,7 +367,7 @@
         "pytest passes"
       ],
       "priority": 29,
-      "passes": false,
+      "passes": true,
       "notes": "This is documentation-only, but must not break tests."
     },
     {

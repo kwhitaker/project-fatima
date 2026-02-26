@@ -225,6 +225,15 @@ Started: 2026-02-25
 - Learnings: BFS owner check uses `placed_owner` closure variable (not `new_board[src].owner`) so tests calling `resolve_captures` directly without pre-placing the card still work; once a card is flipped to `placed_owner` it won't be recaptured (owner guard fires); combo cards are enqueued with `(neighbor_def, 0, None)` — no modifier leakage
 ---
 
+## 2026-02-26 11:30 - US-027
+- Created `docs/realtime.md`: covers Supabase JS subscription setup, event payload schema (id/game_id/seq/event_type/payload/created_at), seq ordering guarantee, all four event_type values with payload fields, MVP refetch behaviour, and RLS notes
+- Created `tests/test_realtime_doc.py` (6 tests): assert doc exists; covers subscription/filter, payload shape, seq ordering, MVP GET refetch, and all required event_type names
+- Tests/validation run: `uv run pytest` → 420 passed; `uv run ruff check .` → clean
+- Files changed: `docs/realtime.md` (new), `tests/test_realtime_doc.py` (new)
+- Learnings: doc-only stories still benefit from assertion-based tests; checking specific keywords in the doc text ensures the required content is present and catches accidental deletions; `docs/` directory was not pre-existing — created it as part of this story
+
+---
+
 ## 2026-02-26 11:00 - US-026
 - Created `tests/test_error_responses.py` (19 tests): 8×422, 5×404, 3×403, 3×409; each test asserts both the status code and that the response body contains a `detail` key
 - Router already returned the correct codes for all error classes; no router changes needed

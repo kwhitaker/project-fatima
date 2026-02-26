@@ -141,6 +141,14 @@ Started: 2026-02-25
 - Learnings: `STAT_BUDGETS[(tier, bucket)][0]` (sum_budget) is already monotonically increasing with tier and rarity — reusing it as the card cost avoids defining a separate lookup table; deck_cost of an empty list is 0 (sum([]) == 0 in Python) — worth testing explicitly; the cost function is consumed by US-018 (deck generation with tolerance matching)
 ---
 
+## 2026-02-26 01:00 - US-018
+- Added `DeckGenerationError`, `DEFAULT_COST_TOLERANCE`, `_can_add_to_deck`, `generate_matched_decks` to `app/rules/deck.py`
+- Algorithm: shuffle pool with seeded RNG, sort by cost descending, assign alternately to two decks respecting slot/copy/named rules; raise on insufficient pool or cost imbalance
+- Tests/validation run: `uv run pytest` → 268 passed (13 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/deck.py`, `tests/test_deck_generation.py` (new, 13 tests)
+- Learnings: sort-then-alternate over cost-descending order naturally balances decks; `_can_add_to_deck` reuses `_RARITY_SLOT_LIMITS` and `COPY_LIMITS` already in deck.py; `target = 1 - idx` after each add correctly alternates even when fallback deck is used; with a pool of all-same-cost cards tolerance=0 works (diff=0); ultra-only pool fails fast (slot limit=1 means max 1 card per deck)
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

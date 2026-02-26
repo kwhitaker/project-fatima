@@ -242,7 +242,7 @@
         "Unit tests cover determinism and tolerance matching"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "Store seed in game state; use it for Mists rolls too (derive per-move RNG)."
     },
     {

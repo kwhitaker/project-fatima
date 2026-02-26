@@ -337,7 +337,7 @@
         "pytest passes"
       ],
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "notes": "Keep schema compatible with future keywords/tags expansion."
     },
     {

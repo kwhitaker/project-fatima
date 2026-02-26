@@ -6,7 +6,7 @@ error strings (empty = passes).
 """
 
 from app.models.cards import CardDefinition
-from app.rules.cards import rarity_bucket
+from app.rules.cards import STAT_BUDGETS, rarity_bucket
 
 # Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
 _RARITY_SLOT_LIMITS: dict[str, int] = {
@@ -79,3 +79,25 @@ def validate_deck(cards: list[CardDefinition]) -> list[str]:
             )
 
     return errors
+
+
+# ---------------------------------------------------------------------------
+# Deck cost (weighted sum for fairness matching)
+# ---------------------------------------------------------------------------
+
+
+def card_cost(card: CardDefinition) -> int:
+    """Return the weighted cost of a single card.
+
+    Cost equals the stat sum_budget for the card's (tier, rarity bucket) from
+    STAT_BUDGETS.  Higher tier and higher rarity bucket produce higher costs,
+    giving a simple, deterministic strength signal used for fairness matching.
+    """
+    bucket = rarity_bucket(card.rarity)
+    sum_budget, _ = STAT_BUDGETS[(card.tier, bucket)]
+    return sum_budget
+
+
+def deck_cost(cards: list[CardDefinition]) -> int:
+    """Return the total weighted cost of a list of cards (sum of card_cost values)."""
+    return sum(card_cost(c) for c in cards)

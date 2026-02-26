@@ -199,3 +199,12 @@ Started: 2026-02-25
 - Files changed: `supabase/migrations/001_initial_schema.sql` (new), `tests/test_schema.py` (new, 8 tests)
 - Learnings: test only checks file content (no DB connection needed); `glob("*.sql")` on a non-existent directory returns [] silently — test for `len(files) >= 1` catches missing dir; keeping RLS policy names descriptive (table_action_scope) aids future maintenance
 ---
+
+## 2026-02-26 07:00 - US-024
+- Created `supabase/migrations/002_cards_schema.sql`: cards table with canonical columns (card_key PK, character_key, name, version, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb) plus CHECK constraints and RLS (public SELECT policy)
+- Created `scripts/seed_cards.py`: `card_to_row()` + `seed_cards(client, file)` functions; `__main__` block uses SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY env vars; no secrets committed
+- Added `scripts` to `packages` in `pyproject.toml` so tests can import `scripts.seed_cards`; ran `uv sync` to reinstall
+- Tests/validation run: `uv run pytest` → 352 passed (14 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `supabase/migrations/002_cards_schema.sql` (new), `scripts/__init__.py` (new), `scripts/seed_cards.py` (new), `tests/test_seed_cards.py` (new, 14 tests), `pyproject.toml`
+- Learnings: `packages = ["app", "scripts"]` in hatch wheel config is enough to make `scripts` importable in tests after `uv sync`; `card_to_row` flattens `sides.n/e/s/w` into top-level columns matching the DB schema; returning `(count, errors)` rather than raising lets callers decide whether to abort cleanly; tested real `cards.jsonl` in repo as a smoke test
+---

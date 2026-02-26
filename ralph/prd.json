@@ -323,7 +323,7 @@
         "Unit tests cover that validation runs and that upsert calls are formed correctly (mocked)"
       ],
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "notes": "Requires defining a cards table schema in the earlier SQL story (or add it here if missing)."
     },
     {

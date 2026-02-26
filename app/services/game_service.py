@@ -101,6 +101,7 @@ def submit_move(
     use_archetype: bool = False,
     skulker_boost_side: str | None = None,
     presence_boost_direction: str | None = None,
+    idempotency_key: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
     if state is None:
@@ -134,5 +135,6 @@ def submit_move(
         payload={"player_id": player_id, "card_key": card_key, "cell_index": cell_index},
         expected_version=expected_version,
         new_state=new_state,
+        idempotency_key=idempotency_key,
     )
     return new_state

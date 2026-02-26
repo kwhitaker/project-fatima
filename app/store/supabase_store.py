@@ -11,7 +11,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from app.models.game import GameState
-from app.store import ConflictError, GameEvent
+from app.store import ConflictError, DuplicateEventError, GameEvent
 
 if TYPE_CHECKING:
     from supabase import Client
@@ -50,6 +50,17 @@ class SupabaseGameStore:
             }
         ).execute()
 
+    def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
+        response = (
+            self._client.table("game_events")
+            .select("seq")
+            .eq("game_id", game_id)
+            .eq("idempotency_key", idempotency_key)
+            .maybe_single()
+            .execute()
+        )
+        return response.data is not None
+
     def get_game(self, game_id: str) -> GameState | None:
         response = (
             self._client.table("games")
@@ -69,12 +80,28 @@ class SupabaseGameStore:
         payload: dict,  # type: ignore[type-arg]
         expected_version: int,
         new_state: GameState,
+        idempotency_key: str | None = None,
     ) -> GameEvent:
         """Insert an event and update the snapshot atomically (optimistic lock).
 
         Raises ConflictError if current state_version != expected_version.
         Raises KeyError if game_id does not exist.
+        Raises DuplicateEventError if idempotency_key was already used for this game.
         """
+        if idempotency_key is not None:
+            dup_response = (
+                self._client.table("game_events")
+                .select("seq")
+                .eq("game_id", game_id)
+                .eq("idempotency_key", idempotency_key)
+                .maybe_single()
+                .execute()
+            )
+            if dup_response.data is not None:
+                raise DuplicateEventError(
+                    f"Idempotency key {idempotency_key!r} already used for game {game_id!r}"
+                )
+
         update_response = (
             self._client.table("games")
             .update(
@@ -116,14 +143,15 @@ class SupabaseGameStore:
         )
         seq = (seq_response.data[0]["seq"] + 1) if seq_response.data else 1
 
-        self._client.table("game_events").insert(
-            {
-                "game_id": game_id,
-                "seq": seq,
-                "event_type": event_type,
-                "payload": payload,
-            }
-        ).execute()
+        event_row: dict[str, Any] = {
+            "game_id": game_id,
+            "seq": seq,
+            "event_type": event_type,
+            "payload": payload,
+        }
+        if idempotency_key is not None:
+            event_row["idempotency_key"] = idempotency_key
+        self._client.table("game_events").insert(event_row).execute()
 
         return GameEvent(game_id=game_id, seq=seq, event_type=event_type, payload=payload)
 

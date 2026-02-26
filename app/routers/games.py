@@ -9,7 +9,7 @@ from app.dependencies import get_card_store, get_game_store
 from app.models.game import Archetype, GameState
 from app.rules.errors import InvalidMoveError
 from app.services import game_service
-from app.store import CardStore, ConflictError, GameStore
+from app.store import CardStore, ConflictError, DuplicateEventError, GameStore
 
 router = APIRouter(prefix="/games", tags=["games"])
 
@@ -38,6 +38,7 @@ class MoveRequest(BaseModel):
     use_archetype: bool = False
     skulker_boost_side: str | None = None
     presence_boost_direction: str | None = None
+    idempotency_key: str | None = None
 
 
 @router.post("", response_model=GameState, status_code=201)
@@ -95,6 +96,16 @@ def submit_move(
     game_store: GameStoreDep,
     card_store: CardStoreDep,
 ) -> GameState:
+    # Idempotency check must happen before version/auth validation so that
+    # retries with a stale state_version are still recognised as duplicates.
+    if body.idempotency_key is not None and game_store.has_idempotency_key(
+        game_id, body.idempotency_key
+    ):
+        state = game_store.get_game(game_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
+        return state
+
     try:
         return game_service.submit_move(
             game_store,
@@ -107,6 +118,7 @@ def submit_move(
             body.use_archetype,
             body.skulker_boost_side,
             body.presence_boost_direction,
+            body.idempotency_key,
         )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -116,3 +128,9 @@ def submit_move(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except InvalidMoveError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except DuplicateEventError:
+        # Belt-and-suspenders: store also raises DuplicateEventError; return current state.
+        state = game_store.get_game(game_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
+        return state

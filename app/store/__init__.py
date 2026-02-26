@@ -14,6 +14,10 @@ class ConflictError(Exception):
     """Raised when a state_version mismatch is detected (optimistic locking → 409)."""
 
 
+class DuplicateEventError(Exception):
+    """Raised when an idempotency key has already been used for this game."""
+
+
 @dataclass
 class GameEvent:
     game_id: str
@@ -27,6 +31,10 @@ class GameStore(Protocol):
 
     def get_game(self, game_id: str) -> GameState | None: ...
 
+    def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
+        """Return True if this idempotency_key was already used for the given game."""
+        ...
+
     def append_event(
         self,
         game_id: str,
@@ -34,11 +42,13 @@ class GameStore(Protocol):
         payload: dict,  # type: ignore[type-arg]
         expected_version: int,
         new_state: GameState,
+        idempotency_key: str | None = None,
     ) -> GameEvent:
         """Atomically insert an event and update the game snapshot.
 
         Raises ConflictError if current state_version != expected_version.
         Raises KeyError if game_id does not exist.
+        Raises DuplicateEventError if idempotency_key was already used for this game.
         """
         ...
 

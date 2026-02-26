@@ -16,7 +16,7 @@
         "Document canonical commands for web dev/build/test in a short web/README.md"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Keep styling plain shadcn/ui; we will add effects later in a dedicated story."
     },
     {
@@ -52,7 +52,7 @@
       ],
       "priority": 3,
       "passes": false,
-      "notes": "This story intentionally spans backend + schema to unblock the UI. Keep snapshot-first; do not add client-side rules." 
+      "notes": "This story intentionally spans backend + schema to unblock the UI. Keep snapshot-first; do not add client-side rules."
     },
     {
       "id": "US-UI-004",
@@ -171,7 +171,7 @@
       ],
       "priority": 11,
       "passes": false,
-      "notes": "Keep implementation low-effort and replaceable; prefer CSS/Framer Motion-level work over heavy canvas/3D." 
+      "notes": "Keep implementation low-effort and replaceable; prefer CSS/Framer Motion-level work over heavy canvas/3D."
     },
     {
       "id": "US-UI-012",

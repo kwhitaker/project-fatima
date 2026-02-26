@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/__tests__/routes.test.tsx","./src/__tests__/setup.ts","./src/components/ui/button.tsx","./src/lib/utils.ts","./src/routes/GameRoom.tsx","./src/routes/Games.tsx","./src/routes/Login.tsx"],"version":"5.9.3"}

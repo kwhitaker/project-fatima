@@ -156,6 +156,9 @@ web/.turbo/
 web/coverage/
 web/playwright-report/
 web/test-results/
+# Allow web/src/lib (overrides the Python `lib/` exclusion above)
+!web/src/lib/
+!web/src/lib/**
 
 # Spyder project settings
 .spyderproject

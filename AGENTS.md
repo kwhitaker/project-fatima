@@ -27,6 +27,27 @@ We intend to use `mise` for tool/runtime version management.
 - Activate in shell: follow mise docs for your shell (`mise activate` is commonly used).
 - Tip: prefer `mise x -- <cmd>` when you need a specific tool version.
 
+## Web frontend (React/Vite/TS)
+
+Source lives in `web/`. Uses bun as package manager.
+
+```bash
+# Install
+cd web && bun install
+
+# Dev server (proxies /api/* → FastAPI at localhost:8000)
+cd web && bun dev
+
+# Build
+cd web && bun run build
+
+# Unit tests (vitest)
+cd web && bun run test
+
+# Watch mode
+cd web && bun run test:watch
+```
+
 ## Ralph (autonomous loop)
 This repo includes a Claude Code loop runner under `ralph/`.
 - Run: `./ralph/ralph.sh 10`

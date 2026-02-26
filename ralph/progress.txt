@@ -132,6 +132,15 @@ Started: 2026-02-25
 - Learnings: "copies" does NOT contain the substring "copy" — error messages for tests filtering on "copy" must use "copy" literally (not "copies"); slot-limit and copy-limit errors coexist independently in the errors list
 ---
 
+## 2026-02-26 00:30 - US-017
+- Added `card_cost(card)` to `app/rules/deck.py`: returns `sum_budget` from `STAT_BUDGETS[(tier, bucket)]` as the card's strength weight
+- Added `deck_cost(cards)` as `sum(card_cost(c) for c in cards)` — deterministic, no simulation
+- Added `STAT_BUDGETS` import to `deck.py` (already imported `rarity_bucket`); reusing the existing budget table avoids a redundant cost table
+- Tests/validation run: `uv run pytest` → 255 passed (15 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/deck.py`, `tests/test_deck_cost.py` (new, 15 tests)
+- Learnings: `STAT_BUDGETS[(tier, bucket)][0]` (sum_budget) is already monotonically increasing with tier and rarity — reusing it as the card cost avoids defining a separate lookup table; deck_cost of an empty list is 0 (sum([]) == 0 in Python) — worth testing explicitly; the cost function is consumed by US-018 (deck generation with tolerance matching)
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

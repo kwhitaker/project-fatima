@@ -228,7 +228,7 @@
         "Unit tests cover cost ordering (stronger bucket/tier => higher cost)"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "Keep it simple and deterministic; no simulation."
     },
     {

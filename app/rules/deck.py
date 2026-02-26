@@ -5,6 +5,8 @@ by load_cards_from_lines / load_cards_from_file.  Returns a list of human-readab
 error strings (empty = passes).
 """
 
+import random
+
 from app.models.cards import CardDefinition
 from app.rules.cards import STAT_BUDGETS, rarity_bucket
 
@@ -101,3 +103,87 @@ def card_cost(card: CardDefinition) -> int:
 def deck_cost(cards: list[CardDefinition]) -> int:
     """Return the total weighted cost of a list of cards (sum of card_cost values)."""
     return sum(card_cost(c) for c in cards)
+
+
+# ---------------------------------------------------------------------------
+# Seeded deck generation
+# ---------------------------------------------------------------------------
+
+DEFAULT_COST_TOLERANCE = 20
+
+
+class DeckGenerationError(Exception):
+    """Raised when deck generation fails (pool insufficient or costs out of tolerance)."""
+
+
+def _can_add_to_deck(deck: list[CardDefinition], card: CardDefinition) -> bool:
+    """Return True if adding card to deck would not violate composition rules."""
+    if len(deck) >= 10:
+        return False
+
+    # Named character uniqueness
+    if card.is_named and any(c.character_key == card.character_key for c in deck):
+        return False
+
+    # Rarity slot limit (ultra ≤ 1, very_rare ≤ 2, rare ≤ 3)
+    bucket = rarity_bucket(card.rarity)
+    if bucket in _RARITY_SLOT_LIMITS:
+        if sum(1 for c in deck if rarity_bucket(c.rarity) == bucket) >= _RARITY_SLOT_LIMITS[bucket]:
+            return False
+
+    # Copy limit per card_key
+    limit = COPY_LIMITS[bucket]
+    if sum(1 for c in deck if c.card_key == card.card_key) >= limit:
+        return False
+
+    return True
+
+
+def generate_matched_decks(
+    pool: list[CardDefinition],
+    seed: int,
+    tolerance: int = DEFAULT_COST_TOLERANCE,
+) -> tuple[list[CardDefinition], list[CardDefinition]]:
+    """Generate two 10-card decks from pool that pass validation and are cost-balanced.
+
+    Shuffles the pool with the given seed, then sorts by card cost descending so
+    higher-value cards are distributed evenly.  Cards are assigned alternately to
+    each deck, respecting deck-composition rules (slot limits, copy limits, named
+    uniqueness).
+
+    Raises DeckGenerationError if the pool cannot fill both decks or if the
+    resulting cost difference exceeds tolerance.
+    """
+    rng = random.Random(seed)
+    shuffled = pool[:]
+    rng.shuffle(shuffled)
+    # Stable sort: higher-cost cards processed first for even distribution.
+    shuffled.sort(key=card_cost, reverse=True)
+
+    decks: list[list[CardDefinition]] = [[], []]
+    target = 0
+
+    for card in shuffled:
+        if len(decks[0]) == 10 and len(decks[1]) == 10:
+            break
+        for idx in (target, 1 - target):
+            if _can_add_to_deck(decks[idx], card):
+                decks[idx].append(card)
+                target = 1 - idx
+                break
+
+    deck_a, deck_b = decks[0], decks[1]
+
+    if len(deck_a) != 10 or len(deck_b) != 10:
+        raise DeckGenerationError(
+            f"Could not fill both decks from pool of {len(pool)} cards "
+            f"(filled {len(deck_a)} and {len(deck_b)})"
+        )
+
+    cost_diff = abs(deck_cost(deck_a) - deck_cost(deck_b))
+    if cost_diff > tolerance:
+        raise DeckGenerationError(
+            f"Deck cost imbalance {cost_diff} exceeds tolerance {tolerance}"
+        )
+
+    return deck_a, deck_b

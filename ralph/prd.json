@@ -14,7 +14,7 @@
         "Document the canonical test command in AGENTS.md"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Keep this story small; avoid adding Supabase integration yet."
     },
     {
@@ -27,7 +27,7 @@
         "Unit tests cover basic model validation (side ranges, required fields)"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer pydantic."
     },
     {
@@ -40,7 +40,7 @@
         "Deterministic outcomes for a given input state"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "This should live in the pure rules engine reducer; no DB/API yet."
     },
     {
@@ -54,7 +54,7 @@
         "Unit tests cover all roll cases using a seeded RNG"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Modifier affects comparisons only; printed stats do not change."
     },
     {
@@ -67,7 +67,7 @@
         "Unit tests cover validation errors and successful placements"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Still no archetypes yet; focus on core turn invariants."
     },
     {
@@ -80,7 +80,7 @@
         "Unit tests cover rotation behavior and once-per-game enforcement"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Default: rotation occurs after placement selection and before Mists/captures are evaluated."
     },
     {
@@ -93,7 +93,7 @@
         "Unit tests cover side selection, effect scope, and once-per-game enforcement"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Choice is made at placement time (not after seeing results)."
     },
     {
@@ -106,7 +106,7 @@
         "Unit tests cover reroll behavior and once-per-game enforcement"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Reroll applies only to Mists and only on that placement."
     },
     {
@@ -120,7 +120,7 @@
         "Unit tests cover Fog negation and once-per-game enforcement"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Devout does not turn Fog into Omen; it neutralizes the -1."
     },
     {
@@ -133,7 +133,7 @@
         "Unit tests cover the single-comparison scope and once-per-game enforcement"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Default: applied as +1 to placed side value for the chosen comparison before evaluating capture."
     },
     {
@@ -146,7 +146,7 @@
         "Unit tests cover win/lose outcomes and tie detection"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Sudden Death comes in the next story."
     },
     {
@@ -161,7 +161,7 @@
         "Unit tests cover the transition, card carryover, and cap behavior"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Same game_id; round_number increments; cap=3 then draw."
     },
     {
@@ -175,7 +175,7 @@
         "Unit tests cover schema failures and duplicate card_key"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Budget/cap enforcement is in a separate story to keep scope small."
     },
     {
@@ -189,7 +189,7 @@
         "Unit tests cover bucket boundaries and budget/cap failures"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Keep bucket and budget tables centralized and test-covered."
     },
     {
@@ -203,7 +203,7 @@
         "Unit tests cover each rule failure"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Copy limits are a separate story."
     },
     {
@@ -216,7 +216,7 @@
         "Deck validator returns actionable error messages"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Default: common/uncommon allow 2 copies; higher buckets allow 1 (adjustable lookup)."
     },
     {
@@ -228,7 +228,7 @@
         "Unit tests cover cost ordering (stronger bucket/tier => higher cost)"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "Keep it simple and deterministic; no simulation."
     },
     {
@@ -242,7 +242,7 @@
         "Unit tests cover determinism and tolerance matching"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "Store seed in game state; use it for Mists rolls too (derive per-move RNG)."
     },
     {
@@ -255,7 +255,7 @@
         "Integration tests use the in-memory store and validate optimistic locking"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Reducer must be the only rules implementation."
     },
     {
@@ -269,7 +269,7 @@
         "pytest passes"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Auth can be a simple test-only stub initially; tighten later."
     },
     {
@@ -283,7 +283,7 @@
         "pytest passes"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "notes": "This story captures schema in files; applying migrations can be added later."
     },
     {
@@ -297,7 +297,7 @@
         "Unit tests cover store behavior via mocks/fakes (no real Supabase credentials in repo)"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": "Keep it injectable so integration tests can still use in-memory store."
     },
     {
@@ -310,7 +310,7 @@
         "Integration/unit tests cover dedupe behavior"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "notes": "Implementation can be store-specific (in-memory + Supabase)."
     },
     {
@@ -323,7 +323,7 @@
         "Unit tests cover that validation runs and that upsert calls are formed correctly (mocked)"
       ],
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "notes": "Requires defining a cards table schema in the earlier SQL story (or add it here if missing)."
     },
     {
@@ -337,7 +337,7 @@
         "pytest passes"
       ],
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "notes": "Keep schema compatible with future keywords/tags expansion."
     },
     {
@@ -352,8 +352,8 @@
         "Integration tests cover these status codes",
         "pytest passes"
       ],
-      "priority": 26,
-      "passes": false,
+      "priority": 28,
+      "passes": true,
       "notes": "Keep error bodies stable and minimal; avoid leaking internal details."
     },
     {
@@ -366,9 +366,41 @@
         "Document the MVP client behavior: on event, refetch GET /games/{game_id}",
         "pytest passes"
       ],
-      "priority": 27,
-      "passes": false,
+      "priority": 29,
+      "passes": true,
       "notes": "This is documentation-only, but must not break tests."
+    },
+    {
+      "id": "US-028",
+      "title": "Allow players to leave games (forfeit active, delete waiting)",
+      "description": "As a player, I want to be able to leave a game. If the game is active, leaving forfeits and the other player wins. If the game is waiting with only one player, leaving deletes the game.",
+      "acceptanceCriteria": [
+        "Add endpoint: POST /games/{id}/leave",
+        "If game status is ACTIVE and the caller is a participant, leaving ends the game and sets the other player as winner",
+        "If game status is WAITING and the caller is the only joined player, leaving deletes the game",
+        "For ACTIVE forfeits, append a game_forfeited event and update the snapshot transactionally",
+        "Support idempotency_key for leave (same semantics as moves)",
+        "Add store support for deleting a game with optimistic locking (in-memory + Supabase)",
+        "Unit and integration tests cover both ACTIVE and WAITING behaviors"
+      ],
+      "priority": 26,
+      "passes": true,
+      "notes": "MVP: only allow forfeit when status=ACTIVE and 2 players are present; WAITING delete is only for single-player lobbies. Supabase schema already uses ON DELETE CASCADE for game_events."
+    },
+    {
+      "id": "US-029",
+      "title": "Implement chain/combo capture resolution",
+      "description": "As a player, captures can trigger additional captures (combos) for extra excitement and strategy.",
+      "acceptanceCriteria": [
+        "Capture resolution supports chain/combo flips until no new captures occur",
+        "Combos propagate via newly-captured cards battling adjacent enemy cards",
+        "Mists and archetype modifiers apply only to the initially placed card's comparisons (combo captures use printed stats)",
+        "Unit tests cover a multi-step combo and modifier scoping",
+        "All existing tests pass"
+      ],
+      "priority": 27,
+      "passes": true,
+      "notes": "Keep it pure and deterministic; no Same/Plus or diagonal interactions."
     }
   ]
 }

@@ -1,0 +1,29 @@
+"""Domain errors raised by the rules engine reducer."""
+
+
+class InvalidMoveError(Exception):
+    """Base class for all illegal-move errors."""
+
+
+class WrongPlayerTurnError(InvalidMoveError):
+    """The acting player index does not match the current turn."""
+
+
+class CardNotInHandError(InvalidMoveError):
+    """The card being played is not in the player's hand."""
+
+
+class OccupiedCellError(InvalidMoveError):
+    """The target board cell is already occupied."""
+
+
+class ArchetypeAlreadyUsedError(InvalidMoveError):
+    """The player's once-per-game archetype power has already been spent."""
+
+
+class ArchetypeNotAvailableError(InvalidMoveError):
+    """The requested archetype power does not match the player's archetype."""
+
+
+class ArchetypePowerArgumentError(InvalidMoveError):
+    """A required argument for the archetype power is missing or invalid."""

@@ -60,7 +60,11 @@ When a card is placed, it battles any orthogonally adjacent enemy cards.
 
 Notes:
 
-- MVP uses only the placed card to initiate comparisons (no chain/combos).
+- Captures can chain ("combos"): when a card is captured, it may immediately capture any
+  orthogonally adjacent enemy cards using the same strict greater-than rule.
+- Combos continue until no new captures occur.
+- Mists/archetype modifiers apply only to the initially placed card's comparisons for that
+  placement; combo captures use printed side values.
 - Ownership is binary (a card is controlled by one player at a time).
 
 ## Randomness: Mists of Barovia
@@ -135,7 +139,7 @@ The UI can translate numeric rarity into these buckets.
 
 - No card keywords/abilities.
 - No elemental tiles.
-- No Same/Plus/combos.
+- No Same/Plus.
 - Use Mists randomness.
 - Enforce: named character uniqueness + rarity slots + copy limits.
 

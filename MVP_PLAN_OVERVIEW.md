@@ -34,7 +34,7 @@ Deliverables:
   - validates move legality
   - resolves Mists randomness per placement
   - applies archetype power modifiers (once-per-game)
-  - resolves captures vs orthogonal adjacent enemy cards (no combos)
+  - resolves captures vs orthogonal adjacent enemy cards, including chain/combo flips
   - advances turn and determines end-of-round/game result
 - Sudden Death flow:
   - tie at board-full triggers a new round

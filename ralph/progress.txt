@@ -217,6 +217,14 @@ Started: 2026-02-25
 - Learnings: `Response(status_code=204)` in a FastAPI endpoint bypasses `response_model` serialization cleanly; `delete_game` for Supabase uses the same conditional-check pattern as `append_event` (DELETE by id+version, then check existence if 0 rows); WAITING delete idempotency is implicit (404 on retry is acceptable since the action already succeeded)
 ---
 
+## 2026-02-26 10:00 - US-029
+- Replaced single-pass loop in `resolve_captures` with BFS queue; initial entry uses mists_modifier + presence_direction, combo entries use 0/None (printed stats only)
+- Added `tests/test_combo_captures.py` (9 tests): 2-step combo, 3-step chain, no-combo fallback, modifier scoping (mists + presence), own-card safety, multi-branch, determinism, end-to-end via apply_intent
+- Tests/validation run: `uv run pytest` → 395 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/rules/captures.py`, `tests/test_combo_captures.py` (new)
+- Learnings: BFS owner check uses `placed_owner` closure variable (not `new_board[src].owner`) so tests calling `resolve_captures` directly without pre-placing the card still work; once a card is flipped to `placed_owner` it won't be recaptured (owner guard fires); combo cards are enqueued with `(neighbor_def, 0, None)` — no modifier leakage
+---
+
 ## 2026-02-26 07:00 - US-024
 - Created `supabase/migrations/002_cards_schema.sql`: cards table with canonical columns (card_key PK, character_key, name, version, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb) plus CHECK constraints and RLS (public SELECT policy)
 - Created `scripts/seed_cards.py`: `card_to_row()` + `seed_cards(client, file)` functions; `__main__` block uses SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY env vars; no secrets committed

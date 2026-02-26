@@ -255,7 +255,7 @@
         "Integration tests use the in-memory store and validate optimistic locking"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Reducer must be the only rules implementation."
     },
     {

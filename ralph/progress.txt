@@ -149,6 +149,14 @@ Started: 2026-02-25
 - Learnings: sort-then-alternate over cost-descending order naturally balances decks; `_can_add_to_deck` reuses `_RARITY_SLOT_LIMITS` and `COPY_LIMITS` already in deck.py; `target = 1 - idx` after each add correctly alternates even when fallback deck is used; with a pool of all-same-cost cards tolerance=0 works (diff=0); ultra-only pool fails fast (slot limit=1 means max 1 card per deck)
 ---
 
+## 2026-02-26 02:00 - US-019
+- Created `app/store/__init__.py`: `GameStore`/`CardStore` Protocol interfaces, `GameEvent` dataclass, `ConflictError` exception
+- Created `app/store/memory.py`: `MemoryGameStore` (append-only events, per-game seq, optimistic locking via state_version) and `MemoryCardStore`
+- Tests/validation run: `uv run pytest` → 288 passed (20 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/store/__init__.py` (new), `app/store/memory.py` (new), `tests/test_store.py` (new, 20 tests)
+- Learnings: `Protocol` with `...` body for method stubs still needs proper return type and body (`...`); ruff I001 fires when `import pytest` is not separated from local imports by a blank line; `MemoryGameStore.get_events("missing")` returns `[]` (not KeyError) since it's a read-only operation — `append_event` raises `KeyError` for unknown games
+---
+
 ## 2026-02-25 02:00 - US-013
 - Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
 - Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking

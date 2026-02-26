@@ -384,7 +384,7 @@
         "Unit and integration tests cover both ACTIVE and WAITING behaviors"
       ],
       "priority": 26,
-      "passes": false,
+      "passes": true,
       "notes": "MVP: only allow forfeit when status=ACTIVE and 2 players are present; WAITING delete is only for single-player lobbies. Supabase schema already uses ON DELETE CASCADE for game_events."
     },
     {

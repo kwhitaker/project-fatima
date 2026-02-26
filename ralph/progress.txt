@@ -208,6 +208,15 @@ Started: 2026-02-25
 - Learnings: when a prerequisite story (US-024) creates the artifact, the dependent story (US-025) can focus entirely on test coverage; `_cards_sql()` helper isolates the cards-specific file so tests don't match across migrations; side column check uses trailing space ("n ") to avoid matching "n" as a substring of other identifiers
 ---
 
+## 2026-02-26 09:00 - US-028
+- Added `delete_game(game_id, expected_version)` to GameStore Protocol, MemoryGameStore, and SupabaseGameStore (with optimistic locking; Supabase uses conditional DELETE + follow-up check)
+- Added `leave_game` service function: ACTIVE → forfeit (appends `game_forfeited` event, other player wins, returns COMPLETE state); WAITING+1 player → deletes lobby (returns None → 204)
+- Added `POST /games/{id}/leave` endpoint with idempotency support for ACTIVE forfeits; 204 for WAITING deletion
+- Tests/validation run: `uv run pytest` → 386 passed (19 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/services/game_service.py`, `app/routers/games.py`, `tests/test_leave_game.py` (new, 19 tests)
+- Learnings: `Response(status_code=204)` in a FastAPI endpoint bypasses `response_model` serialization cleanly; `delete_game` for Supabase uses the same conditional-check pattern as `append_event` (DELETE by id+version, then check existence if 0 rows); WAITING delete idempotency is implicit (404 on retry is acceptable since the action already succeeded)
+---
+
 ## 2026-02-26 07:00 - US-024
 - Created `supabase/migrations/002_cards_schema.sql`: cards table with canonical columns (card_key PK, character_key, name, version, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb) plus CHECK constraints and RLS (public SELECT policy)
 - Created `scripts/seed_cards.py`: `card_to_row()` + `seed_cards(client, file)` functions; `__main__` block uses SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY env vars; no secrets committed

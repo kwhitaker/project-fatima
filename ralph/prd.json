@@ -352,7 +352,7 @@
         "Integration tests cover these status codes",
         "pytest passes"
       ],
-      "priority": 26,
+      "priority": 28,
       "passes": false,
       "notes": "Keep error bodies stable and minimal; avoid leaking internal details."
     },
@@ -366,9 +366,41 @@
         "Document the MVP client behavior: on event, refetch GET /games/{game_id}",
         "pytest passes"
       ],
-      "priority": 27,
+      "priority": 29,
       "passes": false,
       "notes": "This is documentation-only, but must not break tests."
+    },
+    {
+      "id": "US-028",
+      "title": "Allow players to leave games (forfeit active, delete waiting)",
+      "description": "As a player, I want to be able to leave a game. If the game is active, leaving forfeits and the other player wins. If the game is waiting with only one player, leaving deletes the game.",
+      "acceptanceCriteria": [
+        "Add endpoint: POST /games/{id}/leave",
+        "If game status is ACTIVE and the caller is a participant, leaving ends the game and sets the other player as winner",
+        "If game status is WAITING and the caller is the only joined player, leaving deletes the game",
+        "For ACTIVE forfeits, append a game_forfeited event and update the snapshot transactionally",
+        "Support idempotency_key for leave (same semantics as moves)",
+        "Add store support for deleting a game with optimistic locking (in-memory + Supabase)",
+        "Unit and integration tests cover both ACTIVE and WAITING behaviors"
+      ],
+      "priority": 26,
+      "passes": false,
+      "notes": "MVP: only allow forfeit when status=ACTIVE and 2 players are present; WAITING delete is only for single-player lobbies. Supabase schema already uses ON DELETE CASCADE for game_events."
+    },
+    {
+      "id": "US-029",
+      "title": "Implement chain/combo capture resolution",
+      "description": "As a player, captures can trigger additional captures (combos) for extra excitement and strategy.",
+      "acceptanceCriteria": [
+        "Capture resolution supports chain/combo flips until no new captures occur",
+        "Combos propagate via newly-captured cards battling adjacent enemy cards",
+        "Mists and archetype modifiers apply only to the initially placed card's comparisons (combo captures use printed stats)",
+        "Unit tests cover a multi-step combo and modifier scoping",
+        "All existing tests pass"
+      ],
+      "priority": 27,
+      "passes": false,
+      "notes": "Keep it pure and deterministic; no Same/Plus or diagonal interactions."
     }
   ]
 }

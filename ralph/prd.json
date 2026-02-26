@@ -283,7 +283,7 @@
         "pytest passes"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "notes": "This story captures schema in files; applying migrations can be added later."
     },
     {

@@ -173,3 +173,11 @@ Started: 2026-02-25
 - Files changed: `app/rules/cards.py` (new), `tests/test_cards_loader.py` (new, 22 tests)
 - Learnings: ruff I001 fires when stdlib-only and first-party imports are not separated by a blank line — run `ruff check --fix` to auto-resolve; pydantic `ValidationError.errors()` returns a list of dicts with `loc` (tuple) and `msg` (str) — join loc with "." for readable field path; duplicate detection needs to continue (not raise) so all subsequent dupes are also reported
 ---
+
+## 2026-02-26 04:00 - US-021
+- Created `supabase/migrations/001_initial_schema.sql`: profiles, games (current_state jsonb, state_version, seed), game_events (seq, UNIQUE(game_id,seq)) with an index on (game_id, seq)
+- Added RLS via `ENABLE ROW LEVEL SECURITY` + SELECT policies for participants; no client INSERT/UPDATE/DELETE policies (service role key owns writes)
+- Tests/validation run: `uv run pytest` → 307 passed (8 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
+- Files changed: `supabase/migrations/001_initial_schema.sql` (new), `tests/test_schema.py` (new, 8 tests)
+- Learnings: test only checks file content (no DB connection needed); `glob("*.sql")` on a non-existent directory returns [] silently — test for `len(files) >= 1` catches missing dir; keeping RLS policy names descriptive (table_action_scope) aids future maintenance
+---

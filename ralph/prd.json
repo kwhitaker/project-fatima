@@ -310,7 +310,7 @@
         "Integration/unit tests cover dedupe behavior"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "notes": "Implementation can be store-specific (in-memory + Supabase)."
     },
     {

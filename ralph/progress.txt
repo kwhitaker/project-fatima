@@ -182,6 +182,16 @@ Started: 2026-02-25
 - Learnings: supabase 2.20+ pulls in `storage3` which pulls `pyiceberg` requiring C++ compiler (build fails); version 2.10–2.19 is compatible with `httpx>=0.28`; MagicMock `table.side_effect = lambda n: games_table if n == "games" else events_table` cleanly routes fluent builder per-table; `TYPE_CHECKING` guard avoids runtime import of `supabase` package while keeping pyright happy
 ---
 
+## 2026-02-26 06:00 - US-023
+- Added `DuplicateEventError` and `has_idempotency_key` to `GameStore` Protocol; updated `append_event` signature with `idempotency_key: str | None = None`
+- `MemoryGameStore`: tracks used keys per game in `_idempotency_keys`; raises `DuplicateEventError` if key seen before version check
+- `SupabaseGameStore`: pre-query for duplicate key before optimistic lock; stores key in insert payload when provided; `has_idempotency_key` method for early check
+- Router: checks `has_idempotency_key` BEFORE state_version validation (handles stale-version retries correctly); catches `DuplicateEventError` as belt-and-suspenders
+- Tests/validation run: `uv run pytest` → 338 passed (13 new); `ruff check .` → clean; `pyright` → 0 errors
+- Files changed: `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/routers/games.py`, `app/services/game_service.py`, `tests/test_idempotency.py` (new, 13 tests)
+- Learnings: idempotency check MUST happen before state_version check in the router — stale-version retries are the canonical network-retry scenario; `has_idempotency_key` on the Protocol keeps the store as the authoritative owner; the mock chain for Supabase `.eq().eq().maybe_single()` is distinct from `.eq().order().limit()` so both queries can coexist on the same `events_table` mock without conflict
+---
+
 ## 2026-02-26 04:00 - US-021
 - Created `supabase/migrations/001_initial_schema.sql`: profiles, games (current_state jsonb, state_version, seed), game_events (seq, UNIQUE(game_id,seq)) with an index on (game_id, seq)
 - Added RLS via `ENABLE ROW LEVEL SECURITY` + SELECT policies for participants; no client INSERT/UPDATE/DELETE policies (service role key owns writes)

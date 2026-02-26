@@ -52,6 +52,14 @@ class GameStore(Protocol):
         """
         ...
 
+    def delete_game(self, game_id: str, expected_version: int) -> None:
+        """Delete a game and all its events (optimistic lock).
+
+        Raises ConflictError if current state_version != expected_version.
+        Raises KeyError if game_id does not exist.
+        """
+        ...
+
     def get_events(self, game_id: str) -> list[GameEvent]: ...
 
 

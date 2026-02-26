@@ -155,6 +155,34 @@ class SupabaseGameStore:
 
         return GameEvent(game_id=game_id, seq=seq, event_type=event_type, payload=payload)
 
+    def delete_game(self, game_id: str, expected_version: int) -> None:
+        """Delete a game (and cascade-delete its events) with optimistic locking.
+
+        Raises ConflictError if current state_version != expected_version.
+        Raises KeyError if game_id does not exist.
+        """
+        delete_response = (
+            self._client.table("games")
+            .delete()
+            .eq("id", game_id)
+            .eq("state_version", expected_version)
+            .execute()
+        )
+        if not delete_response.data:
+            check = (
+                self._client.table("games")
+                .select("state_version")
+                .eq("id", game_id)
+                .maybe_single()
+                .execute()
+            )
+            if check.data is None:
+                raise KeyError(f"Game {game_id!r} does not exist")
+            raise ConflictError(
+                f"Version conflict for game {game_id!r}: "
+                f"expected {expected_version}, got {check.data['state_version']}"
+            )
+
     def get_events(self, game_id: str) -> list[GameEvent]:
         response = (
             self._client.table("game_events")

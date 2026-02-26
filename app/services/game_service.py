@@ -3,7 +3,7 @@
 import uuid
 from random import Random
 
-from app.models.game import Archetype, GameState, GameStatus, PlayerState
+from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
 from app.rules.deck import generate_matched_decks
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
@@ -88,6 +88,61 @@ def select_archetype(
         new_state=new_state,
     )
     return new_state
+
+
+def leave_game(
+    game_store: GameStore,
+    game_id: str,
+    player_id: str,
+    state_version: int,
+    idempotency_key: str | None = None,
+) -> GameState | None:
+    """Leave a game.
+
+    ACTIVE + 2 players → forfeit: append game_forfeited event, other player wins.
+    WAITING + 1 player → delete the game lobby.
+    Returns the new GameState for forfeits, or None when the game was deleted.
+    """
+    state = game_store.get_game(game_id)
+    if state is None:
+        raise KeyError(f"Game {game_id!r} not found")
+
+    player_index = next(
+        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
+    )
+    if player_index is None:
+        raise PermissionError(f"Player {player_id!r} is not in this game")
+
+    if state.status == GameStatus.ACTIVE:
+        other_index = 1 - player_index
+        new_result = GameResult(winner=other_index, is_draw=False)
+        new_state = state.model_copy(
+            update={
+                "status": GameStatus.COMPLETE,
+                "result": new_result,
+                "state_version": state.state_version + 1,
+            }
+        )
+        game_store.append_event(
+            game_id=game_id,
+            event_type="game_forfeited",
+            payload={
+                "forfeit_by": player_id,
+                "winner": state.players[other_index].player_id,
+            },
+            expected_version=state_version,
+            new_state=new_state,
+            idempotency_key=idempotency_key,
+        )
+        return new_state
+    elif state.status == GameStatus.WAITING and len(state.players) == 1:
+        game_store.delete_game(game_id, expected_version=state_version)
+        return None
+    else:
+        raise ValueError(
+            f"Cannot leave game {game_id!r}: "
+            f"status={state.status.value!r}, players={len(state.players)}"
+        )
 
 
 def submit_move(

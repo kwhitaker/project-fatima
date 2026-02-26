@@ -62,6 +62,24 @@ class MemoryGameStore:
             self._idempotency_keys[game_id].add(idempotency_key)
         return event
 
+    def delete_game(self, game_id: str, expected_version: int) -> None:
+        """Delete a game and all its events (optimistic lock).
+
+        Raises KeyError if game_id does not exist.
+        Raises ConflictError if current state_version != expected_version.
+        """
+        current = self._states.get(game_id)
+        if current is None:
+            raise KeyError(f"Game {game_id!r} does not exist")
+        if current.state_version != expected_version:
+            raise ConflictError(
+                f"Version conflict for game {game_id!r}: "
+                f"expected {expected_version}, got {current.state_version}"
+            )
+        del self._states[game_id]
+        del self._events[game_id]
+        self._idempotency_keys.pop(game_id, None)
+
     def get_events(self, game_id: str) -> list[GameEvent]:
         return list(self._events.get(game_id, []))
 

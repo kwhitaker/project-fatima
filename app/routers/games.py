@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.dependencies import get_card_store, get_game_store
@@ -28,6 +28,12 @@ class JoinGameRequest(BaseModel):
 class SelectArchetypeRequest(BaseModel):
     player_id: str
     archetype: Archetype
+
+
+class LeaveGameRequest(BaseModel):
+    player_id: str
+    state_version: int
+    idempotency_key: str | None = None
 
 
 class MoveRequest(BaseModel):
@@ -134,3 +140,46 @@ def submit_move(
         if state is None:
             raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
         return state
+
+
+@router.post("/{game_id}/leave", response_model=GameState)
+def leave_game(
+    game_id: str,
+    body: LeaveGameRequest,
+    game_store: GameStoreDep,
+) -> GameState | Response:
+    # Idempotency check for ACTIVE forfeits (same semantics as moves).
+    if body.idempotency_key is not None and game_store.has_idempotency_key(
+        game_id, body.idempotency_key
+    ):
+        state = game_store.get_game(game_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
+        return state
+
+    try:
+        result = game_service.leave_game(
+            game_store,
+            game_id,
+            body.player_id,
+            body.state_version,
+            body.idempotency_key,
+        )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ConflictError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except DuplicateEventError:
+        state = game_store.get_game(game_id)
+        if state is None:
+            raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
+        return state
+
+    if result is None:
+        # Game was deleted (WAITING lobby with a single player)
+        return Response(status_code=204)
+    return result

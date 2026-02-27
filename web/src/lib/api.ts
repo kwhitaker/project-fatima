@@ -7,12 +7,26 @@ export interface PlayerState {
   archetype_used: boolean;
 }
 
+export interface BoardCell {
+  card_key: string;
+  owner: 0 | 1;
+}
+
+export interface GameResult {
+  winner: 0 | 1 | null;
+  is_draw: boolean;
+}
+
 export interface GameState {
   game_id: string;
   status: "waiting" | "active" | "complete";
   players: PlayerState[];
+  board: (BoardCell | null)[];
+  current_player_index: number;
+  starting_player_index: number;
   state_version: number;
   round_number: number;
+  result: GameResult | null;
 }
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -58,5 +72,20 @@ export async function joinGame(gameId: string): Promise<GameState> {
     body: JSON.stringify({}),
   });
   if (!res.ok) throw new Error(`Failed to join game: ${res.status}`);
+  return res.json() as Promise<GameState>;
+}
+
+export async function leaveGame(
+  gameId: string,
+  stateVersion: number
+): Promise<GameState | null> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}/leave`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ state_version: stateVersion }),
+  });
+  if (res.status === 204) return null;
+  if (!res.ok) throw new Error(`Failed to leave game: ${res.status}`);
   return res.json() as Promise<GameState>;
 }

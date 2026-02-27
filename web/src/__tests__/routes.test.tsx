@@ -31,13 +31,14 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // --- API mock ----------------------------------------------------------------
-const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard } = vi.hoisted(() => ({
+const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard, mockSelectArchetype } = vi.hoisted(() => ({
   mockListGames: vi.fn(),
   mockCreateGame: vi.fn(),
   mockGetGame: vi.fn(),
   mockJoinGame: vi.fn(),
   mockLeaveGame: vi.fn(),
   mockPlaceCard: vi.fn(),
+  mockSelectArchetype: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -47,6 +48,7 @@ vi.mock("@/lib/api", () => ({
   joinGame: mockJoinGame,
   leaveGame: mockLeaveGame,
   placeCard: mockPlaceCard,
+  selectArchetype: mockSelectArchetype,
 }));
 
 const MOCK_SESSION = {
@@ -98,6 +100,7 @@ beforeEach(() => {
   mockGetGame.mockResolvedValue(DEFAULT_GAME);
   mockJoinGame.mockResolvedValue(DEFAULT_GAME);
   mockLeaveGame.mockResolvedValue(null);
+  mockSelectArchetype.mockResolvedValue(makeGame({ game_id: "abc-123" }));
 });
 
 // --- Auth guards -------------------------------------------------------------
@@ -632,6 +635,106 @@ describe("game room move submission (US-UI-007)", () => {
       expect(screen.getByText(/cell is already occupied/i)).toBeInTheDocument();
     });
     expect(mockGetGame).toHaveBeenCalledTimes(2);
+  });
+});
+
+// --- Archetype selection UX (US-UI-008) --------------------------------------
+
+describe("archetype selection UX (US-UI-008)", () => {
+  const noArchGame = makeGame({
+    game_id: "game-arch",
+    status: "active",
+    state_version: 2,
+    current_player_index: 0,
+    players: [
+      { player_id: "user-123", archetype: null, hand: ["card-a"], archetype_used: false },
+      { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+    ],
+    board: EMPTY_BOARD,
+  });
+
+  it("shows archetype selector when caller has no archetype", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(noArchGame);
+    renderAt("/g/game-arch");
+    await waitFor(() => {
+      expect(screen.getByText(/choose your archetype/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /martial/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /skulker/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /caster/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /devout/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /presence/i })).toBeInTheDocument();
+    });
+  });
+
+  it("selecting an archetype calls selectArchetype and updates the game", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(noArchGame);
+    const updatedGame = makeGame({
+      ...noArchGame,
+      players: [
+        { player_id: "user-123", archetype: "martial", hand: ["card-a"], archetype_used: false },
+        { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      ],
+    });
+    mockSelectArchetype.mockResolvedValue(updatedGame);
+    const user = userEvent.setup();
+    renderAt("/g/game-arch");
+    await waitFor(() => screen.getByRole("button", { name: /martial/i }));
+    await user.click(screen.getByRole("button", { name: /martial/i }));
+    await waitFor(() => {
+      expect(mockSelectArchetype).toHaveBeenCalledWith("game-arch", "martial");
+      // Selector gone after archetype chosen
+      expect(screen.queryByText(/choose your archetype/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("does not show archetype selector when caller already has an archetype", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makeGame({
+      ...noArchGame,
+      players: [
+        { player_id: "user-123", archetype: "devout", hand: ["card-a"], archetype_used: false },
+        { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      ],
+    }));
+    renderAt("/g/game-arch");
+    await waitFor(() => {
+      expect(screen.getByText(/your turn/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/choose your archetype/i)).not.toBeInTheDocument();
+  });
+
+  it("shows archetype power as Available when not yet used", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makeGame({
+      ...noArchGame,
+      players: [
+        { player_id: "user-123", archetype: "caster", hand: ["card-a"], archetype_used: false },
+        { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      ],
+    }));
+    renderAt("/g/game-arch");
+    await waitFor(() => {
+      expect(screen.getByText(/caster/i)).toBeInTheDocument();
+      expect(screen.getByText(/available/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows archetype power as Used when already used", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makeGame({
+      ...noArchGame,
+      players: [
+        { player_id: "user-123", archetype: "skulker", hand: ["card-a"], archetype_used: true },
+        { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      ],
+    }));
+    renderAt("/g/game-arch");
+    await waitFor(() => {
+      expect(screen.getByText(/skulker/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/used/i).length).toBeGreaterThan(0);
+    });
   });
 });
 

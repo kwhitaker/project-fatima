@@ -108,6 +108,33 @@ export async function placeCard(
   return res.json() as Promise<GameState>;
 }
 
+export type Archetype = "martial" | "skulker" | "caster" | "devout" | "presence";
+
+export async function selectArchetype(
+  gameId: string,
+  archetype: Archetype
+): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}/archetype`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ archetype }),
+  });
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to select archetype: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
+  return res.json() as Promise<GameState>;
+}
+
 export async function leaveGame(
   gameId: string,
   stateVersion: number

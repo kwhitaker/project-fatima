@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { getGame, joinGame, leaveGame, placeCard, type BoardCell, type GameState } from "@/lib/api";
+import { getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type GameState } from "@/lib/api";
 
 function BoardGrid({
   board,
@@ -63,6 +63,8 @@ export default function GameRoom() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [movePending, setMovePending] = useState(false);
+  const [archetypePending, setArchetypePending] = useState(false);
+  const [archetypeError, setArchetypeError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!gameId) return;
@@ -130,6 +132,20 @@ export default function GameRoom() {
       }
     } finally {
       setMovePending(false);
+    }
+  };
+
+  const handleSelectArchetype = async (archetype: Archetype) => {
+    if (!gameId || !game) return;
+    setArchetypePending(true);
+    setArchetypeError(null);
+    try {
+      const updated = await selectArchetype(gameId, archetype);
+      setGame(updated);
+    } catch (e: unknown) {
+      setArchetypeError(e instanceof Error ? e.message : "Failed to select archetype");
+    } finally {
+      setArchetypePending(false);
     }
   };
 
@@ -224,6 +240,30 @@ export default function GameRoom() {
           {/* Move error */}
           {moveError && (
             <p className="text-destructive text-sm">{moveError}</p>
+          )}
+
+          {/* Archetype selection prompt */}
+          {myPlayer && !myPlayer.archetype && (
+            <div>
+              <p className="text-sm font-medium mb-2">Choose your archetype</p>
+              <div className="flex gap-2 flex-wrap">
+                {(["martial", "skulker", "caster", "devout", "presence"] as const).map((arch) => (
+                  <Button
+                    key={arch}
+                    variant="outline"
+                    size="sm"
+                    className="capitalize"
+                    onClick={() => void handleSelectArchetype(arch)}
+                    disabled={archetypePending}
+                  >
+                    {arch}
+                  </Button>
+                ))}
+              </div>
+              {archetypeError && (
+                <p className="text-destructive text-sm mt-1">{archetypeError}</p>
+              )}
+            </div>
           )}
 
           {/* My hand */}

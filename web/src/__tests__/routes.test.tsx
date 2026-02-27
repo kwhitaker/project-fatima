@@ -31,12 +31,13 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // --- API mock ----------------------------------------------------------------
-const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame } = vi.hoisted(() => ({
+const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard } = vi.hoisted(() => ({
   mockListGames: vi.fn(),
   mockCreateGame: vi.fn(),
   mockGetGame: vi.fn(),
   mockJoinGame: vi.fn(),
   mockLeaveGame: vi.fn(),
+  mockPlaceCard: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -45,6 +46,7 @@ vi.mock("@/lib/api", () => ({
   getGame: mockGetGame,
   joinGame: mockJoinGame,
   leaveGame: mockLeaveGame,
+  placeCard: mockPlaceCard,
 }));
 
 const MOCK_SESSION = {
@@ -512,6 +514,124 @@ describe("game room complete state", () => {
     await waitFor(() => {
       expect(screen.getByText(/draw/i)).toBeInTheDocument();
     });
+  });
+});
+
+// --- Game room move submission (US-UI-007) ------------------------------------
+
+describe("game room move submission (US-UI-007)", () => {
+  const moveGame = makeGame({
+    game_id: "game-move",
+    status: "active",
+    state_version: 5,
+    current_player_index: 0,
+    players: [
+      { player_id: "user-123", archetype: null, hand: ["card-a", "card-b"], archetype_used: false },
+      { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+    ],
+    board: EMPTY_BOARD,
+  });
+
+  it("card buttons are disabled when it is not the caller's turn", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({ ...moveGame, current_player_index: 1 });
+    renderAt("/g/game-move");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "card-a" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "card-b" })).toBeDisabled();
+    });
+  });
+
+  it("empty cells become clickable buttons after selecting a card on caller's turn", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(moveGame);
+    const user = userEvent.setup();
+    renderAt("/g/game-move");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    // Before selection: no cell buttons
+    expect(screen.queryByRole("button", { name: /cell 0/i })).not.toBeInTheDocument();
+    // Select card-a
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    // Now cell 0 should be a clickable button
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /cell 0/i })).toBeInTheDocument();
+    });
+  });
+
+  it("clicking an empty cell with a selected card calls placeCard", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(moveGame);
+    mockPlaceCard.mockResolvedValue({ ...moveGame, current_player_index: 1 });
+    const user = userEvent.setup();
+    renderAt("/g/game-move");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(mockPlaceCard).toHaveBeenCalledWith(
+        "game-move",
+        "card-a",
+        0,
+        5,
+        expect.any(String)
+      );
+    });
+  });
+
+  it("updates the game snapshot after a successful move", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(moveGame);
+    const updatedBoard: (BoardCell | null)[] = [...EMPTY_BOARD];
+    updatedBoard[0] = { card_key: "card-a", owner: 0 };
+    const updatedGame: GameState = { ...moveGame, board: updatedBoard, current_player_index: 1 };
+    mockPlaceCard.mockResolvedValue(updatedGame);
+    const user = userEvent.setup();
+    renderAt("/g/game-move");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/opponent.?s turn/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows move error on 409 conflict and refetches game", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(moveGame);
+    mockPlaceCard.mockRejectedValue(
+      Object.assign(new Error("State version conflict"), { status: 409 })
+    );
+    const user = userEvent.setup();
+    renderAt("/g/game-move");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/state version conflict/i)).toBeInTheDocument();
+    });
+    // mount call + refetch on error = 2 calls
+    expect(mockGetGame).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows move error on 422 invalid move and refetches game", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(moveGame);
+    mockPlaceCard.mockRejectedValue(
+      Object.assign(new Error("Cell is already occupied"), { status: 422 })
+    );
+    const user = userEvent.setup();
+    renderAt("/g/game-move");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/cell is already occupied/i)).toBeInTheDocument();
+    });
+    expect(mockGetGame).toHaveBeenCalledTimes(2);
   });
 });
 

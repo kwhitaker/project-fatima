@@ -75,6 +75,39 @@ export async function joinGame(gameId: string): Promise<GameState> {
   return res.json() as Promise<GameState>;
 }
 
+export async function placeCard(
+  gameId: string,
+  cardKey: string,
+  cellIndex: number,
+  stateVersion: number,
+  idempotencyKey: string
+): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}/moves`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      card_key: cardKey,
+      cell_index: cellIndex,
+      state_version: stateVersion,
+      idempotency_key: idempotencyKey,
+    }),
+  });
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Move failed: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
+  return res.json() as Promise<GameState>;
+}
+
 export async function leaveGame(
   gameId: string,
   stateVersion: number

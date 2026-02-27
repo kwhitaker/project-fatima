@@ -3,35 +3,49 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { getGame, joinGame, leaveGame, type BoardCell, type GameState } from "@/lib/api";
+import { getGame, joinGame, leaveGame, placeCard, type BoardCell, type GameState } from "@/lib/api";
 
 function BoardGrid({
   board,
   myIndex,
+  canPlace = false,
+  onCellClick,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
+  canPlace?: boolean;
+  onCellClick?: (index: number) => void;
 }) {
   return (
     <div
       className="grid grid-cols-3 gap-2 w-fit"
       aria-label="game board"
     >
-      {board.map((cell, i) => (
-        <div
-          key={i}
-          className={cn(
-            "w-20 h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
-            cell === null
-              ? "bg-muted text-muted-foreground"
-              : cell.owner === myIndex
-              ? "bg-blue-200 text-blue-900"
-              : "bg-red-200 text-red-900"
-          )}
-        >
-          {cell ? cell.card_key : ""}
-        </div>
-      ))}
+      {board.map((cell, i) => {
+        const cellClass = cn(
+          "w-20 h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
+          cell === null
+            ? "bg-muted text-muted-foreground"
+            : cell.owner === myIndex
+            ? "bg-blue-200 text-blue-900"
+            : "bg-red-200 text-red-900"
+        );
+        if (canPlace && cell === null) {
+          return (
+            <button
+              key={i}
+              aria-label={`cell ${i}`}
+              onClick={() => onCellClick?.(i)}
+              className={cn(cellClass, "hover:bg-accent cursor-pointer")}
+            />
+          );
+        }
+        return (
+          <div key={i} className={cellClass}>
+            {cell ? cell.card_key : ""}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -47,6 +61,8 @@ export default function GameRoom() {
   const [leaving, setLeaving] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const [movePending, setMovePending] = useState(false);
 
   useEffect(() => {
     if (!gameId) return;
@@ -88,6 +104,33 @@ export default function GameRoom() {
     void navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handlePlaceCard = async (cellIndex: number) => {
+    if (!selectedCard || !game || !gameId) return;
+    setMovePending(true);
+    setMoveError(null);
+    const idempotencyKey = crypto.randomUUID();
+    try {
+      const updated = await placeCard(
+        gameId,
+        selectedCard,
+        cellIndex,
+        game.state_version,
+        idempotencyKey
+      );
+      setGame(updated);
+      setSelectedCard(null);
+    } catch (e: unknown) {
+      const errStatus = (e as { status?: number }).status;
+      setMoveError(e instanceof Error ? e.message : "Move failed");
+      if (errStatus === 409 || errStatus === 422) {
+        const fresh = await getGame(gameId).catch(() => null);
+        if (fresh) setGame(fresh);
+      }
+    } finally {
+      setMovePending(false);
+    }
   };
 
   if (loading) {
@@ -171,7 +214,17 @@ export default function GameRoom() {
           </p>
 
           {/* Board */}
-          <BoardGrid board={game.board} myIndex={myIndex} />
+          <BoardGrid
+            board={game.board}
+            myIndex={myIndex}
+            canPlace={game.current_player_index === myIndex && selectedCard !== null && !movePending}
+            onCellClick={(i) => void handlePlaceCard(i)}
+          />
+
+          {/* Move error */}
+          {moveError && (
+            <p className="text-destructive text-sm">{moveError}</p>
+          )}
 
           {/* My hand */}
           <div>
@@ -183,6 +236,7 @@ export default function GameRoom() {
                   onClick={() =>
                     setSelectedCard(selectedCard === cardKey ? null : cardKey)
                   }
+                  disabled={game.current_player_index !== myIndex || movePending}
                   className={cn(
                     "px-3 py-2 border rounded text-xs font-mono",
                     selectedCard === cardKey

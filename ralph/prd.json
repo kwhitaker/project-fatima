@@ -31,7 +31,7 @@
         "Unauthenticated users are redirected to /login when visiting /games or /g/:gameId"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "MVP: email magic link only; no usernames/profile editing yet."
     },
     {

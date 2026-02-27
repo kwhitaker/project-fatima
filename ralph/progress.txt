@@ -15,3 +15,11 @@ Started: 2026-02-26
 - Learnings: bun resolves latest versions (React 19, Router 7, Vite 7, Tailwind 4, Vitest 4) — use `vitest/config` defineConfig (not vite's) for proper test type resolution; Tailwind v4 uses `@import "tailwindcss"` + `@tailwindcss/postcss` plugin; `bun test` runs bun's runner, not vitest — use `bun run test` to invoke the vitest script
 ---
 
+## 2026-02-27 09:49 - US-UI-002
+- Added Supabase JS client (`web/src/lib/supabase.ts`), `AuthContext` with magic-link signIn/signOut, and `RequireAuth` guard component
+- Protected `/games` and `/g/:gameId` routes; unauthenticated users redirect to `/login`; Login form submits magic link and shows confirmation/error; Games page has Log out button
+- Tests: 11 vitest tests pass (auth redirect, magic link form, logout); TypeScript lint and production build both clean; added `vite/client` to tsconfig types for `import.meta.env`
+- Files changed: `web/src/lib/supabase.ts` (new), `web/src/context/AuthContext.tsx` (new), `web/src/components/RequireAuth.tsx` (new), `web/src/App.tsx`, `web/src/routes/Login.tsx`, `web/src/routes/Games.tsx`, `web/src/__tests__/routes.test.tsx`, `web/tsconfig.app.json`, `web/package.json`, `web/bun.lock`
+- Learnings: `vi.mock` is hoisted so use `vi.hoisted()` to declare shared mock functions; add `"vite/client"` to tsconfig `types` array alongside `"vitest/globals"` so `import.meta.env` type-checks correctly
+---
+

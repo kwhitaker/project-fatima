@@ -96,7 +96,7 @@
         "Add Leave button calling POST /games/:gameId/leave (no player_id in body)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Keep UI read-only for moves in this story; move interaction comes next."
     },
     {

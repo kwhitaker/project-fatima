@@ -33,6 +33,14 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-27 15:19 - US-UI-006
+- Added `BoardCell`, `GameResult` types and `board`/`current_player_index`/`result` fields to `GameState` in `api.ts`; added `leaveGame(gameId, stateVersion)` function (handles 204 no-content)
+- Implemented `BoardGrid` component (3×3 grid, blue=mine/red=opponent ownership); active game view: turn indicator, score, hand (selectable buttons), opponent card count, archetype display, Leave button; complete game view: result banner (win/lose/draw), final board, Leave button; Leave navigates to /games
+- Added 11 vitest tests covering all US-UI-006 acceptance criteria; all 31 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: make a `makeGame(overrides)` factory in tests to avoid duplicating full GameState shapes; `aria-label` on the grid div allows `getByLabelText` in tests; catch-all in `handleLeave` ensures navigation even if API fails
+---
+
 ## 2026-02-27 10:46 - US-UI-005
 - Added `getGame(gameId)` and `joinGame(gameId)` to `web/src/lib/api.ts`
 - Implemented `GameRoom.tsx` lobby UI: fetches game on mount; WAITING renders invite link + Copy Link button; shows Join button when not a participant and game not full; shows blocked message when full and not a participant; ACTIVE/COMPLETE show placeholder text

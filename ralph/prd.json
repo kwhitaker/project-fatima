@@ -51,7 +51,7 @@
         "Add/adjust tests covering the new auth-scoped behavior and list endpoint"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "This story intentionally spans backend + schema to unblock the UI. Keep snapshot-first; do not add client-side rules."
     },
     {

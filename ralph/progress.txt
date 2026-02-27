@@ -23,3 +23,13 @@ Started: 2026-02-26
 - Learnings: `vi.mock` is hoisted so use `vi.hoisted()` to declare shared mock functions; add `"vite/client"` to tsconfig `types` array alongside `"vitest/globals"` so `import.meta.env` type-checks correctly
 ---
 
+## 2026-02-27 - US-UI-003
+- Added `app/auth.py` with `get_caller_id` FastAPI dependency (validates Supabase JWT via PyJWT, reads `SUPABASE_JWT_SECRET`); all endpoints now use `CallerIdDep` for identity
+- Removed `player_id` from all request bodies; `POST /games` auto-joins caller as player1; `GET /games` lists caller's games; `GET /games/{id}` blocks non-participants on ACTIVE/COMPLETE games (403)
+- Added `LastMoveInfo` (mists_roll, mists_effect) to `GameState`; reducer now tracks mists roll per move; SD rounds alternate starting player via `starting_player_index`; starting player on ACTIVE chosen deterministically from seed
+- Added migration `003_idempotency_key_and_player_columns.sql`; updated SupabaseGameStore to sync `player1_id`/`player2_id` columns and implement `list_games_for_player`
+- Tests: 432 pass (pytest), ruff + pyright clean; added `tests/test_auth_api.py` covering GET /games, spectator block, last_move, deterministic starting player
+- Files: `app/auth.py` (new), `app/models/game.py`, `app/rules/reducer.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/routers/games.py`, `supabase/migrations/003_*` (new), plus 6 test files
+- Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
+---
+

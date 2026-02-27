@@ -125,7 +125,7 @@
         "Display whether the caller's archetype power is available or already used"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "MVP: simple selector UI; no lore text required."
     },
     {

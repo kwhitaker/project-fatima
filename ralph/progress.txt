@@ -33,6 +33,14 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-27 15:45 - US-UI-008
+- Added `selectArchetype(gameId, archetype)` to `web/src/lib/api.ts`; throws typed error with `.status` on failure
+- Added archetype selection prompt in GameRoom ACTIVE view: shows 5 archetype buttons when caller has no archetype; hides after selection; displays selected archetype + Available/Used status for both players
+- Tests: 5 new vitest tests (42 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: add new mocked API functions to both `vi.hoisted()` and `vi.mock()` blocks AND `beforeEach` defaults to avoid test bleed; Archetype type exported from api.ts avoids duplication in GameRoom
+---
+
 ## 2026-02-27 15:30 - US-UI-007
 - Added `placeCard(gameId, cardKey, cellIndex, stateVersion, idempotencyKey)` to `web/src/lib/api.ts`; throws error with `.status` property on non-OK responses
 - Updated `BoardGrid` to accept `canPlace`/`onCellClick` props; empty cells become `<button aria-label="cell N">` when it's the caller's turn and a card is selected

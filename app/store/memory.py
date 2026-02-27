@@ -24,6 +24,13 @@ class MemoryGameStore:
     def get_game(self, game_id: str) -> GameState | None:
         return self._states.get(game_id)
 
+    def list_games_for_player(self, player_id: str) -> list[GameState]:
+        return [
+            state
+            for state in self._states.values()
+            if any(p.player_id == player_id for p in state.players)
+        ]
+
     def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
         return idempotency_key in self._idempotency_keys.get(game_id, set())
 

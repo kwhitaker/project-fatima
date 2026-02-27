@@ -10,8 +10,10 @@ All error responses must include a ``detail`` key in the JSON body.
 """
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
+from app.auth import get_caller_id
 from app.dependencies import get_card_store, get_game_store
 from app.main import app
 from app.models.cards import CardDefinition, CardSides
@@ -35,25 +37,37 @@ def _make_card(idx: int) -> CardDefinition:
 _TEST_CARDS = [_make_card(i) for i in range(20)]
 
 
+def _mock_caller_id(request: Request) -> str:
+    return request.headers.get("X-User-Id", "test-user")
+
+
 @pytest.fixture()
 def client() -> TestClient:  # type: ignore[misc]
     game_store = MemoryGameStore()
     card_store = MemoryCardStore(cards=_TEST_CARDS)
     app.dependency_overrides[get_game_store] = lambda: game_store
     app.dependency_overrides[get_card_store] = lambda: card_store
+    app.dependency_overrides[get_caller_id] = _mock_caller_id
     yield TestClient(app)  # type: ignore[misc]
     app.dependency_overrides.clear()
 
 
-def _active_game(client: TestClient) -> tuple[str, list[str], list[str], int]:
-    """Return (game_id, alice_hand, bob_hand, state_version) for a fresh active game."""
-    game_id = client.post("/games", json={"seed": 1}).json()["game_id"]
-    client.post(f"/games/{game_id}/join", json={"player_id": "alice"})
-    client.post(f"/games/{game_id}/join", json={"player_id": "bob"})
-    data = client.get(f"/games/{game_id}").json()
-    alice_hand = data["players"][0]["hand"]
-    bob_hand = data["players"][1]["hand"]
-    return game_id, alice_hand, bob_hand, data["state_version"]
+def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
+    return getattr(client, method)(path, headers={"X-User-Id": user}, **kwargs)
+
+
+def _active_game(client: TestClient) -> tuple[str, list[str], list[str], int, int]:
+    """Create and return (game_id, p0_hand, p1_hand, state_version, first_player_index)."""
+    game_id = _as(client, "alice", "post", "/games", json={"seed": 1}).json()["game_id"]
+    resp = _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+    data = resp.json()
+    return (
+        game_id,
+        data["players"][0]["hand"],
+        data["players"][1]["hand"],
+        data["state_version"],
+        data["current_player_index"],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -76,66 +90,57 @@ def _assert_error(resp: object, status: int) -> dict:  # type: ignore[type-arg]
 
 class Test422RequestValidation:
     def test_create_game_wrong_seed_type(self, client: TestClient) -> None:
-        resp = client.post("/games", json={"seed": "not-an-int"})
-        _assert_error(resp, 422)
-
-    def test_move_missing_player_id(self, client: TestClient) -> None:
-        game_id, alice_hand, _, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={"card_key": alice_hand[0], "cell_index": 0, "state_version": sv},
-        )
+        resp = _as(client, "alice", "post", "/games", json={"seed": "not-an-int"})
         _assert_error(resp, 422)
 
     def test_move_missing_card_key(self, client: TestClient) -> None:
-        game_id, _, _, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={"player_id": "alice", "cell_index": 0, "state_version": sv},
+        game_id, _, _, sv, _ = _active_game(client)
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/moves",
+            json={"cell_index": 0, "state_version": sv},
         )
         _assert_error(resp, 422)
 
     def test_move_missing_cell_index(self, client: TestClient) -> None:
-        game_id, alice_hand, _, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={"player_id": "alice", "card_key": alice_hand[0], "state_version": sv},
+        game_id, p0_hand, _, sv, _ = _active_game(client)
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/moves",
+            json={"card_key": p0_hand[0], "state_version": sv},
         )
         _assert_error(resp, 422)
 
     def test_move_missing_state_version(self, client: TestClient) -> None:
-        game_id, alice_hand, _, _ = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={"player_id": "alice", "card_key": alice_hand[0], "cell_index": 0},
+        game_id, p0_hand, _, _, _ = _active_game(client)
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/moves",
+            json={"card_key": p0_hand[0], "cell_index": 0},
         )
         _assert_error(resp, 422)
 
-    def test_join_missing_player_id(self, client: TestClient) -> None:
-        game_id = client.post("/games", json={}).json()["game_id"]
-        resp = client.post(f"/games/{game_id}/join", json={})
-        _assert_error(resp, 422)
-
     def test_archetype_invalid_value(self, client: TestClient) -> None:
-        game_id, _, _, _ = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/archetype",
-            json={"player_id": "alice", "archetype": "wizard"},
+        game_id, _, _, _, _ = _active_game(client)
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/archetype",
+            json={"archetype": "wizard"},
         )
         _assert_error(resp, 422)
 
     def test_invalid_move_wrong_turn_returns_422(self, client: TestClient) -> None:
         """Game-logic rule violations (InvalidMoveError) also map to 422."""
-        game_id, _, bob_hand, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "bob",
-                "card_key": bob_hand[0],
-                "cell_index": 0,
-                "state_version": sv,
-            },
-        )
+        game_id, p0_hand, p1_hand, sv, first_player_index = _active_game(client)
+        # Send from the player whose turn it is NOT
+        if first_player_index == 0:
+            # alice (p0) goes first; bob tries to move → 422
+            resp = _as(
+                client, "bob", "post", f"/games/{game_id}/moves",
+                json={"card_key": p1_hand[0], "cell_index": 0, "state_version": sv},
+            )
+        else:
+            # bob (p1) goes first; alice tries to move → 422
+            resp = _as(
+                client, "alice", "post", f"/games/{game_id}/moves",
+                json={"card_key": p0_hand[0], "cell_index": 0, "state_version": sv},
+            )
         _assert_error(resp, 422)
 
 
@@ -146,30 +151,30 @@ class Test422RequestValidation:
 
 class Test404GameNotFound:
     def test_get_game(self, client: TestClient) -> None:
-        _assert_error(client.get("/games/no-such-id"), 404)
+        _assert_error(_as(client, "alice", "get", "/games/no-such-id"), 404)
 
     def test_join_game(self, client: TestClient) -> None:
-        resp = client.post("/games/no-such-id/join", json={"player_id": "alice"})
+        resp = _as(client, "alice", "post", "/games/no-such-id/join", json={})
         _assert_error(resp, 404)
 
     def test_select_archetype(self, client: TestClient) -> None:
-        resp = client.post(
-            "/games/no-such-id/archetype",
-            json={"player_id": "alice", "archetype": "martial"},
+        resp = _as(
+            client, "alice", "post", "/games/no-such-id/archetype",
+            json={"archetype": "martial"},
         )
         _assert_error(resp, 404)
 
     def test_submit_move(self, client: TestClient) -> None:
-        resp = client.post(
-            "/games/no-such-id/moves",
-            json={"player_id": "alice", "card_key": "x", "cell_index": 0, "state_version": 0},
+        resp = _as(
+            client, "alice", "post", "/games/no-such-id/moves",
+            json={"card_key": "x", "cell_index": 0, "state_version": 0},
         )
         _assert_error(resp, 404)
 
     def test_leave_game(self, client: TestClient) -> None:
-        resp = client.post(
-            "/games/no-such-id/leave",
-            json={"player_id": "alice", "state_version": 0},
+        resp = _as(
+            client, "alice", "post", "/games/no-such-id/leave",
+            json={"state_version": 0},
         )
         _assert_error(resp, 404)
 
@@ -181,31 +186,26 @@ class Test404GameNotFound:
 
 class Test403NotParticipant:
     def test_select_archetype_non_participant(self, client: TestClient) -> None:
-        game_id, _, _, _ = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/archetype",
-            json={"player_id": "charlie", "archetype": "martial"},
+        game_id, _, _, _, _ = _active_game(client)
+        resp = _as(
+            client, "charlie", "post", f"/games/{game_id}/archetype",
+            json={"archetype": "martial"},
         )
         _assert_error(resp, 403)
 
     def test_submit_move_non_participant(self, client: TestClient) -> None:
-        game_id, alice_hand, _, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "charlie",
-                "card_key": alice_hand[0],
-                "cell_index": 0,
-                "state_version": sv,
-            },
+        game_id, p0_hand, _, sv, _ = _active_game(client)
+        resp = _as(
+            client, "charlie", "post", f"/games/{game_id}/moves",
+            json={"card_key": p0_hand[0], "cell_index": 0, "state_version": sv},
         )
         _assert_error(resp, 403)
 
     def test_leave_game_non_participant(self, client: TestClient) -> None:
-        game_id, _, _, sv = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/leave",
-            json={"player_id": "charlie", "state_version": sv},
+        game_id, _, _, sv, _ = _active_game(client)
+        resp = _as(
+            client, "charlie", "post", f"/games/{game_id}/leave",
+            json={"state_version": sv},
         )
         _assert_error(resp, 403)
 
@@ -217,42 +217,33 @@ class Test403NotParticipant:
 
 class Test409Conflict:
     def test_submit_move_stale_version(self, client: TestClient) -> None:
-        game_id, alice_hand, _, sv = _active_game(client)
+        game_id, p0_hand, p1_hand, sv, first_player_index = _active_game(client)
+        first_user = "alice" if first_player_index == 0 else "bob"
+        first_hand = p0_hand if first_player_index == 0 else p1_hand
         # Advance the version by one move
-        client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "alice",
-                "card_key": alice_hand[0],
-                "cell_index": 4,
-                "state_version": sv,
-            },
+        _as(
+            client, first_user, "post", f"/games/{game_id}/moves",
+            json={"card_key": first_hand[0], "cell_index": 4, "state_version": sv},
         )
         # Retry with stale version → 409
-        resp = client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "alice",
-                "card_key": alice_hand[1],
-                "cell_index": 0,
-                "state_version": sv,
-            },
+        resp = _as(
+            client, first_user, "post", f"/games/{game_id}/moves",
+            json={"card_key": first_hand[1], "cell_index": 0, "state_version": sv},
         )
         _assert_error(resp, 409)
 
     def test_leave_active_game_stale_version(self, client: TestClient) -> None:
-        game_id, _, _, _ = _active_game(client)
-        resp = client.post(
-            f"/games/{game_id}/leave",
-            json={"player_id": "alice", "state_version": 9999},
+        game_id, _, _, _, _ = _active_game(client)
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/leave",
+            json={"state_version": 9999},
         )
         _assert_error(resp, 409)
 
     def test_leave_waiting_game_stale_version(self, client: TestClient) -> None:
-        game_id = client.post("/games", json={}).json()["game_id"]
-        client.post(f"/games/{game_id}/join", json={"player_id": "alice"})
-        resp = client.post(
-            f"/games/{game_id}/leave",
-            json={"player_id": "alice", "state_version": 9999},
+        game_id = _as(client, "alice", "post", "/games", json={}).json()["game_id"]
+        resp = _as(
+            client, "alice", "post", f"/games/{game_id}/leave",
+            json={"state_version": 9999},
         )
         _assert_error(resp, 409)

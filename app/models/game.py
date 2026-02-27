@@ -35,6 +35,11 @@ class GameResult(BaseModel):
     is_draw: bool
 
 
+class LastMoveInfo(BaseModel):
+    mists_roll: int  # 1-6 die result
+    mists_effect: str  # "fog" | "omen" | "none"
+
+
 class GameState(BaseModel):
     game_id: str
     state_version: int = 0
@@ -44,5 +49,7 @@ class GameState(BaseModel):
     players: list[PlayerState] = []
     board: list[BoardCell | None] = Field(default_factory=lambda: [None] * 9)
     current_player_index: int = 0
+    starting_player_index: int = 0  # set when game becomes ACTIVE; drives SD alternation
     result: GameResult | None = None
     seed: int = 0
+    last_move: LastMoveInfo | None = None

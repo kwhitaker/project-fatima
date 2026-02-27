@@ -10,8 +10,10 @@ Covers:
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient  # noqa: E402
 
+from app.auth import get_caller_id
 from app.dependencies import get_card_store, get_game_store
 from app.main import app
 from app.models.cards import CardDefinition, CardSides
@@ -42,18 +44,27 @@ def _make_card(idx: int) -> CardDefinition:
 _TEST_CARDS = [_make_card(i) for i in range(20)]
 
 
+def _mock_caller_id(request: Request) -> str:
+    return request.headers.get("X-User-Id", "test-user")
+
+
 @pytest.fixture()
 def api_client() -> TestClient:  # type: ignore[misc]
     game_store = MemoryGameStore()
     card_store = MemoryCardStore(cards=_TEST_CARDS)
     app.dependency_overrides[get_game_store] = lambda: game_store
     app.dependency_overrides[get_card_store] = lambda: card_store
+    app.dependency_overrides[get_caller_id] = _mock_caller_id
     yield TestClient(app)  # type: ignore[misc]
     app.dependency_overrides.clear()
 
 
 def _make_state(game_id: str = "g1", version: int = 0) -> GameState:
     return GameState(game_id=game_id, state_version=version, seed=42)
+
+
+def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
+    return getattr(client, method)(path, headers={"X-User-Id": user}, **kwargs)
 
 
 # ---------------------------------------------------------------------------
@@ -144,76 +155,69 @@ class TestMemoryStoreIdempotency:
 
 
 class TestApiIdempotency:
-    def _setup_active_game(self, client: TestClient) -> tuple[str, list[str], int]:
-        """Returns (game_id, alice_hand, state_version)."""
-        resp = client.post("/games", json={"seed": 77})
+    def _setup_active_game(self, client: TestClient) -> tuple[str, list[str], int, int]:
+        """Returns (game_id, first_player_hand, state_version, first_player_index)."""
+        resp = _as(client, "alice", "post", "/games", json={"seed": 77})
         game_id = resp.json()["game_id"]
-        client.post(f"/games/{game_id}/join", json={"player_id": "alice"})
-        client.post(f"/games/{game_id}/join", json={"player_id": "bob"})
-        data = client.get(f"/games/{game_id}").json()
-        return game_id, data["players"][0]["hand"], data["state_version"]
+        _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+        data = _as(client, "alice", "get", f"/games/{game_id}").json()
+        first_player_index = data["current_player_index"]
+        first_hand = data["players"][first_player_index]["hand"]
+        return game_id, first_hand, data["state_version"], first_player_index
 
     def test_idempotency_key_is_accepted(self, api_client: TestClient) -> None:
-        game_id, hand, sv = self._setup_active_game(api_client)
-        resp = api_client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "alice",
-                "card_key": hand[0],
-                "cell_index": 4,
-                "state_version": sv,
-                "idempotency_key": "move-001",
-            },
+        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+        first_user = "alice" if first_player_index == 0 else "bob"
+        resp = _as(
+            api_client, first_user, "post", f"/games/{game_id}/moves",
+            json={"card_key": hand[0], "cell_index": 4, "state_version": sv,
+                  "idempotency_key": "move-001"},
         )
         assert resp.status_code == 200
 
     def test_duplicate_idempotency_key_returns_200(self, api_client: TestClient) -> None:
-        game_id, hand, sv = self._setup_active_game(api_client)
+        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+        first_user = "alice" if first_player_index == 0 else "bob"
         move_payload = {
-            "player_id": "alice",
             "card_key": hand[0],
             "cell_index": 4,
             "state_version": sv,
             "idempotency_key": "move-unique-001",
         }
-        resp1 = api_client.post(f"/games/{game_id}/moves", json=move_payload)
+        resp1 = _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
         assert resp1.status_code == 200
         state_after_first = resp1.json()
 
         # Retry with same idempotency key (stale state_version is now passed,
         # but same key means it's a duplicate)
-        resp2 = api_client.post(f"/games/{game_id}/moves", json=move_payload)
+        resp2 = _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
         assert resp2.status_code == 200
         # The state returned should match what was returned after the first call
         assert resp2.json()["state_version"] == state_after_first["state_version"]
 
     def test_duplicate_key_does_not_create_extra_event(self, api_client: TestClient) -> None:
         """Two moves with the same idempotency key produce exactly one event."""
-        game_id, hand, sv = self._setup_active_game(api_client)
+        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+        first_user = "alice" if first_player_index == 0 else "bob"
         move_payload = {
-            "player_id": "alice",
             "card_key": hand[0],
             "cell_index": 4,
             "state_version": sv,
             "idempotency_key": "move-dedup-test",
         }
-        api_client.post(f"/games/{game_id}/moves", json=move_payload)
-        api_client.post(f"/games/{game_id}/moves", json=move_payload)
+        _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
+        _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
 
-        data = api_client.get(f"/games/{game_id}").json()
-        # State advanced exactly once (base + join×2 + move×1)
+        data = _as(api_client, first_user, "get", f"/games/{game_id}").json()
+        # State advanced exactly once (base + join×1 + move×1)
         assert data["board"][4] is not None  # the cell was placed
 
     def test_no_idempotency_key_still_works(self, api_client: TestClient) -> None:
-        game_id, hand, sv = self._setup_active_game(api_client)
-        resp = api_client.post(
-            f"/games/{game_id}/moves",
-            json={
-                "player_id": "alice",
-                "card_key": hand[0],
-                "cell_index": 4,
-                "state_version": sv,
-            },
+        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+        first_user = "alice" if first_player_index == 0 else "bob"
+        resp = _as(
+            api_client, first_user, "post", f"/games/{game_id}/moves",
+            json={"card_key": hand[0], "cell_index": 4, "state_version": sv},
         )
         assert resp.status_code == 200
 

@@ -33,6 +33,14 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-27 10:46 - US-UI-005
+- Added `getGame(gameId)` and `joinGame(gameId)` to `web/src/lib/api.ts`
+- Implemented `GameRoom.tsx` lobby UI: fetches game on mount; WAITING renders invite link + Copy Link button; shows Join button when not a participant and game not full; shows blocked message when full and not a participant; ACTIVE/COMPLETE show placeholder text
+- Added 5 new vitest tests covering all lobby states; all 20 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/routes/GameRoom.tsx`, `web/src/lib/api.ts`, `web/src/__tests__/routes.test.tsx`
+- Learnings: `useAuth().user.id` is the caller identity for participant checks; default `mockGetGame` in `beforeEach` prevents existing navigation tests from erroring when they land on `/g/:gameId`
+---
+
 ## 2026-02-27 10:11 - US-UI-004
 - Created `web/src/lib/api.ts` with `listGames()` and `createGame()` — authenticated fetch wrappers that read the Supabase session token and call `/api/games`
 - Updated `web/src/routes/Games.tsx` to fetch and render the game list, show status badges, navigate to `/g/:gameId` on row click, and navigate after Create Game

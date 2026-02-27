@@ -80,7 +80,7 @@
         "If the game has 2 players and the caller is not a participant, show a blocked state"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "No spectators for MVP."
     },
     {

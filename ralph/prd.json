@@ -65,7 +65,7 @@
         "Clicking a game navigates to /g/:gameId"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "MVP: basic list; filtering/search can come later."
     },
     {

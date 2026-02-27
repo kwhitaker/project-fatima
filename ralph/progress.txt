@@ -33,3 +33,12 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-27 10:11 - US-UI-004
+- Created `web/src/lib/api.ts` with `listGames()` and `createGame()` — authenticated fetch wrappers that read the Supabase session token and call `/api/games`
+- Updated `web/src/routes/Games.tsx` to fetch and render the game list, show status badges, navigate to `/g/:gameId` on row click, and navigate after Create Game
+- Added 4 new vitest tests (games list render, row click navigation, Create Game flow, empty state); fixed pre-existing ruff format/lint issues in 6 Python files
+- Tests: 15 vitest pass, 432 pytest pass; ruff + pyright clean; vite build clean
+- Files changed: `web/src/lib/api.ts` (new), `web/src/routes/Games.tsx`, `web/src/__tests__/routes.test.tsx`, `tests/test_idempotency.py` (lint fix), 5 other pre-existing format-only changes
+- Learnings: mock `@/lib/api` with `vi.hoisted()` + `vi.mock()` for clean API isolation; ruff format does not auto-break mock `.return_value` chains — split them into intermediate variables
+---
+

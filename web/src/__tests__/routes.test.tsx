@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { vi, beforeEach, describe, it, expect } from "vitest";
 import App from "../App";
+import type { GameState, PlayerState } from "@/lib/api";
 
 // --- Supabase mock -----------------------------------------------------------
 // vi.mock is hoisted to the top, so use vi.hoisted() for the shared fns.
@@ -30,14 +31,18 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // --- API mock ----------------------------------------------------------------
-const { mockListGames, mockCreateGame } = vi.hoisted(() => ({
+const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame } = vi.hoisted(() => ({
   mockListGames: vi.fn(),
   mockCreateGame: vi.fn(),
+  mockGetGame: vi.fn(),
+  mockJoinGame: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
   listGames: mockListGames,
   createGame: mockCreateGame,
+  getGame: mockGetGame,
+  joinGame: mockJoinGame,
 }));
 
 const MOCK_SESSION = {
@@ -61,6 +66,14 @@ function renderAt(path: string) {
   );
 }
 
+const DEFAULT_GAME: GameState = {
+  game_id: "abc-123",
+  status: "waiting",
+  players: [],
+  state_version: 0,
+  round_number: 1,
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   // Default: unauthenticated, empty game list
@@ -73,6 +86,8 @@ beforeEach(() => {
     state_version: 0,
     round_number: 1,
   });
+  mockGetGame.mockResolvedValue(DEFAULT_GAME);
+  mockJoinGame.mockResolvedValue(DEFAULT_GAME);
 });
 
 // --- Auth guards -------------------------------------------------------------
@@ -243,6 +258,87 @@ describe("games page", () => {
       expect(
         screen.getByRole("heading", { name: /game new-game-id/i })
       ).toBeInTheDocument();
+    });
+  });
+});
+
+// --- Game room lobby (US-UI-005) ---------------------------------------------
+
+function makePlayer(id: string): PlayerState {
+  return { player_id: id, archetype: null, hand: [], archetype_used: false };
+}
+
+describe("game room lobby", () => {
+  const waitingGame: GameState = {
+    game_id: "game-xyz",
+    status: "waiting",
+    players: [makePlayer("other-user")],
+    state_version: 0,
+    round_number: 1,
+  };
+
+  it("shows Join button when WAITING and caller is not a participant", async () => {
+    setupAuth(true); // user id = "user-123"
+    mockGetGame.mockResolvedValue(waitingGame);
+    renderAt("/g/game-xyz");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /join game/i })).toBeInTheDocument();
+    });
+  });
+
+  it("shows blocked message when WAITING, full, and caller is not a participant", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({
+      ...waitingGame,
+      players: [makePlayer("other-user"), makePlayer("another-user")],
+    });
+    renderAt("/g/game-xyz");
+    await waitFor(() => {
+      expect(screen.getByText(/this game is full/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /join/i })).not.toBeInTheDocument();
+  });
+
+  it("does not show Join button when caller is already a participant", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({
+      ...waitingGame,
+      players: [makePlayer("user-123")],
+    });
+    renderAt("/g/game-xyz");
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /game game-xyz/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /join/i })).not.toBeInTheDocument();
+  });
+
+  it("shows a Copy Link button for the invite link", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(waitingGame);
+    renderAt("/g/game-xyz");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /copy link/i })).toBeInTheDocument();
+    });
+  });
+
+  it("Join button calls joinGame and updates the UI", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(waitingGame);
+    const updatedGame: GameState = {
+      ...waitingGame,
+      players: [makePlayer("other-user"), makePlayer("user-123")],
+    };
+    mockJoinGame.mockResolvedValue(updatedGame);
+    const user = userEvent.setup();
+    renderAt("/g/game-xyz");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /join game/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /join game/i }));
+    await waitFor(() => {
+      expect(mockJoinGame).toHaveBeenCalledWith("game-xyz");
+      // Now a participant — no more Join button
+      expect(screen.queryByRole("button", { name: /join game/i })).not.toBeInTheDocument();
     });
   });
 });

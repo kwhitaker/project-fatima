@@ -42,3 +42,21 @@ export async function createGame(): Promise<GameState> {
   if (!res.ok) throw new Error(`Failed to create game: ${res.status}`);
   return res.json() as Promise<GameState>;
 }
+
+export async function getGame(gameId: string): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}`, { headers });
+  if (!res.ok) throw new Error(`Failed to load game: ${res.status}`);
+  return res.json() as Promise<GameState>;
+}
+
+export async function joinGame(gameId: string): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}/join`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) throw new Error(`Failed to join game: ${res.status}`);
+  return res.json() as Promise<GameState>;
+}

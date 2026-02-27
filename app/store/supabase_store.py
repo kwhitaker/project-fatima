@@ -83,9 +83,7 @@ class SupabaseGameStore:
             .or_(f"player1_id.eq.{player_id},player2_id.eq.{player_id}")
             .execute()
         )
-        return [
-            GameState.model_validate(row["current_state"]) for row in (response.data or [])
-        ]
+        return [GameState.model_validate(row["current_state"]) for row in (response.data or [])]
 
     def append_event(
         self,

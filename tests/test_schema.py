@@ -45,6 +45,7 @@ def test_schema_enables_rls() -> None:
 # US-025: cards table schema assertions
 # ---------------------------------------------------------------------------
 
+
 def _cards_sql() -> str:
     """Return only the cards schema migration SQL."""
     cards_file = MIGRATIONS_DIR / "002_cards_schema.sql"

@@ -169,9 +169,16 @@ class TestApiIdempotency:
         game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
         first_user = "alice" if first_player_index == 0 else "bob"
         resp = _as(
-            api_client, first_user, "post", f"/games/{game_id}/moves",
-            json={"card_key": hand[0], "cell_index": 4, "state_version": sv,
-                  "idempotency_key": "move-001"},
+            api_client,
+            first_user,
+            "post",
+            f"/games/{game_id}/moves",
+            json={
+                "card_key": hand[0],
+                "cell_index": 4,
+                "state_version": sv,
+                "idempotency_key": "move-001",
+            },
         )
         assert resp.status_code == 200
 
@@ -216,7 +223,10 @@ class TestApiIdempotency:
         game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
         first_user = "alice" if first_player_index == 0 else "bob"
         resp = _as(
-            api_client, first_user, "post", f"/games/{game_id}/moves",
+            api_client,
+            first_user,
+            "post",
+            f"/games/{game_id}/moves",
             json={"card_key": hand[0], "cell_index": 4, "state_version": sv},
         )
         assert resp.status_code == 200
@@ -255,10 +265,8 @@ class TestSupabaseIdempotency:
 
     def _set_idem_lookup(self, events_table: MagicMock, data: dict | None) -> None:
         """Configure the mock for the idempotency key lookup query."""
-        chain = (
-            events_table.select.return_value.eq.return_value.eq.return_value
-            .maybe_single.return_value.execute.return_value
-        )
+        execute_rv = events_table.select.return_value.eq.return_value.eq.return_value
+        chain = execute_rv.maybe_single.return_value.execute.return_value
         chain.data = data
 
     def test_duplicate_key_raises_duplicate_event_error(self, mock_client: tuple) -> None:
@@ -269,9 +277,7 @@ class TestSupabaseIdempotency:
 
         store = SupabaseGameStore(client=client)
         with pytest.raises(DuplicateEventError):
-            store.append_event(
-                "g1", "MOVE", {}, 0, _make_state("g1", 1), idempotency_key="dup-key"
-            )
+            store.append_event("g1", "MOVE", {}, 0, _make_state("g1", 1), idempotency_key="dup-key")
 
     def test_new_key_proceeds_and_stores_key(self, mock_client: tuple) -> None:
         client, games_table, events_table = mock_client

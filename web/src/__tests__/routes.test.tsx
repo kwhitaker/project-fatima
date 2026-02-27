@@ -29,6 +29,17 @@ vi.mock("@/lib/supabase", () => ({
   },
 }));
 
+// --- API mock ----------------------------------------------------------------
+const { mockListGames, mockCreateGame } = vi.hoisted(() => ({
+  mockListGames: vi.fn(),
+  mockCreateGame: vi.fn(),
+}));
+
+vi.mock("@/lib/api", () => ({
+  listGames: mockListGames,
+  createGame: mockCreateGame,
+}));
+
 const MOCK_SESSION = {
   user: { id: "user-123", email: "test@example.com" },
   access_token: "fake-token",
@@ -52,8 +63,16 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Default: unauthenticated
+  // Default: unauthenticated, empty game list
   setupAuth(false);
+  mockListGames.mockResolvedValue([]);
+  mockCreateGame.mockResolvedValue({
+    game_id: "new-game-id",
+    status: "waiting",
+    players: [],
+    state_version: 0,
+    round_number: 1,
+  });
 });
 
 // --- Auth guards -------------------------------------------------------------
@@ -165,6 +184,64 @@ describe("games page", () => {
     await waitFor(() => {
       expect(
         screen.getByRole("button", { name: /log out/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows 'No games yet.' when the list is empty", async () => {
+    setupAuth(true);
+    mockListGames.mockResolvedValue([]);
+    renderAt("/games");
+    await waitFor(() => {
+      expect(screen.getByText(/no games yet/i)).toBeInTheDocument();
+    });
+  });
+
+  it("renders a game row for each game returned by the API", async () => {
+    setupAuth(true);
+    mockListGames.mockResolvedValue([
+      { game_id: "game-aaa", status: "waiting", players: [], state_version: 0, round_number: 1 },
+      { game_id: "game-bbb", status: "active", players: [], state_version: 3, round_number: 1 },
+    ]);
+    renderAt("/games");
+    await waitFor(() => {
+      expect(screen.getByText("game-aaa")).toBeInTheDocument();
+      expect(screen.getByText("game-bbb")).toBeInTheDocument();
+      expect(screen.getByText("Waiting")).toBeInTheDocument();
+      expect(screen.getByText("Active")).toBeInTheDocument();
+    });
+  });
+
+  it("clicking a game row navigates to /g/:gameId", async () => {
+    setupAuth(true);
+    mockListGames.mockResolvedValue([
+      { game_id: "game-ccc", status: "waiting", players: [], state_version: 0, round_number: 1 },
+    ]);
+    const user = userEvent.setup();
+    renderAt("/games");
+    await waitFor(() => {
+      expect(screen.getByText("game-ccc")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("game-ccc"));
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: /game game-ccc/i })
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("Create Game button calls createGame and navigates to /g/:gameId", async () => {
+    setupAuth(true);
+    const user = userEvent.setup();
+    renderAt("/games");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create game/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /create game/i }));
+    await waitFor(() => {
+      expect(mockCreateGame).toHaveBeenCalledOnce();
+      expect(
+        screen.getByRole("heading", { name: /game new-game-id/i })
       ).toBeInTheDocument();
     });
   });

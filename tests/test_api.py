@@ -139,17 +139,27 @@ def test_full_happy_path(client: TestClient) -> None:
     # 5. First player plays
     first_client_method = "alice" if first_player_index == 0 else "bob"
     resp = (
-        _alice(client, "post", f"/games/{game_id}/moves", json={
-            "card_key": first_hand[0],
-            "cell_index": 4,
-            "state_version": state_version,
-        })
+        _alice(
+            client,
+            "post",
+            f"/games/{game_id}/moves",
+            json={
+                "card_key": first_hand[0],
+                "cell_index": 4,
+                "state_version": state_version,
+            },
+        )
         if first_client_method == "alice"
-        else _bob(client, "post", f"/games/{game_id}/moves", json={
-            "card_key": first_hand[0],
-            "cell_index": 4,
-            "state_version": state_version,
-        })
+        else _bob(
+            client,
+            "post",
+            f"/games/{game_id}/moves",
+            json={
+                "card_key": first_hand[0],
+                "cell_index": 4,
+                "state_version": state_version,
+            },
+        )
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -163,17 +173,27 @@ def test_full_happy_path(client: TestClient) -> None:
 
     # 6. Second player plays
     resp = (
-        _bob(client, "post", f"/games/{game_id}/moves", json={
-            "card_key": second_hand[0],
-            "cell_index": 0,
-            "state_version": state_version,
-        })
+        _bob(
+            client,
+            "post",
+            f"/games/{game_id}/moves",
+            json={
+                "card_key": second_hand[0],
+                "cell_index": 0,
+                "state_version": state_version,
+            },
+        )
         if second_user == "bob"
-        else _alice(client, "post", f"/games/{game_id}/moves", json={
-            "card_key": second_hand[0],
-            "cell_index": 0,
-            "state_version": state_version,
-        })
+        else _alice(
+            client,
+            "post",
+            f"/games/{game_id}/moves",
+            json={
+                "card_key": second_hand[0],
+                "cell_index": 0,
+                "state_version": state_version,
+            },
+        )
     )
     assert resp.status_code == 200
     data = resp.json()

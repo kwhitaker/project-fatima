@@ -124,9 +124,7 @@ def leave_game(
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")
 
-    player_index = next(
-        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
-    )
+    player_index = next((i for i, p in enumerate(state.players) if p.player_id == player_id), None)
     if player_index is None:
         raise PermissionError(f"Player {player_id!r} is not in this game")
 

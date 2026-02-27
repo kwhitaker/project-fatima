@@ -33,6 +33,15 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-27 15:30 - US-UI-007
+- Added `placeCard(gameId, cardKey, cellIndex, stateVersion, idempotencyKey)` to `web/src/lib/api.ts`; throws error with `.status` property on non-OK responses
+- Updated `BoardGrid` to accept `canPlace`/`onCellClick` props; empty cells become `<button aria-label="cell N">` when it's the caller's turn and a card is selected
+- Added `handlePlaceCard`, `moveError`, and `movePending` states to `GameRoom.tsx`; card hand buttons disabled when not caller's turn; 409/422 errors shown + game refetched
+- Tests: 6 new vitest tests (37 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: attach `.status` to Error via `Object.assign(err, { status })` instead of a custom class to avoid mock complexity; `crypto.randomUUID()` is available in jsdom test env; render empty cells as `<button>` elements (not divs) to leverage `getByRole("button", { name: /cell N/ })` in tests
+---
+
 ## 2026-02-27 15:19 - US-UI-006
 - Added `BoardCell`, `GameResult` types and `board`/`current_player_index`/`result` fields to `GameState` in `api.ts`; added `leaveGame(gameId, stateVersion)` function (handles 204 no-content)
 - Implemented `BoardGrid` component (3×3 grid, blue=mine/red=opponent ownership); active game view: turn indicator, score, hand (selectable buttons), opponent card count, archetype display, Leave button; complete game view: result banner (win/lose/draw), final board, Leave button; Leave navigates to /games

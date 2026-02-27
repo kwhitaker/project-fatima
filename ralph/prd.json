@@ -111,7 +111,7 @@
         "After a successful move, update UI from the returned snapshot"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Keep power inputs out of scope here; focus on the base move loop."
     },
     {

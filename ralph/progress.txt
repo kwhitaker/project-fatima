@@ -101,3 +101,13 @@ Started: 2026-02-26
 - Learnings: mock `@/lib/api` with `vi.hoisted()` + `vi.mock()` for clean API isolation; ruff format does not auto-break mock `.return_value` chains — split them into intermediate variables
 ---
 
+## 2026-02-28 21:50 - US-UI-012
+- Added `@playwright/test` dev dependency; installed chromium headless shell via `bunx playwright install chromium`
+- Created `web/playwright.config.ts` (testDir: `./e2e`, chromium, webServer: `bun dev` at port 5173, reuseExistingServer in dev)
+- Created `web/e2e/smoke.spec.ts`: two-browser-context smoke test (P1 + P2) using `page.addInitScript` to inject Supabase sessions into localStorage (key: `sb-yhrwetmhhrxeyiiijixb-auth-token`) and `page.route('**/api/**')` to mock all app API calls; exercises create → share link → join → play one move
+- Added `test:e2e` script to `web/package.json`; added vitest `include: ['src/**']` to exclude `e2e/` from vitest; documented e2e commands in `AGENTS.md`
+- Tests: 1 Playwright smoke test passes (1.0s), 58 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/playwright.config.ts` (new), `web/e2e/smoke.spec.ts` (new), `web/package.json`, `web/vite.config.ts`, `web/bun.lock`, `AGENTS.md`
+- Learnings: Supabase JS v2 storage key is `sb-${new URL(url).hostname.split('.')[0]}-auth-token` (confirmed via Node script); inject session via `page.addInitScript(fn, {k,v})` before any scripts run; vitest needs `include: ['src/**']` when `e2e/` exists to avoid picking up Playwright's `test()` function; `page.route('**/api/**')` intercepts before Vite proxy fires; two browser contexts share Node.js closure state so route handlers can read/write shared `currentGame`
+---
+

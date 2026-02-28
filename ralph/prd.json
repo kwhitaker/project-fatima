@@ -183,7 +183,7 @@
         "Document canonical commands to run unit + smoke tests"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Auth in tests may require a test-only strategy (e.g., seeded test users or a stubbed auth mode)."
     }
   ]

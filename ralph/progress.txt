@@ -33,6 +33,14 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-28 16:15 - US-UI-010
+- Added Supabase Realtime subscription in `GameRoom.tsx`: subscribes to `game_events` INSERT events filtered by `game_id` via `supabase.channel("game:${gameId}").on(...).subscribe(...)` following `docs/realtime.md` contract
+- On INSERT, refetches `GET /games/:gameId` and replaces local snapshot state; unsubscribes (`supabase.removeChannel`) on unmount; starts 30s fallback polling interval when channel status is CLOSED/CHANNEL_ERROR, clears it on SUBSCRIBED
+- Tests: 4 new vitest tests (52 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: `vi.hoisted()` blocks are independent — place realtime mocks in their own block and extend the `vi.mock()` factory to include `channel`/`removeChannel`; capture handlers by mutating a shared `realtimeCbs` object from the mock implementation; reset `realtimeCbs` fields in `beforeEach` since `vi.clearAllMocks()` does not clear mock implementations; use `vi.useFakeTimers()` locally in a test (with try/finally + `vi.useRealTimers()`) to test interval behavior; `mockGetGame.mock.calls.length` counts calls synchronously so it works even before the returned promise resolves
+---
+
 ## 2026-02-28 16:00 - US-UI-009
 - Added `powerOptions` optional param to `placeCard` in `api.ts` (options object for `useArchetype`, `skulkerBoostSide`, `presenceBoostDirection`)
 - Added "Use Power" checkbox toggle to GameRoom active view (visible when caller has unused archetype, on their turn); Skulker/Presence show n/e/s/w side selector on toggle; cells blocked until side selected for those archetypes

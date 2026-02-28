@@ -155,7 +155,7 @@
         "Implement a simple fallback refetch interval when realtime disconnects"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Follow docs/realtime.md contract; MVP-simple refetch strategy only."
     },
     {

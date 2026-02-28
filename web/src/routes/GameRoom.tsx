@@ -65,6 +65,8 @@ export default function GameRoom() {
   const [movePending, setMovePending] = useState(false);
   const [archetypePending, setArchetypePending] = useState(false);
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
+  const [usePower, setUsePower] = useState(false);
+  const [powerSide, setPowerSide] = useState<string | null>(null);
 
   useEffect(() => {
     if (!gameId) return;
@@ -112,17 +114,28 @@ export default function GameRoom() {
     if (!selectedCard || !game || !gameId) return;
     setMovePending(true);
     setMoveError(null);
+    const callerId = user?.id ?? "";
+    const myIdx = game.players.findIndex((p) => p.player_id === callerId);
+    const myPlr = myIdx >= 0 ? game.players[myIdx] : undefined;
     const idempotencyKey = crypto.randomUUID();
     try {
-      const updated = await placeCard(
-        gameId,
-        selectedCard,
-        cellIndex,
-        game.state_version,
-        idempotencyKey
-      );
+      let updated: GameState;
+      if (usePower) {
+        updated = await placeCard(
+          gameId, selectedCard, cellIndex, game.state_version, idempotencyKey,
+          {
+            useArchetype: true,
+            skulkerBoostSide: myPlr?.archetype === "skulker" ? (powerSide ?? undefined) : undefined,
+            presenceBoostDirection: myPlr?.archetype === "presence" ? (powerSide ?? undefined) : undefined,
+          }
+        );
+      } else {
+        updated = await placeCard(gameId, selectedCard, cellIndex, game.state_version, idempotencyKey);
+      }
       setGame(updated);
       setSelectedCard(null);
+      setUsePower(false);
+      setPowerSide(null);
     } catch (e: unknown) {
       const errStatus = (e as { status?: number }).status;
       setMoveError(e instanceof Error ? e.message : "Move failed");
@@ -233,7 +246,14 @@ export default function GameRoom() {
           <BoardGrid
             board={game.board}
             myIndex={myIndex}
-            canPlace={game.current_player_index === myIndex && selectedCard !== null && !movePending}
+            canPlace={
+              game.current_player_index === myIndex &&
+              selectedCard !== null &&
+              !movePending &&
+              (!usePower ||
+                !(myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence") ||
+                powerSide !== null)
+            }
             onCellClick={(i) => void handlePlaceCard(i)}
           />
 
@@ -262,6 +282,39 @@ export default function GameRoom() {
               </div>
               {archetypeError && (
                 <p className="text-destructive text-sm mt-1">{archetypeError}</p>
+              )}
+            </div>
+          )}
+
+          {/* Use Power toggle */}
+          {myPlayer?.archetype && !myPlayer.archetype_used && game.current_player_index === myIndex && (
+            <div>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  aria-label="Use Power"
+                  checked={usePower}
+                  onChange={(e) => {
+                    setUsePower(e.target.checked);
+                    setPowerSide(null);
+                  }}
+                  disabled={movePending}
+                />
+                Use Power
+              </label>
+              {usePower && (myPlayer.archetype === "skulker" || myPlayer.archetype === "presence") && (
+                <div className="flex gap-2 mt-2">
+                  {(["n", "e", "s", "w"] as const).map((side) => (
+                    <Button
+                      key={side}
+                      variant={powerSide === side ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setPowerSide(powerSide === side ? null : side)}
+                    >
+                      {side}
+                    </Button>
+                  ))}
+                </div>
               )}
             </div>
           )}

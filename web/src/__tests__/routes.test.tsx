@@ -738,6 +738,109 @@ describe("archetype selection UX (US-UI-008)", () => {
   });
 });
 
+// --- Archetype power UX (US-UI-009) ------------------------------------------
+
+describe("archetype power UX (US-UI-009)", () => {
+  const makePowerGame = (archetype: PlayerState["archetype"], archetypeUsed = false) =>
+    makeGame({
+      game_id: "game-power",
+      status: "active",
+      state_version: 5,
+      current_player_index: 0,
+      players: [
+        { player_id: "user-123", archetype, hand: ["card-a"], archetype_used: archetypeUsed },
+        { player_id: "other-user", archetype: "caster" as const, hand: ["card-c"], archetype_used: false },
+      ],
+      board: EMPTY_BOARD,
+    });
+
+  it("shows Use Power toggle when caller has unused archetype on their turn", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("martial"));
+    renderAt("/g/game-power");
+    await waitFor(() => {
+      expect(screen.getByRole("checkbox", { name: /use power/i })).toBeInTheDocument();
+    });
+  });
+
+  it("does not show Use Power toggle when archetype is already used", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("martial", true));
+    renderAt("/g/game-power");
+    await waitFor(() => {
+      expect(screen.getByText(/your turn/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("checkbox", { name: /use power/i })).not.toBeInTheDocument();
+  });
+
+  it("skulker: shows side selector (n/e/s/w) after Use Power is toggled", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("skulker"));
+    const user = userEvent.setup();
+    renderAt("/g/game-power");
+    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^n$/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^e$/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^s$/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^w$/i })).toBeInTheDocument();
+    });
+  });
+
+  it("presence: shows direction selector (n/e/s/w) after Use Power is toggled", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("presence"));
+    const user = userEvent.setup();
+    renderAt("/g/game-power");
+    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^n$/i })).toBeInTheDocument();
+    });
+  });
+
+  it("submits move with use_archetype=true and no extra params for martial", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("martial"));
+    mockPlaceCard.mockResolvedValue(makePowerGame("martial"));
+    const user = userEvent.setup();
+    renderAt("/g/game-power");
+    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(mockPlaceCard).toHaveBeenCalledWith(
+        "game-power", "card-a", 0, 5, expect.any(String),
+        { useArchetype: true, skulkerBoostSide: undefined, presenceBoostDirection: undefined }
+      );
+    });
+  });
+
+  it("submits move with skulker_boost_side when skulker power used with side selected", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("skulker"));
+    mockPlaceCard.mockResolvedValue(makePowerGame("skulker"));
+    const user = userEvent.setup();
+    renderAt("/g/game-power");
+    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /^n$/i }));
+    await user.click(screen.getByRole("button", { name: /^n$/i }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
+    await user.click(screen.getByRole("button", { name: /cell 0/i }));
+    await waitFor(() => {
+      expect(mockPlaceCard).toHaveBeenCalledWith(
+        "game-power", "card-a", 0, 5, expect.any(String),
+        { useArchetype: true, skulkerBoostSide: "n", presenceBoostDirection: undefined }
+      );
+    });
+  });
+});
+
 // --- shadcn Button component -------------------------------------------------
 
 describe("Button component", () => {

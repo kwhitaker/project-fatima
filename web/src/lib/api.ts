@@ -80,7 +80,12 @@ export async function placeCard(
   cardKey: string,
   cellIndex: number,
   stateVersion: number,
-  idempotencyKey: string
+  idempotencyKey: string,
+  powerOptions?: {
+    useArchetype?: boolean;
+    skulkerBoostSide?: string;
+    presenceBoostDirection?: string;
+  }
 ): Promise<GameState> {
   const headers = await authHeaders();
   const res = await fetch(`/api/games/${gameId}/moves`, {
@@ -91,6 +96,9 @@ export async function placeCard(
       cell_index: cellIndex,
       state_version: stateVersion,
       idempotency_key: idempotencyKey,
+      ...(powerOptions?.useArchetype && { use_archetype: true }),
+      ...(powerOptions?.skulkerBoostSide && { skulker_boost_side: powerOptions.skulkerBoostSide }),
+      ...(powerOptions?.presenceBoostDirection && { presence_boost_direction: powerOptions.presenceBoostDirection }),
     }),
   });
   if (!res.ok) {

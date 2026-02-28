@@ -170,7 +170,7 @@
         "Show an end-of-game banner when the game completes (win/lose/draw/forfeit)"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Keep implementation low-effort and replaceable; prefer CSS/Framer Motion-level work over heavy canvas/3D."
     },
     {

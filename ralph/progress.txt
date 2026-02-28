@@ -33,6 +33,16 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-28 21:30 - US-UI-011
+- Added `LastMoveInfo` interface to `api.ts` and `last_move?: LastMoveInfo | null` to `GameState`; backend already serializes this field per move
+- Added board-diff tracking via `prevBoardRef` + `useEffect([game])` in `GameRoom.tsx`; computes `placedCells` / `capturedCells` sets on each snapshot update; passes them to `BoardGrid` for CSS animation classes (`animate-card-placed`, `animate-card-captured`) and `data-anim` attributes
+- Added Mists feedback banner in ACTIVE view (blue/purple/muted styling per effect, shows roll + "Fog"/"Omen" label); added Combo indicator (`"Combo! ×N"`) when `capturedCells.size >= 2`; end-of-game banner already existed from US-UI-006
+- CSS keyframe animations added to `index.css`: `card-placed` (scale-in) and `card-captured` (brightness pulse); 6 new vitest tests (58 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/index.css`, `web/src/__tests__/routes.test.tsx`
+- Learnings: board-diff tracking via a `useRef` (not state) avoids extra renders; `game.last_move != null` catches both `null` and `undefined` (needed since factory omits the field); no timeout needed for animation cleanup — clearing happens naturally on next `[game]` useEffect run; CSS animations in jsdom don't execute so test only the visible text indicators (mists banner, combo text), not the animation classes themselves
+
+---
+
 ## 2026-02-28 16:15 - US-UI-010
 - Added Supabase Realtime subscription in `GameRoom.tsx`: subscribes to `game_events` INSERT events filtered by `game_id` via `supabase.channel("game:${gameId}").on(...).subscribe(...)` following `docs/realtime.md` contract
 - On INSERT, refetches `GET /games/:gameId` and replaces local snapshot state; unsubscribes (`supabase.removeChannel`) on unmount; starts 30s fallback polling interval when channel status is CLOSED/CHANNEL_ERROR, clears it on SUBSCRIBED

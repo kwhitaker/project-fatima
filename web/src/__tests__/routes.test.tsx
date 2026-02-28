@@ -19,6 +19,34 @@ const {
   mockSignOut: vi.fn(),
 }));
 
+// --- Realtime mock -----------------------------------------------------------
+const { mockChannel, mockRemoveChannel, realtimeCbs } = vi.hoisted(() => {
+  const realtimeCbs = {
+    insertHandler: null as ((() => void) | null),
+    statusHandler: null as (((status: string) => void) | null),
+  };
+
+  // channelObj supports .on(...).subscribe(...) chaining
+  type ChannelObj = { on: ReturnType<typeof vi.fn>; subscribe: ReturnType<typeof vi.fn> };
+  const channelObj = {} as ChannelObj;
+  channelObj.on = vi.fn().mockImplementation(
+    (_event: unknown, _filter: unknown, handler: () => void) => {
+      realtimeCbs.insertHandler = handler;
+      return channelObj;
+    }
+  );
+  channelObj.subscribe = vi.fn().mockImplementation((handler: (s: string) => void) => {
+    realtimeCbs.statusHandler = handler;
+    return channelObj;
+  });
+
+  return {
+    mockChannel: vi.fn().mockReturnValue(channelObj),
+    mockRemoveChannel: vi.fn().mockResolvedValue(undefined),
+    realtimeCbs,
+  };
+});
+
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -27,6 +55,8 @@ vi.mock("@/lib/supabase", () => ({
       signInWithOtp: mockSignInWithOtp,
       signOut: mockSignOut,
     },
+    channel: mockChannel,
+    removeChannel: mockRemoveChannel,
   },
 }));
 
@@ -93,6 +123,9 @@ const DEFAULT_GAME = makeGame();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Reset realtime callbacks so tests don't share state
+  realtimeCbs.insertHandler = null;
+  realtimeCbs.statusHandler = null;
   // Default: unauthenticated, empty game list
   setupAuth(false);
   mockListGames.mockResolvedValue([]);
@@ -838,6 +871,84 @@ describe("archetype power UX (US-UI-009)", () => {
         { useArchetype: true, skulkerBoostSide: "n", presenceBoostDirection: undefined }
       );
     });
+  });
+});
+
+// --- Realtime subscription (US-UI-010) ---------------------------------------
+
+describe("realtime subscription (US-UI-010)", () => {
+  const rtGame = makeGame({
+    game_id: "game-rt",
+    status: "active",
+    state_version: 3,
+    players: [
+      { player_id: "user-123", archetype: null, hand: ["card-a"], archetype_used: false },
+      { player_id: "other-user", archetype: null, hand: ["card-b"], archetype_used: false },
+    ],
+    board: EMPTY_BOARD,
+    current_player_index: 0,
+  });
+
+  it("subscribes to Supabase Realtime channel on mount", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(rtGame);
+    renderAt("/g/game-rt");
+
+    await waitFor(() => {
+      expect(mockChannel).toHaveBeenCalledWith("game:game-rt");
+    });
+  });
+
+  it("refetches game snapshot when INSERT event fires", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(rtGame);
+    renderAt("/g/game-rt");
+
+    await waitFor(() => {
+      expect(realtimeCbs.insertHandler).not.toBeNull();
+    });
+
+    // initial load = 1 call; simulate INSERT event
+    realtimeCbs.insertHandler!();
+
+    await waitFor(() => {
+      expect(mockGetGame).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("removes the channel on unmount", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(rtGame);
+    const { unmount } = renderAt("/g/game-rt");
+
+    await waitFor(() => {
+      expect(mockChannel).toHaveBeenCalled();
+    });
+
+    unmount();
+
+    expect(mockRemoveChannel).toHaveBeenCalled();
+  });
+
+  it("starts fallback polling interval when channel status is CLOSED", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(rtGame);
+    renderAt("/g/game-rt");
+
+    await waitFor(() => {
+      expect(realtimeCbs.statusHandler).not.toBeNull();
+    });
+
+    vi.useFakeTimers();
+    try {
+      realtimeCbs.statusHandler!("CLOSED");
+      // Advance 30 seconds — fallback interval should fire
+      vi.advanceTimersByTime(30_000);
+      // getGame was called once on mount; now at least once more via interval
+      expect(mockGetGame.mock.calls.length).toBeGreaterThanOrEqual(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

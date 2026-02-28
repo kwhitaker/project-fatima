@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type GameState } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 function BoardGrid({
   board,
@@ -76,6 +77,48 @@ export default function GameRoom() {
         setError(e instanceof Error ? e.message : "Failed to load game")
       )
       .finally(() => setLoading(false));
+  }, [gameId]);
+
+  // Realtime subscription: refetch snapshot on game_events INSERT
+  useEffect(() => {
+    if (!gameId) return;
+
+    const refetch = () => {
+      void getGame(gameId).then(setGame).catch(() => null);
+    };
+
+    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+
+    const channel = supabase
+      .channel(`game:${gameId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "game_events",
+          filter: `game_id=eq.${gameId}`,
+        },
+        (_payload) => { refetch(); }
+      )
+      .subscribe((status) => {
+        const s = status as string;
+        if (s === "CLOSED" || s === "CHANNEL_ERROR") {
+          if (!fallbackInterval) {
+            fallbackInterval = setInterval(refetch, 30_000);
+          }
+        } else if (s === "SUBSCRIBED") {
+          if (fallbackInterval) {
+            clearInterval(fallbackInterval);
+            fallbackInterval = null;
+          }
+        }
+      });
+
+    return () => {
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      void supabase.removeChannel(channel);
+    };
   }, [gameId]);
 
   const handleJoin = async () => {

@@ -17,6 +17,11 @@ export interface GameResult {
   is_draw: boolean;
 }
 
+export interface LastMoveInfo {
+  mists_roll: number;   // 1–6 die result
+  mists_effect: string; // "fog" | "omen" | "none"
+}
+
 export interface GameState {
   game_id: string;
   status: "waiting" | "active" | "complete";
@@ -27,6 +32,7 @@ export interface GameState {
   state_version: number;
   round_number: number;
   result: GameResult | null;
+  last_move?: LastMoveInfo | null;
 }
 
 async function authHeaders(): Promise<HeadersInit> {

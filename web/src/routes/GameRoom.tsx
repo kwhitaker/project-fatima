@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -11,11 +11,15 @@ function BoardGrid({
   myIndex,
   canPlace = false,
   onCellClick,
+  placedCells,
+  capturedCells,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
   canPlace?: boolean;
   onCellClick?: (index: number) => void;
+  placedCells?: Set<number>;
+  capturedCells?: Set<number>;
 }) {
   return (
     <div
@@ -23,13 +27,17 @@ function BoardGrid({
       aria-label="game board"
     >
       {board.map((cell, i) => {
+        const isPlaced = placedCells?.has(i) ?? false;
+        const isCaptured = capturedCells?.has(i) ?? false;
         const cellClass = cn(
           "w-20 h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
           cell === null
             ? "bg-muted text-muted-foreground"
             : cell.owner === myIndex
             ? "bg-blue-200 text-blue-900"
-            : "bg-red-200 text-red-900"
+            : "bg-red-200 text-red-900",
+          isPlaced && "animate-card-placed",
+          isCaptured && "animate-card-captured"
         );
         if (canPlace && cell === null) {
           return (
@@ -42,7 +50,11 @@ function BoardGrid({
           );
         }
         return (
-          <div key={i} className={cellClass}>
+          <div
+            key={i}
+            className={cellClass}
+            data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+          >
             {cell ? cell.card_key : ""}
           </div>
         );
@@ -68,6 +80,31 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
+
+  // Animation tracking: diff prev board vs new board on each game update
+  const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
+  const [placedCells, setPlacedCells] = useState<Set<number>>(new Set());
+  const [capturedCells, setCapturedCells] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (!game) return;
+    const prev = prevBoardRef.current;
+    prevBoardRef.current = game.board;
+    if (!prev) return;
+
+    const placed = new Set<number>();
+    const captured = new Set<number>();
+    game.board.forEach((cell, i) => {
+      const prevCell = prev[i];
+      if (prevCell === null && cell !== null) {
+        placed.add(i);
+      } else if (prevCell !== null && cell !== null && prevCell.owner !== cell.owner) {
+        captured.add(i);
+      }
+    });
+    setPlacedCells(placed);
+    setCapturedCells(captured);
+  }, [game]);
 
   useEffect(() => {
     if (!gameId) return;
@@ -285,6 +322,30 @@ export default function GameRoom() {
             Score — You: {myScore} | Opponent: {opponentScore}
           </p>
 
+          {/* Mists feedback */}
+          {game.last_move != null && (
+            <div
+              className={cn(
+                "p-3 rounded border text-sm",
+                game.last_move.mists_effect === "fog" && "bg-blue-50 border-blue-200 text-blue-800",
+                game.last_move.mists_effect === "omen" && "bg-purple-50 border-purple-200 text-purple-800",
+                game.last_move.mists_effect === "none" && "bg-muted border-border text-muted-foreground"
+              )}
+              aria-label="mists feedback"
+            >
+              <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
+              {game.last_move.mists_effect === "fog" && " — Fog: −1 to comparisons"}
+              {game.last_move.mists_effect === "omen" && " — Omen: +1 to comparisons"}
+            </div>
+          )}
+
+          {/* Combo indicator */}
+          {capturedCells.size >= 2 && (
+            <div className="text-center font-bold text-purple-700" aria-live="polite">
+              Combo! ×{capturedCells.size}
+            </div>
+          )}
+
           {/* Board */}
           <BoardGrid
             board={game.board}
@@ -298,6 +359,8 @@ export default function GameRoom() {
                 powerSide !== null)
             }
             onCellClick={(i) => void handlePlaceCard(i)}
+            placedCells={placedCells}
+            capturedCells={capturedCells}
           />
 
           {/* Move error */}

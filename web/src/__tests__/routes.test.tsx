@@ -952,6 +952,125 @@ describe("realtime subscription (US-UI-010)", () => {
   });
 });
 
+// --- Effects: Mists + Captures + End-game banner (US-UI-011) -----------------
+
+describe("effects (US-UI-011)", () => {
+  const effectsGame = makeGame({
+    game_id: "game-fx",
+    status: "active",
+    state_version: 4,
+    current_player_index: 0,
+    players: [
+      { player_id: "user-123", archetype: null, hand: ["card-a"], archetype_used: false },
+      { player_id: "other-user", archetype: null, hand: ["card-c", "card-d"], archetype_used: false },
+    ],
+    board: [
+      { card_key: "card-x", owner: 1 } as BoardCell,
+      { card_key: "card-y", owner: 1 } as BoardCell,
+      null, null, null, null, null, null, null,
+    ],
+  });
+
+  it("shows Fog mists banner when last_move has mists_effect fog", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({ ...effectsGame, last_move: { mists_roll: 1, mists_effect: "fog" } });
+    renderAt("/g/game-fx");
+    await waitFor(() => {
+      expect(screen.getByLabelText(/mists feedback/i)).toBeInTheDocument();
+      expect(screen.getByText(/fog/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows Omen mists banner when last_move has mists_effect omen", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({ ...effectsGame, last_move: { mists_roll: 6, mists_effect: "omen" } });
+    renderAt("/g/game-fx");
+    await waitFor(() => {
+      expect(screen.getByLabelText(/mists feedback/i)).toBeInTheDocument();
+      expect(screen.getByText(/omen/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows the mists roll number in the banner", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({ ...effectsGame, last_move: { mists_roll: 4, mists_effect: "none" } });
+    renderAt("/g/game-fx");
+    await waitFor(() => {
+      expect(screen.getByLabelText(/mists feedback/i)).toBeInTheDocument();
+      // Roll number 4 should appear in the Mists banner text
+      expect(screen.getByText(/roll.*4/i)).toBeInTheDocument();
+    });
+  });
+
+  it("does not show mists banner when last_move is null", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue({ ...effectsGame, last_move: null });
+    renderAt("/g/game-fx");
+    await waitFor(() => {
+      expect(screen.getByText(/your turn/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByLabelText(/mists feedback/i)).not.toBeInTheDocument();
+  });
+
+  it("shows combo indicator when 2+ cells are captured in one move", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(effectsGame);
+
+    // After placing card-a at cell 2, cells 0+1 flip to caller
+    const capturedBoard: (BoardCell | null)[] = [
+      { card_key: "card-x", owner: 0 },
+      { card_key: "card-y", owner: 0 },
+      { card_key: "card-a", owner: 0 },
+      null, null, null, null, null, null,
+    ];
+    mockPlaceCard.mockResolvedValue({ ...effectsGame, board: capturedBoard, current_player_index: 1 });
+
+    const user = userEvent.setup();
+    renderAt("/g/game-fx");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 2/i }));
+    await user.click(screen.getByRole("button", { name: /cell 2/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/combo/i)).toBeInTheDocument();
+    });
+  });
+
+  it("does not show combo indicator for a single capture", async () => {
+    setupAuth(true);
+    // Initial board: only cell 0 owned by opponent
+    const singleCaptureGame = makeGame({
+      ...effectsGame,
+      board: [
+        { card_key: "card-x", owner: 1 } as BoardCell,
+        null, null, null, null, null, null, null, null,
+      ],
+    });
+    mockGetGame.mockResolvedValue(singleCaptureGame);
+
+    const singleCaptureBoard: (BoardCell | null)[] = [
+      { card_key: "card-x", owner: 0 },  // captured
+      { card_key: "card-a", owner: 0 },  // placed
+      null, null, null, null, null, null, null,
+    ];
+    mockPlaceCard.mockResolvedValue({ ...singleCaptureGame, board: singleCaptureBoard, current_player_index: 1 });
+
+    const user = userEvent.setup();
+    renderAt("/g/game-fx");
+    await waitFor(() => screen.getByRole("button", { name: "card-a" }));
+    await user.click(screen.getByRole("button", { name: "card-a" }));
+    await waitFor(() => screen.getByRole("button", { name: /cell 1/i }));
+    await user.click(screen.getByRole("button", { name: /cell 1/i }));
+
+    await waitFor(() => {
+      // After move, board updated — verify no combo text
+      expect(screen.getByText(/opponent.?s turn/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/combo/i)).not.toBeInTheDocument();
+  });
+});
+
 // --- shadcn Button component -------------------------------------------------
 
 describe("Button component", () => {

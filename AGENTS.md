@@ -46,6 +46,10 @@ cd web && bun run test
 
 # Watch mode
 cd web && bun run test:watch
+
+# E2E smoke tests (Playwright; starts Vite dev server automatically)
+# One-time browser install: cd web && bunx playwright install chromium
+cd web && bun run test:e2e
 ```
 
 ## Ralph (autonomous loop)

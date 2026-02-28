@@ -33,6 +33,14 @@ Started: 2026-02-26
 - Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
+## 2026-02-28 16:00 - US-UI-009
+- Added `powerOptions` optional param to `placeCard` in `api.ts` (options object for `useArchetype`, `skulkerBoostSide`, `presenceBoostDirection`)
+- Added "Use Power" checkbox toggle to GameRoom active view (visible when caller has unused archetype, on their turn); Skulker/Presence show n/e/s/w side selector on toggle; cells blocked until side selected for those archetypes
+- Tests: 6 new vitest tests (48 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: When extending mock call signatures with an optional arg, using `undefined` explicitly vs omitting the arg matters for `toHaveBeenCalledWith` checks — use an `if/else` branch to call with or without the extra arg; `getByText(/archetype/i)` can collide with checkbox label text — keep label text generic (no archetype name) to avoid multi-match errors in existing tests
+---
+
 ## 2026-02-27 15:45 - US-UI-008
 - Added `selectArchetype(gameId, archetype)` to `web/src/lib/api.ts`; throws typed error with `.status` on failure
 - Added archetype selection prompt in GameRoom ACTIVE view: shows 5 archetype buttons when caller has no archetype; hides after selection; displays selected archetype + Available/Used status for both players

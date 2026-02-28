@@ -141,7 +141,7 @@
         "On 422, show an actionable error message and refetch snapshot"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Do not attempt client-side prediction; server decides outcomes."
     },
     {

@@ -83,7 +83,7 @@
       ],
       "priority": 5,
       "passes": false,
-      "notes": "cards.jsonl is JSON Lines — add 'element' key to each object. Read the existing tags carefully; some cards may fit multiple elements, choose one. Ambiguous cards (generics with only 'generic' tag) should default to their most common monster type (undead → blood is likely the most common in Barovia)."
+      "notes": "cards.jsonl is JSON Lines — add 'element' key to each object. DO NOT guess element assignments from tags alone. Use `ralph/card_elements.json` as the authoritative lookup — it contains the correct element and a reason for all 65 cards. Apply exactly what is listed there."
     },
     {
       "id": "US-GM-006",

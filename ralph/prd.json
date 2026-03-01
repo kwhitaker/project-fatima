@@ -155,7 +155,7 @@
         "Add/adjust tests to assert the new last_move fields are present and correct"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "Keep this snapshot-first; do not add client-side rules."
     },
     {

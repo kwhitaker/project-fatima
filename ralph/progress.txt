@@ -1,5 +1,13 @@
 # Ralph Progress Log
 
+## 2026-03-01 16:00 - US-UX-011
+- Added `player_index: int`, `card_key: str`, `cell_index: int` to `LastMoveInfo` model in `app/models/game.py` (additive fields, backward-compatible)
+- Updated `apply_intent` in `app/rules/reducer.py` to populate all three new fields when building `LastMoveInfo`; existing `mists_roll`/`mists_effect` and `begin_sudden_death_round` logic unchanged
+- Tests: `test_ux011.py` (6 backend: player_index correct, card_key matches placed card, cell_index matches target cell, mists fields still present, second move updates all fields, archetype activation works); 475 backend + 121 frontend tests pass
+- Files: `app/models/game.py`, `app/rules/reducer.py`, `tests/test_ux011.py`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: `LastMoveInfo` changes are additive (new required fields on a model only constructed in `apply_intent`); no existing call sites needed updating since the construction is in one place
+---
+
 ## 2026-03-01 14:57 - US-UX-010
 - Extended capture feedback in `GameRoom.tsx`: replaced `capturedCells.size >= 2` combo-only indicator with a unified `capturedCells.size > 0` block; single flip shows "1 card captured!" (amber styling), combo shows "Combo! ×N captured" (purple styling); both share `aria-label="capture feedback"` and `aria-live="polite"`
 - Tests: `ux010.test.tsx` (5 frontend: single flip shows indicator, single flip no "combo" text, combo shows "Combo" text, no indicator for no captures, aria-live="polite" present); existing `routes.test.tsx` combo + single-capture tests still pass unchanged (single-capture still has no "combo" text; combo still matches `/combo/i`); 469 backend + 121 frontend tests pass

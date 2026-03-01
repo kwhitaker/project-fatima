@@ -88,6 +88,8 @@ function BoardGrid({
   );
 }
 
+type RealtimeStatus = "connecting" | "live" | "reconnecting";
+
 export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
   const { user } = useAuth();
@@ -107,6 +109,7 @@ export default function GameRoom() {
   const [powerSide, setPowerSide] = useState<string | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
+  const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
 
   // Animation tracking: diff prev board vs new board on each game update
   const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
@@ -174,10 +177,12 @@ export default function GameRoom() {
       .subscribe((status) => {
         const s = status as string;
         if (s === "CLOSED" || s === "CHANNEL_ERROR") {
+          setRealtimeStatus("reconnecting");
           if (!fallbackInterval) {
             fallbackInterval = setInterval(refetch, 30_000);
           }
         } else if (s === "SUBSCRIBED") {
+          setRealtimeStatus("live");
           if (fallbackInterval) {
             clearInterval(fallbackInterval);
             fallbackInterval = null;
@@ -190,6 +195,11 @@ export default function GameRoom() {
       void supabase.removeChannel(channel);
     };
   }, [gameId]);
+
+  const handleRefresh = () => {
+    if (!gameId) return;
+    void getGame(gameId).then(setGame).catch(() => null);
+  };
 
   const handleJoin = async () => {
     if (!gameId) return;
@@ -325,6 +335,36 @@ export default function GameRoom() {
           className="hover:bg-accent cursor-pointer"
         >
           ← Back to Games
+        </Button>
+      </div>
+
+      {/* Realtime status indicator + manual refresh */}
+      <div className="flex items-center gap-3 mb-4">
+        <span
+          aria-label="realtime status"
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs",
+            realtimeStatus === "live"
+              ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/50 dark:border-green-800 dark:text-green-400"
+              : "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950/50 dark:border-yellow-800 dark:text-yellow-400"
+          )}
+        >
+          <span
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              realtimeStatus === "live" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+            )}
+          />
+          {realtimeStatus === "live" ? "Live" : "Reconnecting…"}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          aria-label="refresh game"
+          className="cursor-pointer"
+        >
+          Refresh
         </Button>
       </div>
 

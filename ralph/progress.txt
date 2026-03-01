@@ -7,6 +7,14 @@
 Started: 2026-03-01
 ---
 
+## 2026-03-01 15:30 - US-UX-004
+- Added `ArchetypeNotSelectedError(InvalidMoveError)` to `app/rules/errors.py`; raised in `submit_move` before `apply_intent` when `player.archetype is None` → router maps to 422 with actionable detail
+- Replaced inline archetype selection prompt in `GameRoom.tsx` with a fixed `role="dialog" aria-modal="true"` overlay; added `!!myPlayer?.archetype` guard to `canPlace` and hand card `disabled` prop to block all move interactions until archetype chosen
+- Tests: `test_ux004.py` (6 backend tests: error class hierarchy, 422 on missing archetype, 422 detail is actionable, 200 after selection, second player also blocked); `ux004.test.tsx` (5 UI tests: modal shown/hidden, all 5 archetype options present, hand disabled without archetype, hand enabled after); 463 backend + 83 frontend tests pass; updated `moveGame`/`effectsGame` fixtures in `routes.test.tsx` and setup helpers in `test_error_responses.py`, `test_idempotency.py`, `test_api.py`, `test_auth_api.py` to select archetypes before move submission
+- Files: `app/rules/errors.py`, `app/services/game_service.py`, `web/src/routes/GameRoom.tsx`, `tests/test_ux004.py`, `web/src/__tests__/ux004.test.tsx`, `web/src/__tests__/routes.test.tsx`, `tests/test_error_responses.py`, `tests/test_idempotency.py`, `tests/test_api.py`, `tests/test_auth_api.py`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: pre-existing tests that submit moves without archetype selection need their setup helpers updated; `ArchetypeNotSelectedError` must extend `InvalidMoveError` (not `ValueError`) to be caught by the existing `except InvalidMoveError` → 422 path in the router
+---
+
 ## 2026-03-01 14:30 - US-UX-003
 - Added `completion_reason: str | None` and `forfeit_by_index: int | None` to `GameResult` model (backward-compatible, defaults to None)
 - Updated `compute_round_result` and `begin_sudden_death_round` (SD cap draw) to set `completion_reason="normal"`

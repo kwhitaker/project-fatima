@@ -57,7 +57,7 @@
         "Add/adjust tests covering the blocking behavior (API + UI)"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Do not rely on UI-only gating; enforce on the backend too."
     },
     {

@@ -211,7 +211,7 @@
         "Update/add a small unit test to prevent regression (e.g., presence of focusable controls)"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Keep this as a bounded pass; avoid redesigning everything."
     }
   ]

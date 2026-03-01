@@ -1,5 +1,13 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:25 - US-UX-015
+- Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all native `<button>` elements in `GameRoom.tsx` (empty board cells, board cell inspect buttons, hand card selection buttons, hand card inspect icon buttons)
+- Added focus-visible ring classes to the game list row button in `Games.tsx`; added focus ring + `rounded` to Login.tsx mode-switch buttons; added focus ring to Login input fields; fixed dark mode contrast: `text-red-600 → dark:text-red-400`, `text-green-600 → dark:text-green-400`
+- Tests: `ux015.test.tsx` (10 frontend: board cell focus class, inspect cell focus class, hand card focus class, inspect icon focus class, games list button focus class, 3 Login mode-switch focus tests, Login error dark text, board cell tagName); 475 backend + 151 frontend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/routes/Games.tsx`, `web/src/routes/Login.tsx`, `web/src/__tests__/ux015.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: empty board cells only render as `<button>` when `canPlace` is true (requires `selectedCard !== null`); tests must select a card before querying for `cell N` buttons; `mockSignIn` module-level variable (with `mock` prefix) enables auth mock control from top-level `vi.mock` factory
+---
+
 ## 2026-03-01 15:16 - US-UX-014
 - Added `CardInspectPreview` inline dialog component in `GameRoom.tsx` (role="dialog", aria-modal, aria-label="card preview", escape key, autoFocus Close button, dark: classes)
 - Added `onCellInspect` prop to `BoardGrid`; occupied cells rendered as `<button>` with aria-label `"inspect <name>"` that open the preview; passed to both ACTIVE and COMPLETE board sections

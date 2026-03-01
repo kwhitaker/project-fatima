@@ -33,6 +33,7 @@ vi.mock("@/lib/api", () => ({
   leaveGame: vi.fn().mockResolvedValue(undefined),
   placeCard: vi.fn(),
   selectArchetype: vi.fn(),
+  getCardDefinitions: vi.fn().mockResolvedValue(new Map()),
 }));
 
 vi.mock("@/lib/supabase", () => ({

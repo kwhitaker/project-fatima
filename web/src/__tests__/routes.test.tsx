@@ -70,7 +70,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // --- API mock ----------------------------------------------------------------
-const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard, mockSelectArchetype } = vi.hoisted(() => ({
+const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard, mockSelectArchetype, mockGetCardDefinitions } = vi.hoisted(() => ({
   mockListGames: vi.fn(),
   mockCreateGame: vi.fn(),
   mockGetGame: vi.fn(),
@@ -78,6 +78,7 @@ const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame,
   mockLeaveGame: vi.fn(),
   mockPlaceCard: vi.fn(),
   mockSelectArchetype: vi.fn(),
+  mockGetCardDefinitions: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -88,6 +89,7 @@ vi.mock("@/lib/api", () => ({
   leaveGame: mockLeaveGame,
   placeCard: mockPlaceCard,
   selectArchetype: mockSelectArchetype,
+  getCardDefinitions: mockGetCardDefinitions,
 }));
 
 const MOCK_SESSION = {
@@ -143,6 +145,7 @@ beforeEach(() => {
   mockJoinGame.mockResolvedValue(DEFAULT_GAME);
   mockLeaveGame.mockResolvedValue(null);
   mockSelectArchetype.mockResolvedValue(makeGame({ game_id: "abc-123" }));
+  mockGetCardDefinitions.mockResolvedValue(new Map());
   // Auth form defaults
   mockSignInWithPassword.mockResolvedValue({ error: null });
   mockSignUp.mockResolvedValue({ error: null });

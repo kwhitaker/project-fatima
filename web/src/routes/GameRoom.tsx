@@ -3,8 +3,23 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type GameState } from "@/lib/api";
+import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type CardDefinition, type GameState } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+
+function CardFace({ cardKey, def }: { cardKey: string; def?: CardDefinition }) {
+  const name = def?.name ?? cardKey;
+  return (
+    <div className="flex flex-col items-center justify-between w-full h-full p-0.5">
+      <span className="text-[9px] font-bold leading-none">{def?.sides.n ?? ""}</span>
+      <div className="flex items-center justify-between w-full">
+        <span className="text-[9px] leading-none">{def?.sides.w ?? ""}</span>
+        <span className="text-[9px] font-semibold leading-tight text-center truncate max-w-[34px]">{name}</span>
+        <span className="text-[9px] leading-none">{def?.sides.e ?? ""}</span>
+      </div>
+      <span className="text-[9px] font-bold leading-none">{def?.sides.s ?? ""}</span>
+    </div>
+  );
+}
 
 function BoardGrid({
   board,
@@ -13,6 +28,7 @@ function BoardGrid({
   onCellClick,
   placedCells,
   capturedCells,
+  cardDefs,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -20,6 +36,7 @@ function BoardGrid({
   onCellClick?: (index: number) => void;
   placedCells?: Set<number>;
   capturedCells?: Set<number>;
+  cardDefs?: Map<string, CardDefinition>;
 }) {
   return (
     <div
@@ -30,7 +47,7 @@ function BoardGrid({
         const isPlaced = placedCells?.has(i) ?? false;
         const isCaptured = capturedCells?.has(i) ?? false;
         const cellClass = cn(
-          "w-16 h-16 sm:w-20 sm:h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
+          "w-16 h-16 sm:w-20 sm:h-20 border rounded flex items-center justify-center text-xs text-center p-0.5",
           cell === null
             ? "bg-muted text-muted-foreground"
             : cell.owner === myIndex
@@ -55,7 +72,9 @@ function BoardGrid({
             className={cellClass}
             data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
           >
-            {cell ? cell.card_key : ""}
+            {cell ? (
+              <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
+            ) : ""}
           </div>
         );
       })}
@@ -81,6 +100,7 @@ export default function GameRoom() {
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
 
   // Animation tracking: diff prev board vs new board on each game update
   const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
@@ -109,8 +129,14 @@ export default function GameRoom() {
 
   useEffect(() => {
     if (!gameId) return;
-    getGame(gameId)
-      .then(setGame)
+    Promise.all([
+      getGame(gameId),
+      getCardDefinitions().catch(() => new Map<string, CardDefinition>()),
+    ])
+      .then(([g, defs]) => {
+        setGame(g);
+        setCardDefs(defs);
+      })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "Failed to load game")
       )
@@ -378,6 +404,7 @@ export default function GameRoom() {
             onCellClick={(i) => void handlePlaceCard(i)}
             placedCells={placedCells}
             capturedCells={capturedCells}
+            cardDefs={cardDefs}
           />
 
           {/* Move error */}
@@ -465,25 +492,36 @@ export default function GameRoom() {
               </p>
             )}
             <div className="flex gap-2 flex-wrap">
-              {myPlayer?.hand.map((cardKey) => (
-                <button
-                  key={cardKey}
-                  onClick={() =>
-                    setSelectedCard(selectedCard === cardKey ? null : cardKey)
-                  }
-                  disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
-                  className={cn(
-                    "px-3 py-2 border rounded text-xs font-mono transition-colors",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    selectedCard === cardKey
-                      ? "border-primary bg-primary/10 cursor-pointer"
-                      : "border-border hover:border-primary hover:bg-accent cursor-pointer"
-                  )}
-                  aria-pressed={selectedCard === cardKey}
-                >
-                  {cardKey}
-                </button>
-              ))}
+              {myPlayer?.hand.map((cardKey) => {
+                const def = cardDefs.get(cardKey);
+                return (
+                  <button
+                    key={cardKey}
+                    onClick={() =>
+                      setSelectedCard(selectedCard === cardKey ? null : cardKey)
+                    }
+                    disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
+                    className={cn(
+                      "flex flex-col items-center min-w-[4rem] px-2 py-1.5 border rounded text-xs transition-transform hover:scale-105",
+                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                      selectedCard === cardKey
+                        ? "border-primary bg-primary/10 cursor-pointer"
+                        : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
+                    )}
+                    aria-pressed={selectedCard === cardKey}
+                  >
+                    <span className="font-semibold truncate max-w-[5rem] text-center">{def?.name ?? cardKey}</span>
+                    <div className="flex flex-col items-center mt-0.5 text-[9px] text-muted-foreground w-full">
+                      <span>{def ? def.sides.n : ""}</span>
+                      <div className="flex justify-between w-full px-1">
+                        <span>{def ? def.sides.w : ""}</span>
+                        <span>{def ? def.sides.e : ""}</span>
+                      </div>
+                      <span>{def ? def.sides.s : ""}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -581,7 +619,7 @@ export default function GameRoom() {
           </p>
 
           {/* Final board */}
-          <BoardGrid board={game.board} myIndex={myIndex} />
+          <BoardGrid board={game.board} myIndex={myIndex} cardDefs={cardDefs} />
         </div>
       )}
     </div>

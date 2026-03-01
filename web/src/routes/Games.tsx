@@ -44,9 +44,9 @@ export default function Games() {
 
   return (
     <div className="container py-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">My Games</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button onClick={() => void handleCreate()} disabled={creating}>
             {creating ? "Creating…" : "Create Game"}
           </Button>
@@ -65,7 +65,7 @@ export default function Games() {
           {games.map((game) => (
             <li key={game.game_id}>
               <button
-                className="hover:bg-muted w-full rounded-lg border p-4 text-left transition-colors"
+                className="hover:bg-muted w-full cursor-pointer rounded-lg border p-4 text-left transition-colors"
                 onClick={() => void navigate(`/g/${game.game_id}`)}
               >
                 <div className="flex items-center justify-between">

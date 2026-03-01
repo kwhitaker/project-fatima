@@ -23,19 +23,19 @@ function BoardGrid({
 }) {
   return (
     <div
-      className="grid grid-cols-3 gap-2 w-fit"
+      className="grid grid-cols-3 gap-1.5 sm:gap-2 w-fit"
       aria-label="game board"
     >
       {board.map((cell, i) => {
         const isPlaced = placedCells?.has(i) ?? false;
         const isCaptured = capturedCells?.has(i) ?? false;
         const cellClass = cn(
-          "w-20 h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
+          "w-16 h-16 sm:w-20 sm:h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
           cell === null
             ? "bg-muted text-muted-foreground"
             : cell.owner === myIndex
-            ? "bg-blue-200 text-blue-900"
-            : "bg-red-200 text-red-900",
+            ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
+            : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
           isPlaced && "animate-card-placed",
           isCaptured && "animate-card-captured"
         );
@@ -287,9 +287,9 @@ export default function GameRoom() {
             Waiting for players… ({game.players.length}/2)
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <span className="font-mono text-sm break-all">{window.location.href}</span>
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
+            <Button variant="outline" size="sm" onClick={handleCopyLink} className="shrink-0">
               {copied ? "Copied!" : "Copy Link"}
             </Button>
           </div>
@@ -327,8 +327,8 @@ export default function GameRoom() {
             <div
               className={cn(
                 "p-3 rounded border text-sm",
-                game.last_move.mists_effect === "fog" && "bg-blue-50 border-blue-200 text-blue-800",
-                game.last_move.mists_effect === "omen" && "bg-purple-50 border-purple-200 text-purple-800",
+                game.last_move.mists_effect === "fog" && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300",
+                game.last_move.mists_effect === "omen" && "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
                 game.last_move.mists_effect === "none" && "bg-muted border-border text-muted-foreground"
               )}
               aria-label="mists feedback"
@@ -341,7 +341,7 @@ export default function GameRoom() {
 
           {/* Combo indicator */}
           {capturedCells.size >= 2 && (
-            <div className="text-center font-bold text-purple-700" aria-live="polite">
+            <div className="text-center font-bold text-purple-700 dark:text-purple-400" aria-live="polite">
               Combo! ×{capturedCells.size}
             </div>
           )}
@@ -503,9 +503,9 @@ export default function GameRoom() {
             {game.result?.is_draw ? (
               <p className="text-xl font-bold">Draw!</p>
             ) : game.result?.winner === myIndex ? (
-              <p className="text-xl font-bold text-green-600">You win!</p>
+              <p className="text-xl font-bold text-green-600 dark:text-green-400">You win!</p>
             ) : (
-              <p className="text-xl font-bold text-red-600">You lose!</p>
+              <p className="text-xl font-bold text-red-600 dark:text-red-400">You lose!</p>
             )}
           </div>
 

@@ -54,3 +54,28 @@ def get_caller_id(authorization: str | None = Header(default=None)) -> str:
     if not sub:
         raise HTTPException(status_code=401, detail="Token missing sub claim")
     return str(sub)
+
+
+def get_caller_email(authorization: str | None = Header(default=None)) -> str | None:
+    """Extract email from Supabase JWT without raising on failure.
+
+    Returns the email claim if present, or None if the token is absent,
+    malformed, or has no email claim. Auth enforcement is done by get_caller_id;
+    this dependency is additive only.
+    """
+    if authorization is None or not authorization.startswith("Bearer "):
+        return None
+    token = authorization.removeprefix("Bearer ")
+    try:
+        client = _get_jwks_client()
+        signing_key = client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["ES256", "RS256", "HS256"],
+            options={"verify_aud": False},
+        )
+        email = payload.get("email")
+        return str(email) if email else None
+    except Exception:
+        return None

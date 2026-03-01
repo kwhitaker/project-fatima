@@ -42,14 +42,14 @@ class TestComputeRoundResult:
         p0_cells: list[BoardCell | None] = [cell(f"c{i}", 0) for i in range(5)]
         board = p0_cells + [cell(f"c{i}", 1) for i in range(5, 9)]
         result = compute_round_result(board)
-        assert result == GameResult(winner=0, is_draw=False)
+        assert result == GameResult(winner=0, is_draw=False, completion_reason="normal")
 
     def test_player1_wins(self):
         """4 cells for p0 vs 5 for p1 → winner=1."""
         p0_cells: list[BoardCell | None] = [cell(f"c{i}", 0) for i in range(4)]
         board = p0_cells + [cell(f"c{i}", 1) for i in range(4, 9)]
         result = compute_round_result(board)
-        assert result == GameResult(winner=1, is_draw=False)
+        assert result == GameResult(winner=1, is_draw=False, completion_reason="normal")
 
     def test_tie_detection(self):
         """Equal ownership (4 vs 4) → is_draw=True, winner=None."""
@@ -57,19 +57,19 @@ class TestComputeRoundResult:
             [cell(f"c{i}", 0) for i in range(4)] + [cell(f"c{i}", 1) for i in range(4, 8)] + [None]
         )
         result = compute_round_result(board)
-        assert result == GameResult(winner=None, is_draw=True)
+        assert result == GameResult(winner=None, is_draw=True, completion_reason="normal")
 
     def test_sweep_player0(self):
         """All 9 cells owned by p0 → winner=0."""
         board: list[BoardCell | None] = [cell(f"c{i}", 0) for i in range(9)]
         result = compute_round_result(board)
-        assert result == GameResult(winner=0, is_draw=False)
+        assert result == GameResult(winner=0, is_draw=False, completion_reason="normal")
 
     def test_sweep_player1(self):
         """All 9 cells owned by p1 → winner=1."""
         board: list[BoardCell | None] = [cell(f"c{i}", 1) for i in range(9)]
         result = compute_round_result(board)
-        assert result == GameResult(winner=1, is_draw=False)
+        assert result == GameResult(winner=1, is_draw=False, completion_reason="normal")
 
 
 # ---------------------------------------------------------------------------

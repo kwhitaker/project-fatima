@@ -1,7 +1,23 @@
 import { supabase } from "@/lib/supabase";
 
+export interface CardSides {
+  n: number;
+  e: number;
+  s: number;
+  w: number;
+}
+
+export interface CardDefinition {
+  card_key: string;
+  name: string;
+  version: string;
+  tier: number;
+  sides: CardSides;
+}
+
 export interface PlayerState {
   player_id: string;
+  email?: string | null;
   archetype: "martial" | "skulker" | "caster" | "devout" | "presence" | null;
   hand: string[];
   archetype_used: boolean;
@@ -15,9 +31,14 @@ export interface BoardCell {
 export interface GameResult {
   winner: 0 | 1 | null;
   is_draw: boolean;
+  completion_reason?: string | null;
+  forfeit_by_index?: number | null;
 }
 
 export interface LastMoveInfo {
+  player_index: number; // 0 or 1
+  card_key: string;
+  cell_index: number;   // 0-8
   mists_roll: number;   // 1–6 die result
   mists_effect: string; // "fog" | "omen" | "none"
 }
@@ -162,4 +183,25 @@ export async function leaveGame(
   if (res.status === 204) return null;
   if (!res.ok) throw new Error(`Failed to leave game: ${res.status}`);
   return res.json() as Promise<GameState>;
+}
+
+// ---------------------------------------------------------------------------
+// Card definitions (fetch + module-level cache)
+// ---------------------------------------------------------------------------
+
+let _cardCache: Map<string, CardDefinition> | null = null;
+
+export async function listCards(): Promise<CardDefinition[]> {
+  const headers = await authHeaders();
+  const res = await fetch("/api/cards", { headers });
+  if (!res.ok) throw new Error(`Failed to list cards: ${res.status}`);
+  return res.json() as Promise<CardDefinition[]>;
+}
+
+/** Fetch card definitions once and cache them for the session. */
+export async function getCardDefinitions(): Promise<Map<string, CardDefinition>> {
+  if (_cardCache) return _cardCache;
+  const cards = await listCards();
+  _cardCache = new Map(cards.map((c) => [c.card_key, c]));
+  return _cardCache;
 }

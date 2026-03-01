@@ -210,8 +210,9 @@ def test_409_on_stale_state_version(client: TestClient) -> None:
     resp = _alice(client, "post", "/games", json={"seed": 42})
     game_id = resp.json()["game_id"]
     _bob(client, "post", f"/games/{game_id}/join", json={})
+    _alice(client, "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
+    resp = _bob(client, "post", f"/games/{game_id}/archetype", json={"archetype": "devout"})
 
-    resp = _alice(client, "get", f"/games/{game_id}")
     data = resp.json()
     state_version = data["state_version"]
     first_player_index = data["current_player_index"]

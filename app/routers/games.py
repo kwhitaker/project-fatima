@@ -5,7 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
 
-from app.auth import get_caller_id
+from app.auth import get_caller_email, get_caller_id
 from app.dependencies import get_card_store, get_game_store
 from app.models.game import Archetype, GameState, GameStatus
 from app.rules.errors import InvalidMoveError
@@ -17,6 +17,7 @@ router = APIRouter(prefix="/games", tags=["games"])
 GameStoreDep = Annotated[GameStore, Depends(get_game_store)]
 CardStoreDep = Annotated[CardStore, Depends(get_card_store)]
 CallerIdDep = Annotated[str, Depends(get_caller_id)]
+CallerEmailDep = Annotated[str | None, Depends(get_caller_email)]
 
 
 class CreateGameRequest(BaseModel):
@@ -51,21 +52,23 @@ def list_games(caller_id: CallerIdDep, game_store: GameStoreDep) -> list[GameSta
 def create_game(
     body: CreateGameRequest,
     caller_id: CallerIdDep,
+    caller_email: CallerEmailDep,
     game_store: GameStoreDep,
     card_store: CardStoreDep,
 ) -> GameState:
-    return game_service.create_game(game_store, card_store, caller_id, body.seed)
+    return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
 
 
 @router.post("/{game_id}/join", response_model=GameState)
 def join_game(
     game_id: str,
     caller_id: CallerIdDep,
+    caller_email: CallerEmailDep,
     game_store: GameStoreDep,
     card_store: CardStoreDep,
 ) -> GameState:
     try:
-        return game_service.join_game(game_store, card_store, game_id, caller_id)
+        return game_service.join_game(game_store, card_store, game_id, caller_id, caller_email)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

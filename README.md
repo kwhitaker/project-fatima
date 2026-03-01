@@ -39,4 +39,8 @@ Data + realtime/communication:
 - Supabase
 
 Frontend:
-- TBD
+- React + Vite (in `web/`)
+
+## Deploy
+
+- Railway: see `docs/railway_deploy.md`

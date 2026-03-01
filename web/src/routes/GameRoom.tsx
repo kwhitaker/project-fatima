@@ -1,67 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type GameState } from "@/lib/api";
-import { supabase } from "@/lib/supabase";
+import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
 
-function BoardGrid({
-  board,
-  myIndex,
-  canPlace = false,
-  onCellClick,
-  placedCells,
-  capturedCells,
-}: {
-  board: (BoardCell | null)[];
-  myIndex: number;
-  canPlace?: boolean;
-  onCellClick?: (index: number) => void;
-  placedCells?: Set<number>;
-  capturedCells?: Set<number>;
-}) {
-  return (
-    <div
-      className="grid grid-cols-3 gap-2 w-fit"
-      aria-label="game board"
-    >
-      {board.map((cell, i) => {
-        const isPlaced = placedCells?.has(i) ?? false;
-        const isCaptured = capturedCells?.has(i) ?? false;
-        const cellClass = cn(
-          "w-20 h-20 border rounded flex items-center justify-center text-xs text-center p-1 break-all",
-          cell === null
-            ? "bg-muted text-muted-foreground"
-            : cell.owner === myIndex
-            ? "bg-blue-200 text-blue-900"
-            : "bg-red-200 text-red-900",
-          isPlaced && "animate-card-placed",
-          isCaptured && "animate-card-captured"
-        );
-        if (canPlace && cell === null) {
-          return (
-            <button
-              key={i}
-              aria-label={`cell ${i}`}
-              onClick={() => onCellClick?.(i)}
-              className={cn(cellClass, "hover:bg-accent cursor-pointer")}
-            />
-          );
-        }
-        return (
-          <div
-            key={i}
-            className={cellClass}
-            data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
-          >
-            {cell ? cell.card_key : ""}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
+import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
+import { CompleteGameView } from "@/routes/game-room/CompleteGameView";
+import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
+import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
+
+import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
+import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
+import { useMeasuredHeight } from "@/routes/game-room/hooks/useMeasuredHeight";
 
 export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -80,83 +32,43 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const { ref: drawerRef, height: drawerHeight } = useMeasuredHeight<HTMLDivElement>([
+    drawerOpen,
+  ]);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+  const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
+  const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
-  // Animation tracking: diff prev board vs new board on each game update
-  const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
-  const [placedCells, setPlacedCells] = useState<Set<number>>(new Set());
-  const [capturedCells, setCapturedCells] = useState<Set<number>>(new Set());
+  const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
 
-  useEffect(() => {
-    if (!game) return;
-    const prev = prevBoardRef.current;
-    prevBoardRef.current = game.board;
-    if (!prev) return;
+  const refetchGame = useCallback(() => {
+    if (!gameId) return;
+    void getGame(gameId).then(setGame).catch(() => null);
+  }, [gameId]);
 
-    const placed = new Set<number>();
-    const captured = new Set<number>();
-    game.board.forEach((cell, i) => {
-      const prevCell = prev[i];
-      if (prevCell === null && cell !== null) {
-        placed.add(i);
-      } else if (prevCell !== null && cell !== null && prevCell.owner !== cell.owner) {
-        captured.add(i);
-      }
-    });
-    setPlacedCells(placed);
-    setCapturedCells(captured);
-  }, [game]);
+  const realtimeStatus = useGameSubscription(gameId, refetchGame);
 
   useEffect(() => {
     if (!gameId) return;
-    getGame(gameId)
-      .then(setGame)
+    Promise.all([
+      getGame(gameId),
+      getCardDefinitions().catch(() => new Map<string, CardDefinition>()),
+    ])
+      .then(([g, defs]) => {
+        setGame(g);
+        setCardDefs(defs);
+      })
       .catch((e: unknown) =>
         setError(e instanceof Error ? e.message : "Failed to load game")
       )
       .finally(() => setLoading(false));
   }, [gameId]);
 
-  // Realtime subscription: refetch snapshot on game_events INSERT
-  useEffect(() => {
-    if (!gameId) return;
-
-    const refetch = () => {
-      void getGame(gameId).then(setGame).catch(() => null);
-    };
-
-    let fallbackInterval: ReturnType<typeof setInterval> | null = null;
-
-    const channel = supabase
-      .channel(`game:${gameId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "game_events",
-          filter: `game_id=eq.${gameId}`,
-        },
-        (_payload) => { refetch(); }
-      )
-      .subscribe((status) => {
-        const s = status as string;
-        if (s === "CLOSED" || s === "CHANNEL_ERROR") {
-          if (!fallbackInterval) {
-            fallbackInterval = setInterval(refetch, 30_000);
-          }
-        } else if (s === "SUBSCRIBED") {
-          if (fallbackInterval) {
-            clearInterval(fallbackInterval);
-            fallbackInterval = null;
-          }
-        }
-      });
-
-    return () => {
-      if (fallbackInterval) clearInterval(fallbackInterval);
-      void supabase.removeChannel(channel);
-    };
-  }, [gameId]);
+  const handleRefresh = () => {
+    refetchGame();
+  };
 
   const handleJoin = async () => {
     if (!gameId) return;
@@ -276,253 +188,138 @@ export default function GameRoom() {
     ? game.board.filter((c) => c !== null && c.owner === opponentIndex).length
     : 0;
 
+  const titleText =
+    game.status === "waiting"
+      ? "Waiting for opponent"
+      : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
+
   return (
-    <div className="container py-8">
-      <h1 className="text-2xl font-bold">Game {gameId}</h1>
-
-      {/* WAITING */}
-      {game.status === "waiting" && (
-        <div className="mt-4 space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Waiting for players… ({game.players.length}/2)
-          </p>
-
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm break-all">{window.location.href}</span>
-            <Button variant="outline" size="sm" onClick={handleCopyLink}>
-              {copied ? "Copied!" : "Copy Link"}
-            </Button>
-          </div>
-
-          {!isParticipant && !isFull && (
-            <Button onClick={() => void handleJoin()} disabled={joining}>
-              {joining ? "Joining…" : "Join Game"}
-            </Button>
-          )}
-          {!isParticipant && isFull && (
-            <p className="text-muted-foreground text-sm">
-              This game is full. You cannot join.
-            </p>
-          )}
+    <div className="container py-4 min-h-[100dvh] flex flex-col">
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">{titleText}</h1>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowRules(true)}
+            className="cursor-pointer"
+          >
+            Rules
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/games")}
+            className="hover:bg-accent cursor-pointer"
+          >
+            ← Back to Games
+          </Button>
         </div>
-      )}
+      </div>
 
-      {/* ACTIVE */}
-      {game.status === "active" && (
-        <div className="mt-4 space-y-4">
-          {/* Turn indicator */}
-          <p className="text-lg font-semibold">
-            {game.current_player_index === myIndex
-              ? "Your turn"
-              : "Opponent's turn"}
-          </p>
-
-          {/* Score */}
-          <p className="text-sm text-muted-foreground">
-            Score — You: {myScore} | Opponent: {opponentScore}
-          </p>
-
-          {/* Mists feedback */}
-          {game.last_move != null && (
-            <div
-              className={cn(
-                "p-3 rounded border text-sm",
-                game.last_move.mists_effect === "fog" && "bg-blue-50 border-blue-200 text-blue-800",
-                game.last_move.mists_effect === "omen" && "bg-purple-50 border-purple-200 text-purple-800",
-                game.last_move.mists_effect === "none" && "bg-muted border-border text-muted-foreground"
-              )}
-              aria-label="mists feedback"
-            >
-              <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
-              {game.last_move.mists_effect === "fog" && " — Fog: −1 to comparisons"}
-              {game.last_move.mists_effect === "omen" && " — Omen: +1 to comparisons"}
-            </div>
+      {/* Realtime status indicator + manual refresh */}
+      <div className="flex items-center gap-3 mb-4">
+        <span
+          aria-label="realtime status"
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs",
+            realtimeStatus === "live"
+              ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/50 dark:border-green-800 dark:text-green-400"
+              : "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950/50 dark:border-yellow-800 dark:text-yellow-400"
           )}
-
-          {/* Combo indicator */}
-          {capturedCells.size >= 2 && (
-            <div className="text-center font-bold text-purple-700" aria-live="polite">
-              Combo! ×{capturedCells.size}
-            </div>
-          )}
-
-          {/* Board */}
-          <BoardGrid
-            board={game.board}
-            myIndex={myIndex}
-            canPlace={
-              game.current_player_index === myIndex &&
-              selectedCard !== null &&
-              !movePending &&
-              (!usePower ||
-                !(myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence") ||
-                powerSide !== null)
-            }
-            onCellClick={(i) => void handlePlaceCard(i)}
-            placedCells={placedCells}
-            capturedCells={capturedCells}
+        >
+          <span
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              realtimeStatus === "live" ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+            )}
           />
+          {realtimeStatus === "live" ? "Live" : "Reconnecting…"}
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          aria-label="refresh game"
+          className="cursor-pointer"
+        >
+          Refresh
+        </Button>
+      </div>
 
-          {/* Move error */}
-          {moveError && (
-            <p className="text-destructive text-sm">{moveError}</p>
-          )}
-
-          {/* Archetype selection prompt */}
-          {myPlayer && !myPlayer.archetype && (
-            <div>
-              <p className="text-sm font-medium mb-2">Choose your archetype</p>
-              <div className="flex gap-2 flex-wrap">
-                {(["martial", "skulker", "caster", "devout", "presence"] as const).map((arch) => (
-                  <Button
-                    key={arch}
-                    variant="outline"
-                    size="sm"
-                    className="capitalize"
-                    onClick={() => void handleSelectArchetype(arch)}
-                    disabled={archetypePending}
-                  >
-                    {arch}
-                  </Button>
-                ))}
-              </div>
-              {archetypeError && (
-                <p className="text-destructive text-sm mt-1">{archetypeError}</p>
-              )}
-            </div>
-          )}
-
-          {/* Use Power toggle */}
-          {myPlayer?.archetype && !myPlayer.archetype_used && game.current_player_index === myIndex && (
-            <div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  aria-label="Use Power"
-                  checked={usePower}
-                  onChange={(e) => {
-                    setUsePower(e.target.checked);
-                    setPowerSide(null);
-                  }}
-                  disabled={movePending}
-                />
-                Use Power
-              </label>
-              {usePower && (myPlayer.archetype === "skulker" || myPlayer.archetype === "presence") && (
-                <div className="flex gap-2 mt-2">
-                  {(["n", "e", "s", "w"] as const).map((side) => (
-                    <Button
-                      key={side}
-                      variant={powerSide === side ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPowerSide(powerSide === side ? null : side)}
-                    >
-                      {side}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* My hand */}
-          <div>
-            <p className="text-sm font-medium mb-1">Your hand</p>
-            {game.current_player_index === myIndex && !movePending && (
-              <p className="text-xs text-muted-foreground mb-2">
-                {selectedCard
-                  ? `"${selectedCard}" selected — click an empty cell to place it`
-                  : "Click a card to select it, then click an empty cell on the board"}
-              </p>
-            )}
-            <div className="flex gap-2 flex-wrap">
-              {myPlayer?.hand.map((cardKey) => (
-                <button
-                  key={cardKey}
-                  onClick={() =>
-                    setSelectedCard(selectedCard === cardKey ? null : cardKey)
-                  }
-                  disabled={game.current_player_index !== myIndex || movePending}
-                  className={cn(
-                    "px-3 py-2 border rounded text-xs font-mono transition-colors",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                    selectedCard === cardKey
-                      ? "border-primary bg-primary/10 cursor-pointer"
-                      : "border-border hover:border-primary hover:bg-accent cursor-pointer"
-                  )}
-                  aria-pressed={selectedCard === cardKey}
-                >
-                  {cardKey}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Opponent hand */}
-          <div>
-            <p className="text-sm font-medium mb-1">Opponent's hand</p>
-            <p className="text-sm text-muted-foreground">
-              {opponentPlayer?.hand.length ?? 0} cards
-            </p>
-          </div>
-
-          {/* Archetypes */}
-          <div className="flex gap-8">
-            <div>
-              <p className="text-xs text-muted-foreground">Your archetype</p>
-              <p className="text-sm capitalize">{myPlayer?.archetype ?? "None"}</p>
-              {myPlayer?.archetype && (
-                <p className="text-xs text-muted-foreground">
-                  {myPlayer.archetype_used ? "Used" : "Available"}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Opponent archetype</p>
-              <p className="text-sm capitalize">{opponentPlayer?.archetype ?? "None"}</p>
-              {opponentPlayer?.archetype && (
-                <p className="text-xs text-muted-foreground">
-                  {opponentPlayer.archetype_used ? "Used" : "Available"}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Leave */}
-          <Button variant="outline" onClick={() => void handleLeave()} disabled={leaving}>
-            {leaving ? "Leaving…" : "Leave Game"}
-          </Button>
-        </div>
+      {game.status === "active" ? (
+        <ActiveGameView
+          game={game}
+          myIndex={myIndex}
+          myPlayer={myPlayer}
+          opponentPlayer={opponentPlayer}
+          myScore={myScore}
+          opponentScore={opponentScore}
+          cardDefs={cardDefs}
+          selectedCard={selectedCard}
+          onSelectCard={setSelectedCard}
+          movePending={movePending}
+          moveError={moveError}
+          usePower={usePower}
+          onUsePowerChange={(next) => {
+            setUsePower(next);
+            setPowerSide(null);
+          }}
+          powerSide={powerSide}
+          onPowerSideToggle={(side) => {
+            setPowerSide(powerSide === side ? null : side);
+          }}
+          placedCells={placedCells}
+          capturedCells={capturedCells}
+          onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
+          onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
+          drawerHeight={drawerHeight}
+          drawerRef={drawerRef}
+          drawerOpen={drawerOpen}
+          onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
+          leaving={leaving}
+          onOpenLeaveConfirm={() => setShowLeaveConfirm(true)}
+          showLeaveConfirm={showLeaveConfirm}
+          onCloseLeaveConfirm={() => setShowLeaveConfirm(false)}
+          onConfirmLeave={() => {
+            setShowLeaveConfirm(false);
+            void handleLeave();
+          }}
+          archetypePending={archetypePending}
+          archetypeError={archetypeError}
+          onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
+        />
+      ) : game.status === "waiting" ? (
+        <WaitingGameView
+          game={game}
+          isParticipant={isParticipant}
+          isFull={isFull}
+          copied={copied}
+          onCopyLink={handleCopyLink}
+          joining={joining}
+          onJoin={() => void handleJoin()}
+        />
+      ) : (
+        <CompleteGameView
+          game={game}
+          myIndex={myIndex}
+          myScore={myScore}
+          opponentScore={opponentScore}
+          cardDefs={cardDefs}
+          onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
+        />
       )}
 
-      {/* COMPLETE */}
-      {game.status === "complete" && (
-        <div className="mt-4 space-y-4">
-          {/* Result banner */}
-          <div className="p-4 rounded border">
-            {game.result?.is_draw ? (
-              <p className="text-xl font-bold">Draw!</p>
-            ) : game.result?.winner === myIndex ? (
-              <p className="text-xl font-bold text-green-600">You win!</p>
-            ) : (
-              <p className="text-xl font-bold text-red-600">You lose!</p>
-            )}
-          </div>
-
-          {/* Final score */}
-          <p className="text-sm text-muted-foreground">
-            Score — You: {myScore} | Opponent: {opponentScore}
-          </p>
-
-          {/* Final board */}
-          <BoardGrid board={game.board} myIndex={myIndex} />
-
-          {/* Leave */}
-          <Button variant="outline" onClick={() => void handleLeave()} disabled={leaving}>
-            {leaving ? "Leaving…" : "Leave Game"}
-          </Button>
-        </div>
+      {/* Card inspect preview dialog */}
+      {previewCard !== null && (
+        <CardInspectPreview
+          cardKey={previewCard.cardKey}
+          def={previewCard.def}
+          onClose={() => setPreviewCard(null)}
+        />
       )}
+
+      <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>
   );
 }

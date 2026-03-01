@@ -27,3 +27,7 @@ class ArchetypeNotAvailableError(InvalidMoveError):
 
 class ArchetypePowerArgumentError(InvalidMoveError):
     """A required argument for the archetype power is missing or invalid."""
+
+
+class ArchetypeNotSelectedError(InvalidMoveError):
+    """The player has not yet selected an archetype and cannot place cards."""

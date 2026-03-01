@@ -306,9 +306,7 @@ class TestMaybeSingleNullResponse:
         result = SupabaseGameStore(client=client).get_game("missing")
         assert result is None
 
-    def test_has_idempotency_key_returns_false_without_crashing(
-        self, mock_client: tuple
-    ) -> None:
+    def test_has_idempotency_key_returns_false_without_crashing(self, mock_client: tuple) -> None:
         client, _, events_table = mock_client
         (
             events_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value

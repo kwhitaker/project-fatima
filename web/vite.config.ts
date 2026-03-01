@@ -15,6 +15,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      "/env.js": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+      },
       "/api": {
         target: "http://localhost:8000",
         changeOrigin: true,

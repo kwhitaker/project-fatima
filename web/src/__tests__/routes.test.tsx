@@ -70,7 +70,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // --- API mock ----------------------------------------------------------------
-const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard, mockSelectArchetype } = vi.hoisted(() => ({
+const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame, mockPlaceCard, mockSelectArchetype, mockGetCardDefinitions } = vi.hoisted(() => ({
   mockListGames: vi.fn(),
   mockCreateGame: vi.fn(),
   mockGetGame: vi.fn(),
@@ -78,6 +78,7 @@ const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame,
   mockLeaveGame: vi.fn(),
   mockPlaceCard: vi.fn(),
   mockSelectArchetype: vi.fn(),
+  mockGetCardDefinitions: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({
@@ -88,6 +89,7 @@ vi.mock("@/lib/api", () => ({
   leaveGame: mockLeaveGame,
   placeCard: mockPlaceCard,
   selectArchetype: mockSelectArchetype,
+  getCardDefinitions: mockGetCardDefinitions,
 }));
 
 const MOCK_SESSION = {
@@ -143,6 +145,7 @@ beforeEach(() => {
   mockJoinGame.mockResolvedValue(DEFAULT_GAME);
   mockLeaveGame.mockResolvedValue(null);
   mockSelectArchetype.mockResolvedValue(makeGame({ game_id: "abc-123" }));
+  mockGetCardDefinitions.mockResolvedValue(new Map());
   // Auth form defaults
   mockSignInWithPassword.mockResolvedValue({ error: null });
   mockSignUp.mockResolvedValue({ error: null });
@@ -186,7 +189,7 @@ describe("auth guards", () => {
     renderAt("/g/abc-123");
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /game abc-123/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -526,7 +529,7 @@ describe("games page", () => {
     await user.click(screen.getByText("game-ccc"));
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /game game-ccc/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -542,7 +545,7 @@ describe("games page", () => {
     await waitFor(() => {
       expect(mockCreateGame).toHaveBeenCalledOnce();
       expect(
-        screen.getByRole("heading", { name: /game new-game-id/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -591,7 +594,7 @@ describe("game room lobby", () => {
     });
     renderAt("/g/game-xyz");
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /game game-xyz/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /waiting for opponent/i })).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: /join/i })).not.toBeInTheDocument();
   });
@@ -725,9 +728,15 @@ describe("game room active state", () => {
     const user = userEvent.setup();
     renderAt("/g/game-active");
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /leave/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /leave game/i })).toBeInTheDocument();
     });
-    await user.click(screen.getByRole("button", { name: /leave/i }));
+    // Click Leave — this now opens a forfeit confirmation dialog
+    await user.click(screen.getByRole("button", { name: /leave game/i }));
+    // Confirm the forfeit in the dialog
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /forfeit.*leave/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /forfeit.*leave/i }));
     await waitFor(() => {
       expect(mockLeaveGame).toHaveBeenCalledWith("game-active", 5);
       expect(screen.getByRole("heading", { name: /my games/i })).toBeInTheDocument();
@@ -802,8 +811,8 @@ describe("game room move submission (US-UI-007)", () => {
     state_version: 5,
     current_player_index: 0,
     players: [
-      { player_id: "user-123", archetype: null, hand: ["card-a", "card-b"], archetype_used: false },
-      { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      { player_id: "user-123", archetype: "martial" as const, hand: ["card-a", "card-b"], archetype_used: false },
+      { player_id: "other-user", archetype: "devout" as const, hand: ["card-c"], archetype_used: false },
     ],
     board: EMPTY_BOARD,
   });
@@ -1201,8 +1210,8 @@ describe("effects (US-UI-011)", () => {
     state_version: 4,
     current_player_index: 0,
     players: [
-      { player_id: "user-123", archetype: null, hand: ["card-a"], archetype_used: false },
-      { player_id: "other-user", archetype: null, hand: ["card-c", "card-d"], archetype_used: false },
+      { player_id: "user-123", archetype: "martial" as const, hand: ["card-a"], archetype_used: false },
+      { player_id: "other-user", archetype: "devout" as const, hand: ["card-c", "card-d"], archetype_used: false },
     ],
     board: [
       { card_key: "card-x", owner: 1 } as BoardCell,

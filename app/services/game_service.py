@@ -5,6 +5,7 @@ from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
 from app.rules.deck import generate_matched_decks
+from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
 
@@ -14,6 +15,7 @@ def create_game(
     card_store: CardStore,
     player_id: str,
     seed: int | None = None,
+    email: str | None = None,
 ) -> GameState:
     """Create a new game and auto-join the caller as player 1."""
     game_id = str(uuid.uuid4())
@@ -23,14 +25,18 @@ def create_game(
         game_id=game_id,
         seed=seed,
         status=GameStatus.WAITING,
-        players=[PlayerState(player_id=player_id)],
+        players=[PlayerState(player_id=player_id, email=email)],
     )
     game_store.create_game(game_id, initial_state)
     return initial_state
 
 
 def join_game(
-    game_store: GameStore, card_store: CardStore, game_id: str, player_id: str
+    game_store: GameStore,
+    card_store: CardStore,
+    game_id: str,
+    player_id: str,
+    email: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
     if state is None:
@@ -42,7 +48,7 @@ def join_game(
     if len(state.players) >= 2:
         raise ValueError("Game already has 2 players")
 
-    new_players = list(state.players) + [PlayerState(player_id=player_id)]
+    new_players = list(state.players) + [PlayerState(player_id=player_id, email=email)]
 
     extra_updates: dict[str, object] = {}
     if len(new_players) == 2:
@@ -130,7 +136,12 @@ def leave_game(
 
     if state.status == GameStatus.ACTIVE:
         other_index = 1 - player_index
-        new_result = GameResult(winner=other_index, is_draw=False)
+        new_result = GameResult(
+            winner=other_index,
+            is_draw=False,
+            completion_reason="forfeit",
+            forfeit_by_index=player_index,
+        )
         new_state = state.model_copy(
             update={
                 "status": GameStatus.COMPLETE,
@@ -183,6 +194,13 @@ def submit_move(
         raise ConflictError(
             f"Version conflict for game {game_id!r}: "
             f"expected {expected_version}, got {state.state_version}"
+        )
+
+    player = state.players[player_index]
+    if player.archetype is None:
+        raise ArchetypeNotSelectedError(
+            "You must select an archetype before placing cards. "
+            "Use POST /games/{game_id}/archetype to select one."
         )
 
     card_lookup = {c.card_key: c for c in card_store.list_cards()}

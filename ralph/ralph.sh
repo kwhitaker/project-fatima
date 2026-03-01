@@ -84,9 +84,19 @@ fi
 echo "Starting Ralph (Claude Code) - Max iterations: $MAX_ITERATIONS"
 
 for i in $(seq 1 "$MAX_ITERATIONS"); do
+  # Find the next pending story
+  NEXT_STORY=$(jq -r '[.userStories[] | select(.passes == false)] | first' "$PRD_FILE" 2>/dev/null || echo "")
+  STORY_ID=$(echo "$NEXT_STORY" | jq -r '.id // "unknown"' 2>/dev/null || echo "unknown")
+  STORY_TITLE=$(echo "$NEXT_STORY" | jq -r '.title // "unknown"' 2>/dev/null || echo "unknown")
+  STORY_DESC=$(echo "$NEXT_STORY" | jq -r '.description // ""' 2>/dev/null || echo "")
+
   echo ""
   echo "==============================================================="
   echo "  Ralph Iteration $i of $MAX_ITERATIONS"
+  echo "  Story: [$STORY_ID] $STORY_TITLE"
+  echo "---------------------------------------------------------------"
+  # Word-wrap description at ~60 chars for readability
+  echo "$STORY_DESC" | fold -s -w 60 | sed 's/^/  /'
   echo "==============================================================="
 
   OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true

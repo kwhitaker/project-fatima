@@ -9,13 +9,24 @@ from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
 
 
-def create_game(game_store: GameStore, card_store: CardStore, seed: int | None = None) -> GameState:
+def create_game(
+    game_store: GameStore,
+    card_store: CardStore,
+    player_id: str,
+    seed: int | None = None,
+) -> GameState:
+    """Create a new game and auto-join the caller as player 1."""
     game_id = str(uuid.uuid4())
     if seed is None:
         seed = Random().randint(0, 2**31 - 1)
-    state = GameState(game_id=game_id, seed=seed, status=GameStatus.WAITING)
-    game_store.create_game(game_id, state)
-    return state
+    initial_state = GameState(
+        game_id=game_id,
+        seed=seed,
+        status=GameStatus.WAITING,
+        players=[PlayerState(player_id=player_id)],
+    )
+    game_store.create_game(game_id, initial_state)
+    return initial_state
 
 
 def join_game(
@@ -33,12 +44,17 @@ def join_game(
 
     new_players = list(state.players) + [PlayerState(player_id=player_id)]
 
+    extra_updates: dict[str, object] = {}
     if len(new_players) == 2:
         cards = card_store.list_cards()
         deck_a, deck_b = generate_matched_decks(cards, seed=state.seed)
         new_players[0] = new_players[0].model_copy(update={"hand": [c.card_key for c in deck_a]})
         new_players[1] = new_players[1].model_copy(update={"hand": [c.card_key for c in deck_b]})
         new_status = GameStatus.ACTIVE
+        # Pick starting player deterministically from seed
+        starting = Random(state.seed).randint(0, 1)
+        extra_updates["starting_player_index"] = starting
+        extra_updates["current_player_index"] = starting
     else:
         new_status = state.status
 
@@ -47,6 +63,7 @@ def join_game(
             "players": new_players,
             "status": new_status,
             "state_version": state.state_version + 1,
+            **extra_updates,
         }
     )
     game_store.append_event(
@@ -107,9 +124,7 @@ def leave_game(
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")
 
-    player_index = next(
-        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
-    )
+    player_index = next((i for i, p in enumerate(state.players) if p.player_id == player_id), None)
     if player_index is None:
         raise PermissionError(f"Player {player_id!r} is not in this game")
 

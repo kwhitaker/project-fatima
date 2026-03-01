@@ -135,7 +135,9 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+.env*
+!.env.example
+!web/.env.example
 .envrc
 .venv
 env/
@@ -143,6 +145,20 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Node / Vite / React (web/)
+node_modules/
+.vite/
+web/node_modules/
+web/dist/
+web/.vite/
+web/.turbo/
+web/coverage/
+web/playwright-report/
+web/test-results/
+# Allow web/src/lib (overrides the Python `lib/` exclusion above)
+!web/src/lib/
+!web/src/lib/**
 
 # Spyder project settings
 .spyderproject

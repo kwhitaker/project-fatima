@@ -4,33 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Turn-based 3x3 card-capture game (Triple Triad–inspired, Curse of Strahd–flavored) built with FastAPI + Supabase. **Currently pre-scaffold**: only planning docs and card data exist. No `pyproject.toml`, `app/`, or `tests/` yet.
+Turn-based 3x3 card-capture game (Triple Triad–inspired, Curse of Strahd–flavored) built with FastAPI + Supabase.
 
 See `AGENTS.md` for the authoritative command reference; update it when you add commands.
 
 ## Commands
 
-> Commands below are the intended defaults. Update `AGENTS.md` and here once the scaffold lands.
+Authoritative commands live in `AGENTS.md`.
 
 ```bash
-# Install (prefer uv once added)
-uv sync
+# Install / bootstrap
+uv sync --extra dev
 
 # Dev server
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 
 # Lint / format
-ruff check .
-ruff format .
+uv run ruff check .
+uv run ruff format .
 
 # Typecheck
-pyright
+uv run pyright
 
 # Tests
-pytest                                              # all tests
-pytest tests/test_something.py::test_happy_path    # single test
-pytest -x                                          # stop on first failure
-pytest -k "capture and not slow"                   # by name substring
+uv run pytest
 ```
 
 ## Architecture
@@ -94,11 +91,12 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 ./ralph/ralph.sh 10   # run up to 10 story iterations
 ```
 
-- Backlog: `ralph/prd.json` (ordered user stories, `passes` field tracks completion).
+- Active backlog: `ralph/prd.json` (ordered user stories, `passes` field tracks completion).
+- Archived API MVP backlog: `ralph/prd.json.api-mvp`.
 - Progress log: `ralph/progress.txt` (append-only).
 - Each iteration: implement ONE story → run checks → commit `feat: [US-XXX] - Title` → mark `passes: true`.
 - Commit only when `pytest` passes; never mark `passes: true` without passing tests.
-- Ralph targets branch `ralph/mvp` (specified in `prd.json`).
+- Ralph targets the branch specified by PRD `branchName`.
 
 ## Conventions
 

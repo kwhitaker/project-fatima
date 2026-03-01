@@ -4,250 +4,110 @@
 - (add stable patterns here as they are discovered)
 
 ---
-Started: 2026-02-25
+Started: 2026-02-26
 ---
 
-## 2026-02-25 18:45 - US-001
-- Created `pyproject.toml` (uv/hatchling, fastapi, uvicorn, pytest, httpx, ruff, pyright)
-- Created `app/main.py` (FastAPI app with `/health` endpoint) and `tests/test_health.py`
-- Updated `AGENTS.md` with canonical `uv run` commands for install, dev server, lint, typecheck, and tests
-- Tests/validation run: `uv run pytest` → 1 passed; `uv run ruff check .` → clean
-- Files changed: `pyproject.toml`, `uv.lock`, `app/__init__.py`, `app/main.py`, `tests/__init__.py`, `tests/test_health.py`, `AGENTS.md`
-- Learnings: hatchling needs `[tool.hatch.build.targets.wheel] packages = ["app"]` when package name doesn't match project name; uv not pre-installed — installed via pip from mise Python
+## 2026-02-26 21:50 - US-UI-001
+- Scaffolded Vite 7 + React 19 + TypeScript app in `web/` with React Router 7, Tailwind CSS 4, and manual shadcn/ui Button component
+- Configured Vite dev proxy (`/api/*` → `http://localhost:8000/*`), vitest 4 test suite (6 tests pass), and production build (tsc -b && vite build)
+- Added web dev/build/test commands to AGENTS.md and web/README.md; fixed .gitignore to allow `web/src/lib/`
+- Files changed: `web/` (all scaffold files), `AGENTS.md`, `.gitignore`
+- Learnings: bun resolves latest versions (React 19, Router 7, Vite 7, Tailwind 4, Vitest 4) — use `vitest/config` defineConfig (not vite's) for proper test type resolution; Tailwind v4 uses `@import "tailwindcss"` + `@tailwindcss/postcss` plugin; `bun test` runs bun's runner, not vitest — use `bun run test` to invoke the vitest script
 ---
 
-## 2026-02-25 19:30 - US-003
-- Created `app/rules/captures.py`: pure `resolve_captures()` using a static adjacency table; `mists_modifier` param ready for US-004
-- Created `app/rules/reducer.py`: `PlacementIntent` dataclass + `apply_intent()` (basic: places card, resolves captures, bumps state_version, no Mists/turn-validation yet)
-- Tests/validation run: `uv run pytest` → 35 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/__init__.py`, `app/rules/captures.py`, `app/rules/reducer.py`, `tests/test_captures.py`
-- Learnings: helper wrapper `rc()` in test file keeps call sites under 100 chars without losing clarity; `model_copy(update=...)` is the Pydantic v2 immutable-update pattern; board adjacency direction pairs: placed card uses direction side, neighbor uses opposite (N↔S, E↔W)
+## 2026-02-27 09:49 - US-UI-002
+- Added Supabase JS client (`web/src/lib/supabase.ts`), `AuthContext` with magic-link signIn/signOut, and `RequireAuth` guard component
+- Protected `/games` and `/g/:gameId` routes; unauthenticated users redirect to `/login`; Login form submits magic link and shows confirmation/error; Games page has Log out button
+- Tests: 11 vitest tests pass (auth redirect, magic link form, logout); TypeScript lint and production build both clean; added `vite/client` to tsconfig types for `import.meta.env`
+- Files changed: `web/src/lib/supabase.ts` (new), `web/src/context/AuthContext.tsx` (new), `web/src/components/RequireAuth.tsx` (new), `web/src/App.tsx`, `web/src/routes/Login.tsx`, `web/src/routes/Games.tsx`, `web/src/__tests__/routes.test.tsx`, `web/tsconfig.app.json`, `web/package.json`, `web/bun.lock`
+- Learnings: `vi.mock` is hoisted so use `vi.hoisted()` to declare shared mock functions; add `"vite/client"` to tsconfig `types` array alongside `"vitest/globals"` so `import.meta.env` type-checks correctly
 ---
 
-## 2026-02-25 20:00 - US-004
-- Added `mists_modifier_from_roll(roll: int) -> int` (public) to `reducer.py`: 1→-1, 6→+1, 2-5→0
-- Updated `apply_intent` to roll `rng.randint(1, 6)` when rng is provided; passes modifier to `resolve_captures`; rng=None → modifier=0 for backward compat
-- Tests/validation run: `uv run pytest` → 48 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/reducer.py`, `tests/test_mists.py`
-- Learnings: `captures.py` already had `mists_modifier` param from US-003 with forward comment; ruff I001 import-sort triggered by stdlib before third-party ordering; `MagicMock().randint.return_value` lets tests pin the roll without a real Random instance
+## 2026-02-27 - US-UI-003
+- Added `app/auth.py` with `get_caller_id` FastAPI dependency (validates Supabase JWT via PyJWT, reads `SUPABASE_JWT_SECRET`); all endpoints now use `CallerIdDep` for identity
+- Removed `player_id` from all request bodies; `POST /games` auto-joins caller as player1; `GET /games` lists caller's games; `GET /games/{id}` blocks non-participants on ACTIVE/COMPLETE games (403)
+- Added `LastMoveInfo` (mists_roll, mists_effect) to `GameState`; reducer now tracks mists roll per move; SD rounds alternate starting player via `starting_player_index`; starting player on ACTIVE chosen deterministically from seed
+- Added migration `003_idempotency_key_and_player_columns.sql`; updated SupabaseGameStore to sync `player1_id`/`player2_id` columns and implement `list_games_for_player`
+- Tests: 432 pass (pytest), ruff + pyright clean; added `tests/test_auth_api.py` covering GET /games, spectator block, last_move, deterministic starting player
+- Files: `app/auth.py` (new), `app/models/game.py`, `app/rules/reducer.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/routers/games.py`, `supabase/migrations/003_*` (new), plus 6 test files
+- Learnings: PyJWT is available as transitive dep via supabase package; test auth with `app.dependency_overrides[get_caller_id] = lambda request: request.headers.get("X-User-Id")`; `begin_sudden_death_round` uses `(starting_player_index + round_number - 1) % 2` formula for alternation
 ---
 
-## 2026-02-25 19:00 - US-002
-- Created `app/models/cards.py` (CardSides, CardDefinition with pydantic validation)
-- Created `app/models/game.py` (Archetype, GameStatus enums; BoardCell, PlayerState, GameResult, GameState models)
-- Tests/validation run: `uv run pytest` → 19 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/models/__init__.py`, `app/models/cards.py`, `app/models/game.py`, `tests/test_models.py`
-- Learnings: pydantic is available transitively via FastAPI; `[None] * 9` inferred as `list[None]` by pyright — must annotate as `list[BoardCell | None]` explicitly; `set` is valid as a pydantic field name (class annotation, no actual shadowing issue)
----
-
-## 2026-02-25 21:00 - US-006
-- Created `app/rules/archetypes.py`: pure `rotate_card_once(card)` (new.n=old.w, new.e=old.n, new.s=old.e, new.w=old.s)
-- Added `ArchetypeAlreadyUsedError` and `ArchetypeNotAvailableError` to `errors.py`
-- Updated `PlacementIntent` with `use_archetype: bool = False`; reducer handles Martial validation + rotation before Mists/captures; sets `archetype_used=True` in player state
-- Tests/validation run: `uv run pytest` → 73 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/archetypes.py` (new), `app/rules/errors.py`, `app/rules/reducer.py`, `tests/test_martial.py` (new)
-- Learnings: `use_archetype` validation must fire before Mists roll; guard `if state.players` lets playerless mechanical tests pass unchanged; `dataclass field(default=False)` needed for default after positional args
----
-
-## 2026-02-25 22:00 - US-007
-- Added `apply_skulker_boost(card, side)` to `archetypes.py`: returns card copy with chosen side +2; original unchanged
-- Added `ArchetypePowerArgumentError` to `errors.py` for missing/invalid archetype arguments
-- Updated `PlacementIntent` with `skulker_boost_side: str | None = None`; refactored archetype block in `apply_intent` from MARTIAL-only check to dispatching if/elif/else covering MARTIAL and SKULKER
-- Updated `test_martial.py`: changed SKULKER→CASTER in wrong-archetype test (SKULKER now has its own handler)
-- Tests/validation run: `uv run pytest` → 88 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/archetypes.py`, `app/rules/errors.py`, `app/rules/reducer.py`, `tests/test_skulker.py` (new), `tests/test_martial.py`
-- Learnings: moving `archetype_used` check before the archetype-type dispatch ensures all archetypes get `ArchetypeAlreadyUsedError` consistently; `model_dump()` + `CardSides(**dict)` is the clean pattern for selective field update; updating existing Martial test when a new archetype claims `use_archetype=True` is expected churn as handlers are added
----
-
-## 2026-02-25 23:00 - US-008
-- Added `elif player.archetype == Archetype.CASTER` branch in `apply_intent` archetype dispatch: sets `caster_reroll = True` and `archetype_activated = True`
-- In Mists roll section: if `caster_reroll`, call `rng.randint` a second time; second result is used as the modifier input
-- Updated `test_martial.py`: changed CASTER→DEVOUT in wrong-archetype test (CASTER now has its own handler)
-- Tests/validation run: `uv run pytest` → 97 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/reducer.py`, `tests/test_caster.py` (new), `tests/test_martial.py`
-- Learnings: the `caster_reroll` flag must be initialized before the archetype dispatch block so it is always in scope for the Mists roll section; `rng.randint.side_effect = [a, b]` allows pinning both rolls in sequence; updating the "wrong archetype" test is expected churn each time a new archetype handler is added — update to the next unimplemented archetype (DEVOUT for US-009)
----
-
-## 2026-02-25 23:30 - US-009
-- Added `devout_negate_fog` flag in `apply_intent`; DEVOUT branch sets it; post-roll logic zeros modifier when `devout_negate_fog and mists_modifier == -1`
-- Updated `test_martial.py` wrong-archetype test: DEVOUT → PRESENCE (DEVOUT now has its own handler)
-- Tests/validation run: `uv run pytest` → 108 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/reducer.py`, `tests/test_devout.py` (new), `tests/test_martial.py`
-- Learnings: Devout applies after the Mists roll result is known, not before; the negation is a post-roll guard (`if devout_negate_fog and mists_modifier == -1`) — keeps the flag initialization pattern consistent with `caster_reroll`; updating the wrong-archetype test to the next unimplemented archetype (PRESENCE) is expected churn each time a new handler is added
----
-
-## 2026-02-25 23:55 - US-010
-- Added `presence_boost_direction: str | None` to `PlacementIntent`; PRESENCE branch in archetype dispatch sets `presence_direction_boost` and validates the direction arg
-- Extended `resolve_captures` with `presence_direction` param: applies +1 to placed side value only for the matching comparison; stacks with `mists_modifier`
-- Removed stale `test_non_martial_archetype_cannot_use_rotation` test (used PRESENCE as unimplemented archetype; all 5 archetypes now handled)
-- Tests/validation run: `uv run pytest` → 119 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/captures.py`, `app/rules/reducer.py`, `tests/test_presence.py` (new), `tests/test_martial.py`
-- Learnings: Presence boost is applied inside the adjacency loop per-direction (not as a global modifier like mists); `placed_side == presence_direction` is the guard; since all archetypes are now implemented, the "wrong archetype" test pattern is fully retired — the `else` branch can only be reached with `archetype=None`
----
-
-## 2026-02-25 00:30 - US-011
-- Added `compute_round_result(board)` to `reducer.py`: counts per-player cells, returns `GameResult` (winner or draw)
-- Updated `apply_intent`: after board update, checks `all(cell is not None for cell in new_board)`; if full, sets `result` and `status=COMPLETE`
-- Tests/validation run: `uv run pytest` → 129 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/reducer.py`, `tests/test_scoring.py` (new)
-- Learnings: `list[BoardCell]` is not assignable to `list[BoardCell | None]` due to pyright invariance — annotate the first sub-list as `list[BoardCell | None]` before concatenation; tie (equal counts) is mathematically impossible with 9 cells in standard play but the defensive branch is tested by calling `compute_round_result` directly with a 4-4 board
----
-
-## 2026-02-25 01:00 - US-012
-- Added `begin_sudden_death_round(state)` to `reducer.py`: rebuilds hands from board ownership, increments `round_number`/`sudden_death_rounds_used`, resets board + `current_player_index=0`; handles SD cap (>=3 rounds → COMPLETE draw); does NOT bump `state_version` (caller's responsibility)
-- Updated `apply_intent` end-of-round check: on draw with players present, applies placement updates then delegates to `begin_sudden_death_round`; non-draw path unchanged
-- Tests/validation run: `uv run pytest` → 153 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/reducer.py`, `tests/test_sudden_death.py` (new, 24 tests)
-- Learnings: a genuine tie at board-full is mathematically impossible with 9 cells/2 players (9 is odd) — test the SD logic directly via `begin_sudden_death_round` rather than driving through `apply_intent`; pyright list invariance: annotate the first sub-list as `list[BoardCell | None]` before concatenation; preserve `archetype_used` in SD (once-per-game semantics)
----
-
-## 2026-02-25 20:30 - US-005
-- Created `app/rules/errors.py`: `InvalidMoveError` base + `WrongPlayerTurnError`, `CardNotInHandError`, `OccupiedCellError`
-- Updated `app/rules/reducer.py`: added turn/hand/cell validation in `apply_intent`; removes card from hand and advances `current_player_index` after legal placement
-- Tests/validation run: `uv run pytest` → 60 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/errors.py` (new), `app/rules/reducer.py`, `tests/test_turn_flow.py` (new)
-- Learnings: guard turn/hand validation on `if state.players:` to keep existing pure-mechanics tests (which omit players) passing without modification; occupied-cell check is always enforced; `list.remove()` removes only the first occurrence, preserving duplicates in hand correctly
----
-
-## 2026-02-25 03:00 - US-014
-- Added `rarity_bucket(rarity)` and `STAT_BUDGETS` lookup table to `app/rules/cards.py`; bucket ranges (1-49 common, 50-74 uncommon, 75-89 rare, 90-96 very_rare, 97-100 ultra) and 15 (tier, bucket) entries are centralized
-- Added `validate_card_balance(card)` returning list of human-readable error strings; loader now calls it after uniqueness check and reports errors with "Balance error:" prefix
-- Tests/validation run: `uv run pytest` → 207 passed (32 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/cards.py`, `tests/test_cards_balance.py` (new, 32 tests)
-- Learnings: existing VALID_CARD fixtures (tier=1, rarity=15/18, common (16,6)) already satisfy balance constraints — no old tests broke; balance check placed after uniqueness check means a card failing balance is not added to `seen_keys`, which lets a second valid occurrence of the same key be accepted; ruff F401 fires on unused imports in test files — remove before committing
----
-
-## 2026-02-25 04:00 - US-015
-- Created `app/rules/deck.py`: `validate_deck(cards)` checks size==10, named uniqueness by `character_key` (when `is_named`), and rarity slots (ultra≤1, very_rare≤2, rare≤3); returns list of error strings
-- Tests/validation run: `uv run pytest` → 227 passed (20 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/deck.py` (new), `tests/test_deck_validator.py` (new, 20 tests)
-- Learnings: "very_rare" contains "rare" as a substring — test assertions checking for "rare" must use `"very_rare" not in e` guard to avoid false positives; `rarity_bucket()` from `cards.py` is reused to classify cards for slot counting; bucket iteration order in `_RARITY_SLOT_LIMITS` doesn't affect correctness since all buckets are checked independently
----
-
-## 2026-02-26 00:00 - US-016
-- Added `COPY_LIMITS` dict to `app/rules/deck.py`: common/uncommon → 2 copies; rare/very_rare/ultra → 1 copy
-- Extended `validate_deck` with copy-limit check: groups cards by `card_key`, looks up limit via `rarity_bucket`, emits actionable error if exceeded
-- Tests/validation run: `uv run pytest` → 240 passed (13 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/deck.py`, `tests/test_deck_copy_limits.py` (new, 13 tests)
-- Learnings: "copies" does NOT contain the substring "copy" — error messages for tests filtering on "copy" must use "copy" literally (not "copies"); slot-limit and copy-limit errors coexist independently in the errors list
----
-
-## 2026-02-26 00:30 - US-017
-- Added `card_cost(card)` to `app/rules/deck.py`: returns `sum_budget` from `STAT_BUDGETS[(tier, bucket)]` as the card's strength weight
-- Added `deck_cost(cards)` as `sum(card_cost(c) for c in cards)` — deterministic, no simulation
-- Added `STAT_BUDGETS` import to `deck.py` (already imported `rarity_bucket`); reusing the existing budget table avoids a redundant cost table
-- Tests/validation run: `uv run pytest` → 255 passed (15 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/deck.py`, `tests/test_deck_cost.py` (new, 15 tests)
-- Learnings: `STAT_BUDGETS[(tier, bucket)][0]` (sum_budget) is already monotonically increasing with tier and rarity — reusing it as the card cost avoids defining a separate lookup table; deck_cost of an empty list is 0 (sum([]) == 0 in Python) — worth testing explicitly; the cost function is consumed by US-018 (deck generation with tolerance matching)
----
-
-## 2026-02-26 01:00 - US-018
-- Added `DeckGenerationError`, `DEFAULT_COST_TOLERANCE`, `_can_add_to_deck`, `generate_matched_decks` to `app/rules/deck.py`
-- Algorithm: shuffle pool with seeded RNG, sort by cost descending, assign alternately to two decks respecting slot/copy/named rules; raise on insufficient pool or cost imbalance
-- Tests/validation run: `uv run pytest` → 268 passed (13 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/deck.py`, `tests/test_deck_generation.py` (new, 13 tests)
-- Learnings: sort-then-alternate over cost-descending order naturally balances decks; `_can_add_to_deck` reuses `_RARITY_SLOT_LIMITS` and `COPY_LIMITS` already in deck.py; `target = 1 - idx` after each add correctly alternates even when fallback deck is used; with a pool of all-same-cost cards tolerance=0 works (diff=0); ultra-only pool fails fast (slot limit=1 means max 1 card per deck)
----
-
-## 2026-02-26 02:00 - US-019
-- Created `app/store/__init__.py`: `GameStore`/`CardStore` Protocol interfaces, `GameEvent` dataclass, `ConflictError` exception
-- Created `app/store/memory.py`: `MemoryGameStore` (append-only events, per-game seq, optimistic locking via state_version) and `MemoryCardStore`
-- Tests/validation run: `uv run pytest` → 288 passed (20 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/store/__init__.py` (new), `app/store/memory.py` (new), `tests/test_store.py` (new, 20 tests)
-- Learnings: `Protocol` with `...` body for method stubs still needs proper return type and body (`...`); ruff I001 fires when `import pytest` is not separated from local imports by a blank line; `MemoryGameStore.get_events("missing")` returns `[]` (not KeyError) since it's a read-only operation — `append_event` raises `KeyError` for unknown games
----
-
-## 2026-02-26 03:00 - US-020
-- Created `app/dependencies.py`: `get_game_store`/`get_card_store` DI providers; tests override via `app.dependency_overrides`
-- Created `app/routers/games.py`: 5 endpoints (POST /games, /{id}/join, /{id}/archetype, GET /{id}, POST /{id}/moves) with 404/400/403/409/422 error translation
-- Created `app/services/game_service.py`: orchestration (create_game, join_game, select_archetype, submit_move); decks generated on 2nd join; per-move RNG derived from `seed + state_version`
-- Tests/validation run: `uv run pytest` → 299 passed (11 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/dependencies.py` (new), `app/routers/__init__.py` (new), `app/routers/games.py` (new), `app/services/__init__.py` (new), `app/services/game_service.py` (new), `app/main.py`, `tests/test_api.py` (new, 11 tests)
-- Learnings: `app.dependency_overrides[fn] = lambda: store` in pytest fixture + `app.dependency_overrides.clear()` in teardown is the clean FastAPI integration test pattern; `PermissionError` (Python built-in) works fine as a domain signal for 403 in this server-only context; `ConflictError` must be caught separately from `InvalidMoveError` in the router since they have different status codes (409 vs 422)
----
-
-## 2026-02-25 02:00 - US-013
-- Created `app/rules/cards.py`: `load_cards_from_lines(lines)` + `load_cards_from_file(path)`; `CardLoadError` dataclass with `line` and `message` fields
-- Loader skips blank lines (still counting them for accurate 1-indexed line numbers), catches `json.JSONDecodeError`, validates via `CardDefinition.model_validate`, enforces `card_key` uniqueness with first-seen line tracking
-- Tests/validation run: `uv run pytest` → 175 passed (22 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/cards.py` (new), `tests/test_cards_loader.py` (new, 22 tests)
-- Learnings: ruff I001 fires when stdlib-only and first-party imports are not separated by a blank line — run `ruff check --fix` to auto-resolve; pydantic `ValidationError.errors()` returns a list of dicts with `loc` (tuple) and `msg` (str) — join loc with "." for readable field path; duplicate detection needs to continue (not raise) so all subsequent dupes are also reported
----
-
-## 2026-02-26 05:00 - US-022
-- Created `app/store/supabase_store.py`: `SupabaseGameStore` backed by Supabase REST API; injects `supabase.Client` (lazy import in constructor when `client=None`); optimistic lock via `UPDATE ... WHERE state_version = expected_version` returning 0 rows → ConflictError / KeyError; seq derived from max existing event seq
-- Added `supabase>=2.10.0,<2.20.0` to production deps (2.18.1 resolved; avoids pyiceberg build issue in ≥2.20 and httpx conflict in <2.10)
-- Tests/validation run: `uv run --extra dev pytest` → 325 passed (18 new); `ruff check .` → clean; `ruff format .` → reformatted 13 pre-existing files; `pyright` → 0 errors
-- Files changed: `app/store/supabase_store.py` (new), `tests/test_supabase_store.py` (new, 18 tests), `pyproject.toml`, `uv.lock` + 13 pre-existing files reformatted
-- Learnings: supabase 2.20+ pulls in `storage3` which pulls `pyiceberg` requiring C++ compiler (build fails); version 2.10–2.19 is compatible with `httpx>=0.28`; MagicMock `table.side_effect = lambda n: games_table if n == "games" else events_table` cleanly routes fluent builder per-table; `TYPE_CHECKING` guard avoids runtime import of `supabase` package while keeping pyright happy
----
-
-## 2026-02-26 06:00 - US-023
-- Added `DuplicateEventError` and `has_idempotency_key` to `GameStore` Protocol; updated `append_event` signature with `idempotency_key: str | None = None`
-- `MemoryGameStore`: tracks used keys per game in `_idempotency_keys`; raises `DuplicateEventError` if key seen before version check
-- `SupabaseGameStore`: pre-query for duplicate key before optimistic lock; stores key in insert payload when provided; `has_idempotency_key` method for early check
-- Router: checks `has_idempotency_key` BEFORE state_version validation (handles stale-version retries correctly); catches `DuplicateEventError` as belt-and-suspenders
-- Tests/validation run: `uv run pytest` → 338 passed (13 new); `ruff check .` → clean; `pyright` → 0 errors
-- Files changed: `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/routers/games.py`, `app/services/game_service.py`, `tests/test_idempotency.py` (new, 13 tests)
-- Learnings: idempotency check MUST happen before state_version check in the router — stale-version retries are the canonical network-retry scenario; `has_idempotency_key` on the Protocol keeps the store as the authoritative owner; the mock chain for Supabase `.eq().eq().maybe_single()` is distinct from `.eq().order().limit()` so both queries can coexist on the same `events_table` mock without conflict
----
-
-## 2026-02-26 04:00 - US-021
-- Created `supabase/migrations/001_initial_schema.sql`: profiles, games (current_state jsonb, state_version, seed), game_events (seq, UNIQUE(game_id,seq)) with an index on (game_id, seq)
-- Added RLS via `ENABLE ROW LEVEL SECURITY` + SELECT policies for participants; no client INSERT/UPDATE/DELETE policies (service role key owns writes)
-- Tests/validation run: `uv run pytest` → 307 passed (8 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `supabase/migrations/001_initial_schema.sql` (new), `tests/test_schema.py` (new, 8 tests)
-- Learnings: test only checks file content (no DB connection needed); `glob("*.sql")` on a non-existent directory returns [] silently — test for `len(files) >= 1` catches missing dir; keeping RLS policy names descriptive (table_action_scope) aids future maintenance
----
-
-## 2026-02-26 08:00 - US-025
-- Added 15 new tests in `tests/test_schema.py` asserting cards table schema: file existence, all canonical columns (card_key, character_key, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb), CHECK constraints (sides 1..10, tier 1..3, rarity 1..100), and RLS policy
-- SQL file `supabase/migrations/002_cards_schema.sql` already existed from US-024 and satisfies all constraints
-- Tests/validation run: `uv run pytest` → 367 passed; `uv run ruff check .` → clean
-- Files changed: `tests/test_schema.py`
-- Learnings: when a prerequisite story (US-024) creates the artifact, the dependent story (US-025) can focus entirely on test coverage; `_cards_sql()` helper isolates the cards-specific file so tests don't match across migrations; side column check uses trailing space ("n ") to avoid matching "n" as a substring of other identifiers
----
-
-## 2026-02-26 09:00 - US-028
-- Added `delete_game(game_id, expected_version)` to GameStore Protocol, MemoryGameStore, and SupabaseGameStore (with optimistic locking; Supabase uses conditional DELETE + follow-up check)
-- Added `leave_game` service function: ACTIVE → forfeit (appends `game_forfeited` event, other player wins, returns COMPLETE state); WAITING+1 player → deletes lobby (returns None → 204)
-- Added `POST /games/{id}/leave` endpoint with idempotency support for ACTIVE forfeits; 204 for WAITING deletion
-- Tests/validation run: `uv run pytest` → 386 passed (19 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `app/services/game_service.py`, `app/routers/games.py`, `tests/test_leave_game.py` (new, 19 tests)
-- Learnings: `Response(status_code=204)` in a FastAPI endpoint bypasses `response_model` serialization cleanly; `delete_game` for Supabase uses the same conditional-check pattern as `append_event` (DELETE by id+version, then check existence if 0 rows); WAITING delete idempotency is implicit (404 on retry is acceptable since the action already succeeded)
----
-
-## 2026-02-26 10:00 - US-029
-- Replaced single-pass loop in `resolve_captures` with BFS queue; initial entry uses mists_modifier + presence_direction, combo entries use 0/None (printed stats only)
-- Added `tests/test_combo_captures.py` (9 tests): 2-step combo, 3-step chain, no-combo fallback, modifier scoping (mists + presence), own-card safety, multi-branch, determinism, end-to-end via apply_intent
-- Tests/validation run: `uv run pytest` → 395 passed; `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `app/rules/captures.py`, `tests/test_combo_captures.py` (new)
-- Learnings: BFS owner check uses `placed_owner` closure variable (not `new_board[src].owner`) so tests calling `resolve_captures` directly without pre-placing the card still work; once a card is flipped to `placed_owner` it won't be recaptured (owner guard fires); combo cards are enqueued with `(neighbor_def, 0, None)` — no modifier leakage
----
-
-## 2026-02-26 11:30 - US-027
-- Created `docs/realtime.md`: covers Supabase JS subscription setup, event payload schema (id/game_id/seq/event_type/payload/created_at), seq ordering guarantee, all four event_type values with payload fields, MVP refetch behaviour, and RLS notes
-- Created `tests/test_realtime_doc.py` (6 tests): assert doc exists; covers subscription/filter, payload shape, seq ordering, MVP GET refetch, and all required event_type names
-- Tests/validation run: `uv run pytest` → 420 passed; `uv run ruff check .` → clean
-- Files changed: `docs/realtime.md` (new), `tests/test_realtime_doc.py` (new)
-- Learnings: doc-only stories still benefit from assertion-based tests; checking specific keywords in the doc text ensures the required content is present and catches accidental deletions; `docs/` directory was not pre-existing — created it as part of this story
+## 2026-02-28 21:30 - US-UI-011
+- Added `LastMoveInfo` interface to `api.ts` and `last_move?: LastMoveInfo | null` to `GameState`; backend already serializes this field per move
+- Added board-diff tracking via `prevBoardRef` + `useEffect([game])` in `GameRoom.tsx`; computes `placedCells` / `capturedCells` sets on each snapshot update; passes them to `BoardGrid` for CSS animation classes (`animate-card-placed`, `animate-card-captured`) and `data-anim` attributes
+- Added Mists feedback banner in ACTIVE view (blue/purple/muted styling per effect, shows roll + "Fog"/"Omen" label); added Combo indicator (`"Combo! ×N"`) when `capturedCells.size >= 2`; end-of-game banner already existed from US-UI-006
+- CSS keyframe animations added to `index.css`: `card-placed` (scale-in) and `card-captured` (brightness pulse); 6 new vitest tests (58 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/index.css`, `web/src/__tests__/routes.test.tsx`
+- Learnings: board-diff tracking via a `useRef` (not state) avoids extra renders; `game.last_move != null` catches both `null` and `undefined` (needed since factory omits the field); no timeout needed for animation cleanup — clearing happens naturally on next `[game]` useEffect run; CSS animations in jsdom don't execute so test only the visible text indicators (mists banner, combo text), not the animation classes themselves
 
 ---
 
-## 2026-02-26 11:00 - US-026
-- Created `tests/test_error_responses.py` (19 tests): 8×422, 5×404, 3×403, 3×409; each test asserts both the status code and that the response body contains a `detail` key
-- Router already returned the correct codes for all error classes; no router changes needed
-- Tests/validation run: `uv run pytest` → 414 passed; `uv run ruff check .` → clean
-- Files changed: `tests/test_error_responses.py` (new)
-- Learnings: existing routers mapped KeyError→404, PermissionError→403, ConflictError→409, InvalidMoveError→422 correctly; FastAPI's built-in Pydantic validation already returns 422 with a `detail` list; `_assert_error` helper centralizes the status-code + body-key check to keep tests concise
-
+## 2026-02-28 16:15 - US-UI-010
+- Added Supabase Realtime subscription in `GameRoom.tsx`: subscribes to `game_events` INSERT events filtered by `game_id` via `supabase.channel("game:${gameId}").on(...).subscribe(...)` following `docs/realtime.md` contract
+- On INSERT, refetches `GET /games/:gameId` and replaces local snapshot state; unsubscribes (`supabase.removeChannel`) on unmount; starts 30s fallback polling interval when channel status is CLOSED/CHANNEL_ERROR, clears it on SUBSCRIBED
+- Tests: 4 new vitest tests (52 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: `vi.hoisted()` blocks are independent — place realtime mocks in their own block and extend the `vi.mock()` factory to include `channel`/`removeChannel`; capture handlers by mutating a shared `realtimeCbs` object from the mock implementation; reset `realtimeCbs` fields in `beforeEach` since `vi.clearAllMocks()` does not clear mock implementations; use `vi.useFakeTimers()` locally in a test (with try/finally + `vi.useRealTimers()`) to test interval behavior; `mockGetGame.mock.calls.length` counts calls synchronously so it works even before the returned promise resolves
 ---
 
-## 2026-02-26 07:00 - US-024
-- Created `supabase/migrations/002_cards_schema.sql`: cards table with canonical columns (card_key PK, character_key, name, version, tier, rarity, is_named, n/e/s/w, set, tags, definition jsonb) plus CHECK constraints and RLS (public SELECT policy)
-- Created `scripts/seed_cards.py`: `card_to_row()` + `seed_cards(client, file)` functions; `__main__` block uses SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY env vars; no secrets committed
-- Added `scripts` to `packages` in `pyproject.toml` so tests can import `scripts.seed_cards`; ran `uv sync` to reinstall
-- Tests/validation run: `uv run pytest` → 352 passed (14 new); `uv run ruff check .` → clean; `uv run pyright` → 0 errors
-- Files changed: `supabase/migrations/002_cards_schema.sql` (new), `scripts/__init__.py` (new), `scripts/seed_cards.py` (new), `tests/test_seed_cards.py` (new, 14 tests), `pyproject.toml`
-- Learnings: `packages = ["app", "scripts"]` in hatch wheel config is enough to make `scripts` importable in tests after `uv sync`; `card_to_row` flattens `sides.n/e/s/w` into top-level columns matching the DB schema; returning `(count, errors)` rather than raising lets callers decide whether to abort cleanly; tested real `cards.jsonl` in repo as a smoke test
+## 2026-02-28 16:00 - US-UI-009
+- Added `powerOptions` optional param to `placeCard` in `api.ts` (options object for `useArchetype`, `skulkerBoostSide`, `presenceBoostDirection`)
+- Added "Use Power" checkbox toggle to GameRoom active view (visible when caller has unused archetype, on their turn); Skulker/Presence show n/e/s/w side selector on toggle; cells blocked until side selected for those archetypes
+- Tests: 6 new vitest tests (48 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: When extending mock call signatures with an optional arg, using `undefined` explicitly vs omitting the arg matters for `toHaveBeenCalledWith` checks — use an `if/else` branch to call with or without the extra arg; `getByText(/archetype/i)` can collide with checkbox label text — keep label text generic (no archetype name) to avoid multi-match errors in existing tests
 ---
+
+## 2026-02-27 15:45 - US-UI-008
+- Added `selectArchetype(gameId, archetype)` to `web/src/lib/api.ts`; throws typed error with `.status` on failure
+- Added archetype selection prompt in GameRoom ACTIVE view: shows 5 archetype buttons when caller has no archetype; hides after selection; displays selected archetype + Available/Used status for both players
+- Tests: 5 new vitest tests (42 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: add new mocked API functions to both `vi.hoisted()` and `vi.mock()` blocks AND `beforeEach` defaults to avoid test bleed; Archetype type exported from api.ts avoids duplication in GameRoom
+---
+
+## 2026-02-27 15:30 - US-UI-007
+- Added `placeCard(gameId, cardKey, cellIndex, stateVersion, idempotencyKey)` to `web/src/lib/api.ts`; throws error with `.status` property on non-OK responses
+- Updated `BoardGrid` to accept `canPlace`/`onCellClick` props; empty cells become `<button aria-label="cell N">` when it's the caller's turn and a card is selected
+- Added `handlePlaceCard`, `moveError`, and `movePending` states to `GameRoom.tsx`; card hand buttons disabled when not caller's turn; 409/422 errors shown + game refetched
+- Tests: 6 new vitest tests (37 total pass), 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: attach `.status` to Error via `Object.assign(err, { status })` instead of a custom class to avoid mock complexity; `crypto.randomUUID()` is available in jsdom test env; render empty cells as `<button>` elements (not divs) to leverage `getByRole("button", { name: /cell N/ })` in tests
+---
+
+## 2026-02-27 15:19 - US-UI-006
+- Added `BoardCell`, `GameResult` types and `board`/`current_player_index`/`result` fields to `GameState` in `api.ts`; added `leaveGame(gameId, stateVersion)` function (handles 204 no-content)
+- Implemented `BoardGrid` component (3×3 grid, blue=mine/red=opponent ownership); active game view: turn indicator, score, hand (selectable buttons), opponent card count, archetype display, Leave button; complete game view: result banner (win/lose/draw), final board, Leave button; Leave navigates to /games
+- Added 11 vitest tests covering all US-UI-006 acceptance criteria; all 31 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/routes.test.tsx`
+- Learnings: make a `makeGame(overrides)` factory in tests to avoid duplicating full GameState shapes; `aria-label` on the grid div allows `getByLabelText` in tests; catch-all in `handleLeave` ensures navigation even if API fails
+---
+
+## 2026-02-27 10:46 - US-UI-005
+- Added `getGame(gameId)` and `joinGame(gameId)` to `web/src/lib/api.ts`
+- Implemented `GameRoom.tsx` lobby UI: fetches game on mount; WAITING renders invite link + Copy Link button; shows Join button when not a participant and game not full; shows blocked message when full and not a participant; ACTIVE/COMPLETE show placeholder text
+- Added 5 new vitest tests covering all lobby states; all 20 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/src/routes/GameRoom.tsx`, `web/src/lib/api.ts`, `web/src/__tests__/routes.test.tsx`
+- Learnings: `useAuth().user.id` is the caller identity for participant checks; default `mockGetGame` in `beforeEach` prevents existing navigation tests from erroring when they land on `/g/:gameId`
+---
+
+## 2026-02-27 10:11 - US-UI-004
+- Created `web/src/lib/api.ts` with `listGames()` and `createGame()` — authenticated fetch wrappers that read the Supabase session token and call `/api/games`
+- Updated `web/src/routes/Games.tsx` to fetch and render the game list, show status badges, navigate to `/g/:gameId` on row click, and navigate after Create Game
+- Added 4 new vitest tests (games list render, row click navigation, Create Game flow, empty state); fixed pre-existing ruff format/lint issues in 6 Python files
+- Tests: 15 vitest pass, 432 pytest pass; ruff + pyright clean; vite build clean
+- Files changed: `web/src/lib/api.ts` (new), `web/src/routes/Games.tsx`, `web/src/__tests__/routes.test.tsx`, `tests/test_idempotency.py` (lint fix), 5 other pre-existing format-only changes
+- Learnings: mock `@/lib/api` with `vi.hoisted()` + `vi.mock()` for clean API isolation; ruff format does not auto-break mock `.return_value` chains — split them into intermediate variables
+---
+
+## 2026-02-28 21:50 - US-UI-012
+- Added `@playwright/test` dev dependency; installed chromium headless shell via `bunx playwright install chromium`
+- Created `web/playwright.config.ts` (testDir: `./e2e`, chromium, webServer: `bun dev` at port 5173, reuseExistingServer in dev)
+- Created `web/e2e/smoke.spec.ts`: two-browser-context smoke test (P1 + P2) using `page.addInitScript` to inject Supabase sessions into localStorage (key: `sb-yhrwetmhhrxeyiiijixb-auth-token`) and `page.route('**/api/**')` to mock all app API calls; exercises create → share link → join → play one move
+- Added `test:e2e` script to `web/package.json`; added vitest `include: ['src/**']` to exclude `e2e/` from vitest; documented e2e commands in `AGENTS.md`
+- Tests: 1 Playwright smoke test passes (1.0s), 58 vitest pass, 432 pytest pass; ruff + pyright + vite build clean
+- Files changed: `web/playwright.config.ts` (new), `web/e2e/smoke.spec.ts` (new), `web/package.json`, `web/vite.config.ts`, `web/bun.lock`, `AGENTS.md`
+- Learnings: Supabase JS v2 storage key is `sb-${new URL(url).hostname.split('.')[0]}-auth-token` (confirmed via Node script); inject session via `page.addInitScript(fn, {k,v})` before any scripts run; vitest needs `include: ['src/**']` when `e2e/` exists to avoid picking up Playwright's `test()` function; `page.route('**/api/**')` intercepts before Vite proxy fires; two browser contexts share Node.js closure state so route handlers can read/write shared `currentGame`
+---
+

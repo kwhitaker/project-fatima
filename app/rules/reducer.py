@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from random import Random
 
 from app.models.cards import CardDefinition
-from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus
+from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo
 from app.rules.archetypes import apply_skulker_boost, rotate_card_once
 from app.rules.captures import resolve_captures
 from app.rules.errors import (
@@ -47,6 +47,17 @@ def mists_modifier_from_roll(roll: int) -> int:
     return 0
 
 
+def _mists_effect_label(roll: int, modifier: int) -> str:
+    """Human-readable effect label for LastMoveInfo."""
+    if roll == 1 and modifier == 0:
+        return "fog_negated"  # Devout negated a Fog
+    if modifier == -1:
+        return "fog"
+    if modifier == 1:
+        return "omen"
+    return "none"
+
+
 def compute_round_result(board: list[BoardCell | None]) -> GameResult:
     """Return the result of a completed round from the current board state.
 
@@ -69,7 +80,8 @@ def begin_sudden_death_round(state: GameState) -> GameState:
     with a draw result instead of starting a new round.
 
     Rebuilds each player's hand from the cards they own on the current board.
-    Resets the board and current_player_index; preserves archetype_used (once-per-game).
+    Resets the board; starting player alternates each SD round based on
+    starting_player_index. Preserves archetype_used (once-per-game).
 
     Does NOT bump state_version — the caller is responsible for that.
     """
@@ -88,15 +100,20 @@ def begin_sudden_death_round(state: GameState) -> GameState:
 
     new_players = [p.model_copy(update={"hand": sd_hands[i]}) for i, p in enumerate(state.players)]
     empty_board: list[BoardCell | None] = [None] * 9
+    new_round_number = state.round_number + 1
+    # Alternate starting player each SD round: round 1 → starting_player_index,
+    # round 2 → the other player, round 3 → back, etc.
+    new_starting_player = (state.starting_player_index + (new_round_number - 1)) % 2
     return state.model_copy(
         update={
-            "round_number": state.round_number + 1,
+            "round_number": new_round_number,
             "sudden_death_rounds_used": state.sudden_death_rounds_used + 1,
             "board": empty_board,
             "players": new_players,
-            "current_player_index": 0,
+            "current_player_index": new_starting_player,
             "result": None,
             "status": GameStatus.ACTIVE,
+            "last_move": None,
         }
     )
 
@@ -178,6 +195,7 @@ def apply_intent(
             )
 
     # --- Mists roll ---
+    mists_roll: int | None = None
     mists_modifier = 0
     if rng is not None:
         roll = rng.randint(1, 6)
@@ -186,6 +204,7 @@ def apply_intent(
         mists_modifier = mists_modifier_from_roll(roll)
         if devout_negate_fog and mists_modifier == -1:
             mists_modifier = 0  # Devout treats Fog as no effect
+        mists_roll = roll
 
     # --- Board update ---
     new_board: list[BoardCell | None] = list(state.board)
@@ -206,6 +225,12 @@ def apply_intent(
         "board": new_board,
         "state_version": state.state_version + 1,
     }
+
+    if mists_roll is not None:
+        updates["last_move"] = LastMoveInfo(
+            mists_roll=mists_roll,
+            mists_effect=_mists_effect_label(mists_roll, mists_modifier),
+        )
 
     if state.players:
         player = state.players[intent.player_index]

@@ -1,0 +1,3 @@
+[tools]
+# Frontend runtime / package manager for the UI MVP.
+bun = "latest"

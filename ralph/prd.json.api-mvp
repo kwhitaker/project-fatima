@@ -1,0 +1,406 @@
+{
+  "project": "project-fatima",
+  "branchName": "ralph/mvp",
+  "description": "MVP: rules engine + cards + decks + API-first backbone + Supabase event log",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Establish Python project scaffold with tests",
+      "description": "As a developer, I want a runnable FastAPI skeleton and a working test runner so future stories have backpressure.",
+      "acceptanceCriteria": [
+        "Create a minimal Python project layout for app code and tests",
+        "Add a minimal FastAPI app with a health endpoint",
+        "Add pytest and at least one passing test",
+        "Document the canonical test command in AGENTS.md"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Keep this story small; avoid adding Supabase integration yet."
+    },
+    {
+      "id": "US-002",
+      "title": "Define canonical game state + card models",
+      "description": "As a developer, I want JSON-serializable state/models so the reducer and event log have a stable shape.",
+      "acceptanceCriteria": [
+        "Add data models for card definitions and game snapshot state",
+        "Models are JSON-serializable and stable",
+        "Unit tests cover basic model validation (side ranges, required fields)"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Prefer pydantic."
+    },
+    {
+      "id": "US-003",
+      "title": "Implement capture resolution for a placement",
+      "description": "As a player, when I place a card, adjacent enemy cards flip if my touching side is higher.",
+      "acceptanceCriteria": [
+        "Implement placement + capture resolution (no combos)",
+        "Unit tests cover N/E/S/W comparisons and ownership flips",
+        "Deterministic outcomes for a given input state"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "This should live in the pure rules engine reducer; no DB/API yet."
+    },
+    {
+      "id": "US-004",
+      "title": "Add Mists randomness modifier",
+      "description": "As a player, each placement rolls 1d6 and applies -1/+1 to comparisons for that placement only.",
+      "acceptanceCriteria": [
+        "Fog (1) applies -1 to all comparisons for the placement",
+        "Omen (6) applies +1 to all comparisons for the placement",
+        "2-5 apply no modifier",
+        "Unit tests cover all roll cases using a seeded RNG"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Modifier affects comparisons only; printed stats do not change."
+    },
+    {
+      "id": "US-005",
+      "title": "Add turn flow and move validation",
+      "description": "As a developer, I want the reducer to enforce turns, hands, and board placement rules.",
+      "acceptanceCriteria": [
+        "Reducer rejects: wrong player turn, card not in hand, and occupied cell",
+        "Reducer advances turn after a legal placement",
+        "Unit tests cover validation errors and successful placements"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Still no archetypes yet; focus on core turn invariants."
+    },
+    {
+      "id": "US-006",
+      "title": "Implement archetype power: Martial rotation",
+      "description": "As a Martial player, I can rotate the placed card once before comparisons, once per game.",
+      "acceptanceCriteria": [
+        "Applying Martial rotates the placed card once (N->E->S->W->N) for this placement only",
+        "Power can be used at most once per player per game",
+        "Unit tests cover rotation behavior and once-per-game enforcement"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Default: rotation occurs after placement selection and before Mists/captures are evaluated."
+    },
+    {
+      "id": "US-007",
+      "title": "Implement archetype power: Skulker side boost",
+      "description": "As a Skulker player, I can add +2 to one chosen side for this placement only, once per game.",
+      "acceptanceCriteria": [
+        "Skulker chooses one side (n/e/s/w) and gets +2 only for comparisons this placement",
+        "Power can be used at most once per player per game",
+        "Unit tests cover side selection, effect scope, and once-per-game enforcement"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Choice is made at placement time (not after seeing results)."
+    },
+    {
+      "id": "US-008",
+      "title": "Implement archetype power: Caster reroll",
+      "description": "As a Caster player, I can reroll the Mists die for my placement, once per game.",
+      "acceptanceCriteria": [
+        "Caster rerolls the Mists die; the second result is used",
+        "Power can be used at most once per player per game",
+        "Unit tests cover reroll behavior and once-per-game enforcement"
+      ],
+      "priority": 8,
+      "passes": true,
+      "notes": "Reroll applies only to Mists and only on that placement."
+    },
+    {
+      "id": "US-009",
+      "title": "Implement archetype power: Devout fog negation",
+      "description": "As a Devout player, I treat Fog (1) as no effect for my placement, once per game.",
+      "acceptanceCriteria": [
+        "If Mists roll is Fog (1), Devout treats it as no modifier for that placement",
+        "If roll is not Fog, Devout does nothing",
+        "Power can be used at most once per player per game",
+        "Unit tests cover Fog negation and once-per-game enforcement"
+      ],
+      "priority": 9,
+      "passes": true,
+      "notes": "Devout does not turn Fog into Omen; it neutralizes the -1."
+    },
+    {
+      "id": "US-010",
+      "title": "Implement archetype power: Presence single-comparison boost",
+      "description": "As a Presence player, I can force one adjacent comparison to be re-evaluated with +1 for me, once per game.",
+      "acceptanceCriteria": [
+        "Presence chooses one adjacent direction and gets +1 only for that single comparison this placement",
+        "Power can be used at most once per player per game",
+        "Unit tests cover the single-comparison scope and once-per-game enforcement"
+      ],
+      "priority": 10,
+      "passes": true,
+      "notes": "Default: applied as +1 to placed side value for the chosen comparison before evaluating capture."
+    },
+    {
+      "id": "US-011",
+      "title": "Implement end-of-round scoring",
+      "description": "As a player, when the board is full the game determines the winner by controlled card count.",
+      "acceptanceCriteria": [
+        "When board is full (9 placements), compute each player's controlled count",
+        "Set a terminal result when one player has more",
+        "Unit tests cover win/lose outcomes and tie detection"
+      ],
+      "priority": 11,
+      "passes": true,
+      "notes": "Sudden Death comes in the next story."
+    },
+    {
+      "id": "US-012",
+      "title": "Implement Sudden Death rounds with cap",
+      "description": "As a player, if the game is tied at board-full, it starts Sudden Death using the 9 cards each player owned.",
+      "acceptanceCriteria": [
+        "On tie at board-full, increment round_number and sudden_death_rounds_used",
+        "Rebuild each player's next-round deck from the 9 cards they ended owning",
+        "Reset board and hands for the new round",
+        "After 3 sudden-death rounds, if still tied, set result to draw",
+        "Unit tests cover the transition, card carryover, and cap behavior"
+      ],
+      "priority": 12,
+      "passes": true,
+      "notes": "Same game_id; round_number increments; cap=3 then draw."
+    },
+    {
+      "id": "US-013",
+      "title": "Add cards.jsonl validator: schema + key uniqueness",
+      "description": "As a developer, I want to validate cards.jsonl inputs before importing so the card pool is trustworthy.",
+      "acceptanceCriteria": [
+        "Implement a cards.jsonl loader that parses JSON Lines",
+        "Validate required fields/types and card_key uniqueness",
+        "Validation errors include line numbers and human-readable messages",
+        "Unit tests cover schema failures and duplicate card_key"
+      ],
+      "priority": 13,
+      "passes": true,
+      "notes": "Budget/cap enforcement is in a separate story to keep scope small."
+    },
+    {
+      "id": "US-014",
+      "title": "Add cards.jsonl validator: rarity buckets + budget/cap enforcement",
+      "description": "As a developer, I want to enforce per-tier rarity budgets so cards are balanced per CARDS_SPEC.md.",
+      "acceptanceCriteria": [
+        "Derive rarity bucket from numeric rarity per CARDS_SPEC.md",
+        "Enforce side values 1..10, tier in {1,2,3}, rarity 1..100",
+        "Enforce (tier,bucket) sum budgets and per-side caps",
+        "Unit tests cover bucket boundaries and budget/cap failures"
+      ],
+      "priority": 14,
+      "passes": true,
+      "notes": "Keep bucket and budget tables centralized and test-covered."
+    },
+    {
+      "id": "US-015",
+      "title": "Implement deck validator: named uniqueness + rarity slots",
+      "description": "As a developer, I want deck validation hooks to enforce anti-stacking rules.",
+      "acceptanceCriteria": [
+        "Validate 10-card deck size",
+        "Enforce named uniqueness by character_key when is_named is true",
+        "Enforce rarity slots: ultra<=1, very_rare<=2, rare<=3",
+        "Unit tests cover each rule failure"
+      ],
+      "priority": 15,
+      "passes": true,
+      "notes": "Copy limits are a separate story."
+    },
+    {
+      "id": "US-016",
+      "title": "Implement deck validator: copy limits by rarity bucket",
+      "description": "As a developer, I want to limit duplicates by exact card version to prevent stacked decks.",
+      "acceptanceCriteria": [
+        "Enforce copy limits by card_key via a bucket-driven lookup table",
+        "Unit tests cover copy limit violations across buckets",
+        "Deck validator returns actionable error messages"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "Default: common/uncommon allow 2 copies; higher buckets allow 1 (adjustable lookup)."
+    },
+    {
+      "id": "US-017",
+      "title": "Implement weighted deck cost + fairness matching",
+      "description": "As a player, server-generated decks should be roughly even strength.",
+      "acceptanceCriteria": [
+        "Implement a weighted-sum deck cost function based on tier and rarity bucket",
+        "Unit tests cover cost ordering (stronger bucket/tier => higher cost)"
+      ],
+      "priority": 17,
+      "passes": true,
+      "notes": "Keep it simple and deterministic; no simulation."
+    },
+    {
+      "id": "US-018",
+      "title": "Implement seeded deck generation producing two matched legal decks",
+      "description": "As a developer, I want game creation to generate decks from the card pool reproducibly.",
+      "acceptanceCriteria": [
+        "Given a card pool and seed, generate two 10-card decks that pass validation",
+        "Ensure deck costs are within a configured tolerance",
+        "Generation is deterministic given the same seed",
+        "Unit tests cover determinism and tolerance matching"
+      ],
+      "priority": 18,
+      "passes": true,
+      "notes": "Store seed in game state; use it for Mists rolls too (derive per-move RNG)."
+    },
+    {
+      "id": "US-019",
+      "title": "Define GameStore/CardStore interfaces + in-memory GameStore",
+      "description": "As a developer, I want a thin storage boundary so we can test the API without Supabase.",
+      "acceptanceCriteria": [
+        "Define GameStore and CardStore interfaces used by FastAPI",
+        "Implement an in-memory GameStore with append-only events, per-game seq, and state_version",
+        "Integration tests use the in-memory store and validate optimistic locking"
+      ],
+      "priority": 19,
+      "passes": true,
+      "notes": "Reducer must be the only rules implementation."
+    },
+    {
+      "id": "US-020",
+      "title": "Implement FastAPI endpoints with in-memory store",
+      "description": "As a developer, I want API-first iteration on the full match flow.",
+      "acceptanceCriteria": [
+        "Add endpoints: POST /games, POST /games/{id}/join, POST /games/{id}/archetype, GET /games/{id}, POST /games/{id}/moves",
+        "Integration tests cover: create->join->select archetype->play moves",
+        "API returns 409 on state_version conflict",
+        "pytest passes"
+      ],
+      "priority": 20,
+      "passes": true,
+      "notes": "Auth can be a simple test-only stub initially; tighten later."
+    },
+    {
+      "id": "US-021",
+      "title": "Add Supabase SQL schema files for games + game_events",
+      "description": "As a developer, I want the database schema captured in-repo for Supabase.",
+      "acceptanceCriteria": [
+        "Add SQL files defining tables: profiles, games (with current_state jsonb, state_version), game_events (append-only with seq)",
+        "Add basic RLS policy stubs matching TECH_DECISIONS.md constraints",
+        "Add a small unit test that asserts the schema files exist and contain key table names",
+        "pytest passes"
+      ],
+      "priority": 21,
+      "passes": true,
+      "notes": "This story captures schema in files; applying migrations can be added later."
+    },
+    {
+      "id": "US-022",
+      "title": "Implement Supabase-backed GameStore append_event + snapshot update",
+      "description": "As a developer, I want the real store to insert an event and update snapshot transactionally.",
+      "acceptanceCriteria": [
+        "Add Supabase-backed GameStore implementation (service role key via env vars)",
+        "Implements insert event + update games.current_state + bump state_version",
+        "Returns 409 on optimistic lock conflict",
+        "Unit tests cover store behavior via mocks/fakes (no real Supabase credentials in repo)"
+      ],
+      "priority": 22,
+      "passes": true,
+      "notes": "Keep it injectable so integration tests can still use in-memory store."
+    },
+    {
+      "id": "US-023",
+      "title": "Add idempotency keys for move submission",
+      "description": "As a player, resubmitting a move should not create duplicate events.",
+      "acceptanceCriteria": [
+        "Moves accept an idempotency key",
+        "Store rejects duplicates for the same game_id + key",
+        "Integration/unit tests cover dedupe behavior"
+      ],
+      "priority": 23,
+      "passes": true,
+      "notes": "Implementation can be store-specific (in-memory + Supabase)."
+    },
+    {
+      "id": "US-024",
+      "title": "Add cards seeding script for Supabase",
+      "description": "As a developer, I want to load cards.jsonl into the cards table with validation.",
+      "acceptanceCriteria": [
+        "Add a script that reads cards.jsonl, validates, and upserts into a cards table",
+        "Script uses env vars for Supabase connection (no secrets committed)",
+        "Unit tests cover that validation runs and that upsert calls are formed correctly (mocked)"
+      ],
+      "priority": 24,
+      "passes": true,
+      "notes": "Requires defining a cards table schema in the earlier SQL story (or add it here if missing)."
+    },
+    {
+      "id": "US-025",
+      "title": "Add Supabase SQL schema files for cards table",
+      "description": "As a developer, I want the cards table schema captured in-repo to match CARDS_SPEC.md and TECH_DECISIONS.md.",
+      "acceptanceCriteria": [
+        "Add SQL defining a cards table with canonical columns (card_key unique, character_key, tier, rarity, is_named, n/e/s/w, set, tags) plus definition jsonb",
+        "Add constraints for side values 1..10, tier 1..3, rarity 1..100",
+        "Add a small unit test that asserts the schema file exists and contains expected columns",
+        "pytest passes"
+      ],
+      "priority": 25,
+      "passes": true,
+      "notes": "Keep schema compatible with future keywords/tags expansion."
+    },
+    {
+      "id": "US-026",
+      "title": "Standardize API error responses and status codes",
+      "description": "As an API consumer, I want consistent errors (403/404/409/422) so clients can handle failures reliably.",
+      "acceptanceCriteria": [
+        "Return 422 on request validation errors",
+        "Return 404 when game_id does not exist",
+        "Return 403 when caller is not a game participant",
+        "Return 409 on optimistic lock conflicts",
+        "Integration tests cover these status codes",
+        "pytest passes"
+      ],
+      "priority": 28,
+      "passes": true,
+      "notes": "Keep error bodies stable and minimal; avoid leaking internal details."
+    },
+    {
+      "id": "US-027",
+      "title": "Document realtime event subscription contract",
+      "description": "As a client developer, I want clear guidance on subscribing to game_events and refetching snapshots.",
+      "acceptanceCriteria": [
+        "Add a short doc describing how clients subscribe to Supabase Realtime for game_events filtered by game_id",
+        "Document the event payload shape and seq ordering expectations",
+        "Document the MVP client behavior: on event, refetch GET /games/{game_id}",
+        "pytest passes"
+      ],
+      "priority": 29,
+      "passes": true,
+      "notes": "This is documentation-only, but must not break tests."
+    },
+    {
+      "id": "US-028",
+      "title": "Allow players to leave games (forfeit active, delete waiting)",
+      "description": "As a player, I want to be able to leave a game. If the game is active, leaving forfeits and the other player wins. If the game is waiting with only one player, leaving deletes the game.",
+      "acceptanceCriteria": [
+        "Add endpoint: POST /games/{id}/leave",
+        "If game status is ACTIVE and the caller is a participant, leaving ends the game and sets the other player as winner",
+        "If game status is WAITING and the caller is the only joined player, leaving deletes the game",
+        "For ACTIVE forfeits, append a game_forfeited event and update the snapshot transactionally",
+        "Support idempotency_key for leave (same semantics as moves)",
+        "Add store support for deleting a game with optimistic locking (in-memory + Supabase)",
+        "Unit and integration tests cover both ACTIVE and WAITING behaviors"
+      ],
+      "priority": 26,
+      "passes": true,
+      "notes": "MVP: only allow forfeit when status=ACTIVE and 2 players are present; WAITING delete is only for single-player lobbies. Supabase schema already uses ON DELETE CASCADE for game_events."
+    },
+    {
+      "id": "US-029",
+      "title": "Implement chain/combo capture resolution",
+      "description": "As a player, captures can trigger additional captures (combos) for extra excitement and strategy.",
+      "acceptanceCriteria": [
+        "Capture resolution supports chain/combo flips until no new captures occur",
+        "Combos propagate via newly-captured cards battling adjacent enemy cards",
+        "Mists and archetype modifiers apply only to the initially placed card's comparisons (combo captures use printed stats)",
+        "Unit tests cover a multi-step combo and modifier scoping",
+        "All existing tests pass"
+      ],
+      "priority": 27,
+      "passes": true,
+      "notes": "Keep it pure and deterministic; no Same/Plus or diagonal interactions."
+    }
+  ]
+}

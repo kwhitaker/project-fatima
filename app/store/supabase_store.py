@@ -40,15 +40,18 @@ class SupabaseGameStore:
     # ------------------------------------------------------------------
 
     def create_game(self, game_id: str, initial_state: GameState) -> None:
-        self._client.table("games").upsert(
-            {
-                "id": game_id,
-                "current_state": initial_state.model_dump(mode="json"),
-                "state_version": initial_state.state_version,
-                "seed": initial_state.seed,
-                "status": initial_state.status.value,
-            }
-        ).execute()
+        row: dict[str, Any] = {
+            "id": game_id,
+            "current_state": initial_state.model_dump(mode="json"),
+            "state_version": initial_state.state_version,
+            "seed": initial_state.seed,
+            "status": initial_state.status.value,
+        }
+        if len(initial_state.players) >= 1:
+            row["player1_id"] = initial_state.players[0].player_id
+        if len(initial_state.players) >= 2:
+            row["player2_id"] = initial_state.players[1].player_id
+        self._client.table("games").upsert(row).execute()
 
     def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
         response = (
@@ -59,7 +62,7 @@ class SupabaseGameStore:
             .maybe_single()
             .execute()
         )
-        return response.data is not None
+        return response is not None and response.data is not None
 
     def get_game(self, game_id: str) -> GameState | None:
         response = (
@@ -69,9 +72,18 @@ class SupabaseGameStore:
             .maybe_single()
             .execute()
         )
-        if response.data is None:
+        if response is None or response.data is None:
             return None
         return GameState.model_validate(response.data["current_state"])
+
+    def list_games_for_player(self, player_id: str) -> list[GameState]:
+        response = (
+            self._client.table("games")
+            .select("current_state")
+            .or_(f"player1_id.eq.{player_id},player2_id.eq.{player_id}")
+            .execute()
+        )
+        return [GameState.model_validate(row["current_state"]) for row in (response.data or [])]
 
     def append_event(
         self,
@@ -97,20 +109,25 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if dup_response.data is not None:
+            if dup_response is not None and dup_response.data is not None:
                 raise DuplicateEventError(
                     f"Idempotency key {idempotency_key!r} already used for game {game_id!r}"
                 )
 
+        update_dict: dict[str, Any] = {
+            "current_state": new_state.model_dump(mode="json"),
+            "state_version": new_state.state_version,
+            "status": new_state.status.value,
+        }
+        # Keep player columns in sync so list_games_for_player queries work
+        if len(new_state.players) >= 1:
+            update_dict["player1_id"] = new_state.players[0].player_id
+        if len(new_state.players) >= 2:
+            update_dict["player2_id"] = new_state.players[1].player_id
+
         update_response = (
             self._client.table("games")
-            .update(
-                {
-                    "current_state": new_state.model_dump(mode="json"),
-                    "state_version": new_state.state_version,
-                    "status": new_state.status.value,
-                }
-            )
+            .update(update_dict)
             .eq("id", game_id)
             .eq("state_version", expected_version)
             .execute()
@@ -125,7 +142,7 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if check.data is None:
+            if check is None or check.data is None:
                 raise KeyError(f"Game {game_id!r} does not exist")
             raise ConflictError(
                 f"Version conflict for game {game_id!r}: "
@@ -176,7 +193,7 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if check.data is None:
+            if check is None or check.data is None:
                 raise KeyError(f"Game {game_id!r} does not exist")
             raise ConflictError(
                 f"Version conflict for game {game_id!r}: "

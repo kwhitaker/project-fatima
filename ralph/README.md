@@ -13,7 +13,8 @@ via git history, `ralph/progress.txt`, and `ralph/prd.json`.
 
 ## Files
 
-- `ralph/prd.json`: the PRD backlog (stories with `passes: false/true`).
+- `ralph/prd.json`: the active PRD backlog (stories with `passes: false/true`).
+- `ralph/prd.json.api-mvp`: archived API MVP backlog.
 - `ralph/progress.txt`: append-only learnings / breadcrumbs between iterations.
 - `ralph/CLAUDE.md`: instructions fed into Claude each iteration.
 - `ralph/ralph.sh`: the loop runner.

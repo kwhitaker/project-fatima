@@ -68,7 +68,8 @@ def make_full_board_state(
             ),
         ],
         board=board,
-        current_player_index=1,  # non-zero so we can verify the reset
+        current_player_index=1,  # non-zero so we can verify the alternation
+        starting_player_index=0,  # p0 started the main game
     )
 
 
@@ -99,12 +100,16 @@ class TestBeginSuddenDeathRound:
         new_state = begin_sudden_death_round(make_full_board_state())
         assert new_state.result is None
 
-    def test_current_player_reset_to_0(self):
-        """current_player_index must reset to 0 regardless of whose turn it was."""
+    def test_current_player_alternates_in_sd(self):
+        """SD round 1 (round 2) gives the turn to the other starting player.
+
+        With starting_player_index=0 and round_number becoming 2:
+        new_starting = (0 + 2 - 1) % 2 = 1
+        """
         state = make_full_board_state()
-        assert state.current_player_index == 1  # pre-condition
+        assert state.starting_player_index == 0  # default
         new_state = begin_sudden_death_round(state)
-        assert new_state.current_player_index == 0
+        assert new_state.current_player_index == 1
 
     def test_game_id_preserved(self):
         new_state = begin_sudden_death_round(make_full_board_state())

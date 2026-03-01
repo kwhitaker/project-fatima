@@ -1,406 +1,190 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/mvp",
-  "description": "MVP: rules engine + cards + decks + API-first backbone + Supabase event log",
+  "branchName": "ralph/ui-mvp",
+  "description": "UI MVP: React/Vite web app in web/ with Supabase auth, backend-backed game list, join-by-link flow, realtime snapshot refetch, and lightweight animations for mists/captures/combos/wins. Includes required API adjustments (JWT-derived player identity, create auto-join, list games, mists feedback fields).",
   "userStories": [
     {
-      "id": "US-001",
-      "title": "Establish Python project scaffold with tests",
-      "description": "As a developer, I want a runnable FastAPI skeleton and a working test runner so future stories have backpressure.",
+      "id": "US-UI-001",
+      "title": "Scaffold web frontend (React/Vite/TS + Tailwind + shadcn/ui)",
+      "description": "As a developer, I want a working frontend scaffold in web/ so we can iterate on UI quickly.",
       "acceptanceCriteria": [
-        "Create a minimal Python project layout for app code and tests",
-        "Add a minimal FastAPI app with a health endpoint",
-        "Add pytest and at least one passing test",
-        "Document the canonical test command in AGENTS.md"
+        "Create a Vite React + TypeScript app under web/",
+        "Install and configure Tailwind CSS",
+        "Install shadcn/ui and render at least one shadcn component on a route",
+        "Add React Router with routes: /login, /games, /g/:gameId",
+        "Configure Vite dev proxy so requests to /api/* reach FastAPI at http://localhost:8000/*",
+        "Document canonical commands for web dev/build/test in a short web/README.md"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Keep this story small; avoid adding Supabase integration yet."
+      "notes": "Keep styling plain shadcn/ui; we will add effects later in a dedicated story."
     },
     {
-      "id": "US-002",
-      "title": "Define canonical game state + card models",
-      "description": "As a developer, I want JSON-serializable state/models so the reducer and event log have a stable shape.",
+      "id": "US-UI-002",
+      "title": "Supabase auth UI (magic link) + session restore",
+      "description": "As a player, I want to log in via Supabase magic link so my games can be tied to my account.",
       "acceptanceCriteria": [
-        "Add data models for card definitions and game snapshot state",
-        "Models are JSON-serializable and stable",
-        "Unit tests cover basic model validation (side ranges, required fields)"
+        "Add Supabase JS client configuration via web env vars (no secrets committed)",
+        "Implement /login screen with magic link sign-in",
+        "Persist and restore session on refresh",
+        "Add logout",
+        "Unauthenticated users are redirected to /login when visiting /games or /g/:gameId"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Prefer pydantic."
+      "notes": "MVP: email magic link only; no usernames/profile editing yet."
     },
     {
-      "id": "US-003",
-      "title": "Implement capture resolution for a placement",
-      "description": "As a player, when I place a card, adjacent enemy cards flip if my touching side is higher.",
+      "id": "US-UI-003",
+      "title": "API adjustments for UI MVP (JWT identity, create auto-join, list games, mists feedback)",
+      "description": "As a UI client, I want the API to be auth-scoped and UI-friendly so game list, spectator blocking, and realtime updates work end-to-end.",
       "acceptanceCriteria": [
-        "Implement placement + capture resolution (no combos)",
-        "Unit tests cover N/E/S/W comparisons and ownership flips",
-        "Deterministic outcomes for a given input state"
+        "FastAPI validates Supabase JWT and derives caller user_id for game actions",
+        "Remove player_id from request bodies for join/archetype/moves/leave; server uses caller identity",
+        "POST /games auto-joins the caller as player1 and returns the GameState",
+        "Add GET /games endpoint returning games where caller is a participant",
+        "Enforce spectator blocking: non-participants cannot read game snapshots (403)",
+        "Pick starting player when game becomes ACTIVE using a deterministic RNG seeded from GameState.seed",
+        "Sudden Death alternates starting player each round",
+        "Expose per-move Mists outcome in the snapshot (e.g., last_move includes mists_roll and derived effect)",
+        "Fix Supabase schema mismatch by adding game_events.idempotency_key column (store already uses it)",
+        "Add/adjust tests covering the new auth-scoped behavior and list endpoint"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "This should live in the pure rules engine reducer; no DB/API yet."
+      "notes": "This story intentionally spans backend + schema to unblock the UI. Keep snapshot-first; do not add client-side rules."
     },
     {
-      "id": "US-004",
-      "title": "Add Mists randomness modifier",
-      "description": "As a player, each placement rolls 1d6 and applies -1/+1 to comparisons for that placement only.",
+      "id": "US-UI-004",
+      "title": "Games list screen (/games) backed by GET /games",
+      "description": "As a player, I want to see my games so I can resume or start matches.",
       "acceptanceCriteria": [
-        "Fog (1) applies -1 to all comparisons for the placement",
-        "Omen (6) applies +1 to all comparisons for the placement",
-        "2-5 apply no modifier",
-        "Unit tests cover all roll cases using a seeded RNG"
+        "Implement /games screen that fetches and renders the caller's games",
+        "Show status (waiting/active/complete) and updated_at/created_at if available",
+        "Add Create Game button that calls POST /games and navigates to /g/:gameId",
+        "Clicking a game navigates to /g/:gameId"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Modifier affects comparisons only; printed stats do not change."
+      "notes": "MVP: basic list; filtering/search can come later."
     },
     {
-      "id": "US-005",
-      "title": "Add turn flow and move validation",
-      "description": "As a developer, I want the reducer to enforce turns, hands, and board placement rules.",
+      "id": "US-UI-005",
+      "title": "Join-by-link lobby flow (waiting state)",
+      "description": "As a player, I want to join a game from a shared link and see a lobby until the match starts.",
       "acceptanceCriteria": [
-        "Reducer rejects: wrong player turn, card not in hand, and occupied cell",
-        "Reducer advances turn after a legal placement",
-        "Unit tests cover validation errors and successful placements"
+        "Implement /g/:gameId route that loads GET /games/:gameId and renders WAITING vs ACTIVE vs COMPLETE",
+        "When WAITING and the caller is not yet a participant, show a Join button",
+        "Join button calls POST /games/:gameId/join (no player_id in body) and transitions the UI",
+        "Display a copyable invite link for the current game",
+        "If the game has 2 players and the caller is not a participant, show a blocked state"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Still no archetypes yet; focus on core turn invariants."
+      "notes": "No spectators for MVP."
     },
     {
-      "id": "US-006",
-      "title": "Implement archetype power: Martial rotation",
-      "description": "As a Martial player, I can rotate the placed card once before comparisons, once per game.",
+      "id": "US-UI-006",
+      "title": "Game room core rendering (snapshot-first)",
+      "description": "As a player, I want to see the board, hands, and turn state so I can play the game.",
       "acceptanceCriteria": [
-        "Applying Martial rotates the placed card once (N->E->S->W->N) for this placement only",
-        "Power can be used at most once per player per game",
-        "Unit tests cover rotation behavior and once-per-game enforcement"
+        "Render 3x3 board with ownership styling per cell",
+        "Render the caller's hand as selectable cards (no move submission yet)",
+        "Render opponent hand as face-down count (or list if MVP prefers), plus both archetype states",
+        "Show turn indicator based on current_player_index",
+        "Show current score (controlled card count) and game result when complete",
+        "Add Leave button calling POST /games/:gameId/leave (no player_id in body)"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Default: rotation occurs after placement selection and before Mists/captures are evaluated."
+      "notes": "Keep UI read-only for moves in this story; move interaction comes next."
     },
     {
-      "id": "US-007",
-      "title": "Implement archetype power: Skulker side boost",
-      "description": "As a Skulker player, I can add +2 to one chosen side for this placement only, once per game.",
+      "id": "US-UI-007",
+      "title": "Place a card (no archetype power UX yet)",
+      "description": "As a player, I want to place a card on my turn and see the updated snapshot.",
       "acceptanceCriteria": [
-        "Skulker chooses one side (n/e/s/w) and gets +2 only for comparisons this placement",
-        "Power can be used at most once per player per game",
-        "Unit tests cover side selection, effect scope, and once-per-game enforcement"
+        "Allow selecting a card from hand and an empty cell",
+        "Submit POST /games/:gameId/moves with card_key, cell_index, state_version, idempotency_key",
+        "Disable interactions when it is not the caller's turn or the game is complete",
+        "Handle 409/422 responses by showing an error and refetching GET /games/:gameId",
+        "After a successful move, update UI from the returned snapshot"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Choice is made at placement time (not after seeing results)."
+      "notes": "Keep power inputs out of scope here; focus on the base move loop."
     },
     {
-      "id": "US-008",
-      "title": "Implement archetype power: Caster reroll",
-      "description": "As a Caster player, I can reroll the Mists die for my placement, once per game.",
+      "id": "US-UI-008",
+      "title": "Archetype selection UX",
+      "description": "As a player, I want to select my archetype once so my power is available.",
       "acceptanceCriteria": [
-        "Caster rerolls the Mists die; the second result is used",
-        "Power can be used at most once per player per game",
-        "Unit tests cover reroll behavior and once-per-game enforcement"
+        "If the caller has no archetype, prompt for selection",
+        "Submit POST /games/:gameId/archetype with archetype (no player_id in body)",
+        "Display selected archetypes for both players",
+        "Display whether the caller's archetype power is available or already used"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Reroll applies only to Mists and only on that placement."
+      "notes": "MVP: simple selector UI; no lore text required."
     },
     {
-      "id": "US-009",
-      "title": "Implement archetype power: Devout fog negation",
-      "description": "As a Devout player, I treat Fog (1) as no effect for my placement, once per game.",
+      "id": "US-UI-009",
+      "title": "Use archetype power on a move (power-specific params)",
+      "description": "As a player, I want to activate my once-per-game archetype power when placing a card.",
       "acceptanceCriteria": [
-        "If Mists roll is Fog (1), Devout treats it as no modifier for that placement",
-        "If roll is not Fog, Devout does nothing",
-        "Power can be used at most once per player per game",
-        "Unit tests cover Fog negation and once-per-game enforcement"
+        "Add a Use Power toggle that is enabled only when archetype_used is false",
+        "Martial/Caster/Devout require no extra inputs",
+        "Skulker prompts for a side (n/e/s/w) and passes skulker_boost_side",
+        "Presence prompts for a direction (n/e/s/w) and passes presence_boost_direction",
+        "Submit moves with use_archetype=true and the correct params",
+        "On 422, show an actionable error message and refetch snapshot"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Devout does not turn Fog into Omen; it neutralizes the -1."
+      "notes": "Do not attempt client-side prediction; server decides outcomes."
     },
     {
-      "id": "US-010",
-      "title": "Implement archetype power: Presence single-comparison boost",
-      "description": "As a Presence player, I can force one adjacent comparison to be re-evaluated with +1 for me, once per game.",
+      "id": "US-UI-010",
+      "title": "Realtime subscription: refetch snapshot on game_events insert",
+      "description": "As a player, I want to see opponent moves without polling so the game feels alive.",
       "acceptanceCriteria": [
-        "Presence chooses one adjacent direction and gets +1 only for that single comparison this placement",
-        "Power can be used at most once per player per game",
-        "Unit tests cover the single-comparison scope and once-per-game enforcement"
+        "Subscribe to Supabase Realtime inserts on game_events filtered by game_id",
+        "On INSERT, refetch GET /games/:gameId and replace local snapshot state",
+        "Unsubscribe on unmount / route change",
+        "Implement a simple fallback refetch interval when realtime disconnects"
       ],
       "priority": 10,
       "passes": true,
-      "notes": "Default: applied as +1 to placed side value for the chosen comparison before evaluating capture."
+      "notes": "Follow docs/realtime.md contract; MVP-simple refetch strategy only."
     },
     {
-      "id": "US-011",
-      "title": "Implement end-of-round scoring",
-      "description": "As a player, when the board is full the game determines the winner by controlled card count.",
+      "id": "US-UI-011",
+      "title": "Make captures/combos/wins + Mists feel good (lightweight effects)",
+      "description": "As a player, I want satisfying feedback for captures, combos, and Mists so the MVP is fun.",
       "acceptanceCriteria": [
-        "When board is full (9 placements), compute each player's controlled count",
-        "Set a terminal result when one player has more",
-        "Unit tests cover win/lose outcomes and tie detection"
+        "Animate card placement into a cell",
+        "Animate ownership flips when captures occur (including multi-flip combos)",
+        "Show a simple combo indicator when multiple flips occur from a single move",
+        "Show Mists feedback using last-move snapshot data (Fog/Omen visuals + roll) without guessing",
+        "Show an end-of-game banner when the game completes (win/lose/draw/forfeit)"
       ],
       "priority": 11,
       "passes": true,
-      "notes": "Sudden Death comes in the next story."
+      "notes": "Keep implementation low-effort and replaceable; prefer CSS/Framer Motion-level work over heavy canvas/3D."
     },
     {
-      "id": "US-012",
-      "title": "Implement Sudden Death rounds with cap",
-      "description": "As a player, if the game is tied at board-full, it starts Sudden Death using the 9 cards each player owned.",
+      "id": "US-UI-012",
+      "title": "UI MVP tests: component sanity + Playwright smoke",
+      "description": "As a developer, I want a minimal test suite so we can refactor UI safely.",
       "acceptanceCriteria": [
-        "On tie at board-full, increment round_number and sudden_death_rounds_used",
-        "Rebuild each player's next-round deck from the 9 cards they ended owning",
-        "Reset board and hands for the new round",
-        "After 3 sudden-death rounds, if still tied, set result to draw",
-        "Unit tests cover the transition, card carryover, and cap behavior"
+        "Add Vitest + Testing Library tests for at least: blocked spectator view, disabled move when not your turn",
+        "Add a Playwright smoke test that exercises create -> share link -> join -> play one move",
+        "Document canonical commands to run unit + smoke tests"
       ],
       "priority": 12,
       "passes": true,
-      "notes": "Same game_id; round_number increments; cap=3 then draw."
-    },
-    {
-      "id": "US-013",
-      "title": "Add cards.jsonl validator: schema + key uniqueness",
-      "description": "As a developer, I want to validate cards.jsonl inputs before importing so the card pool is trustworthy.",
-      "acceptanceCriteria": [
-        "Implement a cards.jsonl loader that parses JSON Lines",
-        "Validate required fields/types and card_key uniqueness",
-        "Validation errors include line numbers and human-readable messages",
-        "Unit tests cover schema failures and duplicate card_key"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Budget/cap enforcement is in a separate story to keep scope small."
-    },
-    {
-      "id": "US-014",
-      "title": "Add cards.jsonl validator: rarity buckets + budget/cap enforcement",
-      "description": "As a developer, I want to enforce per-tier rarity budgets so cards are balanced per CARDS_SPEC.md.",
-      "acceptanceCriteria": [
-        "Derive rarity bucket from numeric rarity per CARDS_SPEC.md",
-        "Enforce side values 1..10, tier in {1,2,3}, rarity 1..100",
-        "Enforce (tier,bucket) sum budgets and per-side caps",
-        "Unit tests cover bucket boundaries and budget/cap failures"
-      ],
-      "priority": 14,
-      "passes": true,
-      "notes": "Keep bucket and budget tables centralized and test-covered."
-    },
-    {
-      "id": "US-015",
-      "title": "Implement deck validator: named uniqueness + rarity slots",
-      "description": "As a developer, I want deck validation hooks to enforce anti-stacking rules.",
-      "acceptanceCriteria": [
-        "Validate 10-card deck size",
-        "Enforce named uniqueness by character_key when is_named is true",
-        "Enforce rarity slots: ultra<=1, very_rare<=2, rare<=3",
-        "Unit tests cover each rule failure"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "Copy limits are a separate story."
-    },
-    {
-      "id": "US-016",
-      "title": "Implement deck validator: copy limits by rarity bucket",
-      "description": "As a developer, I want to limit duplicates by exact card version to prevent stacked decks.",
-      "acceptanceCriteria": [
-        "Enforce copy limits by card_key via a bucket-driven lookup table",
-        "Unit tests cover copy limit violations across buckets",
-        "Deck validator returns actionable error messages"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Default: common/uncommon allow 2 copies; higher buckets allow 1 (adjustable lookup)."
-    },
-    {
-      "id": "US-017",
-      "title": "Implement weighted deck cost + fairness matching",
-      "description": "As a player, server-generated decks should be roughly even strength.",
-      "acceptanceCriteria": [
-        "Implement a weighted-sum deck cost function based on tier and rarity bucket",
-        "Unit tests cover cost ordering (stronger bucket/tier => higher cost)"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": "Keep it simple and deterministic; no simulation."
-    },
-    {
-      "id": "US-018",
-      "title": "Implement seeded deck generation producing two matched legal decks",
-      "description": "As a developer, I want game creation to generate decks from the card pool reproducibly.",
-      "acceptanceCriteria": [
-        "Given a card pool and seed, generate two 10-card decks that pass validation",
-        "Ensure deck costs are within a configured tolerance",
-        "Generation is deterministic given the same seed",
-        "Unit tests cover determinism and tolerance matching"
-      ],
-      "priority": 18,
-      "passes": true,
-      "notes": "Store seed in game state; use it for Mists rolls too (derive per-move RNG)."
-    },
-    {
-      "id": "US-019",
-      "title": "Define GameStore/CardStore interfaces + in-memory GameStore",
-      "description": "As a developer, I want a thin storage boundary so we can test the API without Supabase.",
-      "acceptanceCriteria": [
-        "Define GameStore and CardStore interfaces used by FastAPI",
-        "Implement an in-memory GameStore with append-only events, per-game seq, and state_version",
-        "Integration tests use the in-memory store and validate optimistic locking"
-      ],
-      "priority": 19,
-      "passes": true,
-      "notes": "Reducer must be the only rules implementation."
-    },
-    {
-      "id": "US-020",
-      "title": "Implement FastAPI endpoints with in-memory store",
-      "description": "As a developer, I want API-first iteration on the full match flow.",
-      "acceptanceCriteria": [
-        "Add endpoints: POST /games, POST /games/{id}/join, POST /games/{id}/archetype, GET /games/{id}, POST /games/{id}/moves",
-        "Integration tests cover: create->join->select archetype->play moves",
-        "API returns 409 on state_version conflict",
-        "pytest passes"
-      ],
-      "priority": 20,
-      "passes": true,
-      "notes": "Auth can be a simple test-only stub initially; tighten later."
-    },
-    {
-      "id": "US-021",
-      "title": "Add Supabase SQL schema files for games + game_events",
-      "description": "As a developer, I want the database schema captured in-repo for Supabase.",
-      "acceptanceCriteria": [
-        "Add SQL files defining tables: profiles, games (with current_state jsonb, state_version), game_events (append-only with seq)",
-        "Add basic RLS policy stubs matching TECH_DECISIONS.md constraints",
-        "Add a small unit test that asserts the schema files exist and contain key table names",
-        "pytest passes"
-      ],
-      "priority": 21,
-      "passes": true,
-      "notes": "This story captures schema in files; applying migrations can be added later."
-    },
-    {
-      "id": "US-022",
-      "title": "Implement Supabase-backed GameStore append_event + snapshot update",
-      "description": "As a developer, I want the real store to insert an event and update snapshot transactionally.",
-      "acceptanceCriteria": [
-        "Add Supabase-backed GameStore implementation (service role key via env vars)",
-        "Implements insert event + update games.current_state + bump state_version",
-        "Returns 409 on optimistic lock conflict",
-        "Unit tests cover store behavior via mocks/fakes (no real Supabase credentials in repo)"
-      ],
-      "priority": 22,
-      "passes": true,
-      "notes": "Keep it injectable so integration tests can still use in-memory store."
-    },
-    {
-      "id": "US-023",
-      "title": "Add idempotency keys for move submission",
-      "description": "As a player, resubmitting a move should not create duplicate events.",
-      "acceptanceCriteria": [
-        "Moves accept an idempotency key",
-        "Store rejects duplicates for the same game_id + key",
-        "Integration/unit tests cover dedupe behavior"
-      ],
-      "priority": 23,
-      "passes": true,
-      "notes": "Implementation can be store-specific (in-memory + Supabase)."
-    },
-    {
-      "id": "US-024",
-      "title": "Add cards seeding script for Supabase",
-      "description": "As a developer, I want to load cards.jsonl into the cards table with validation.",
-      "acceptanceCriteria": [
-        "Add a script that reads cards.jsonl, validates, and upserts into a cards table",
-        "Script uses env vars for Supabase connection (no secrets committed)",
-        "Unit tests cover that validation runs and that upsert calls are formed correctly (mocked)"
-      ],
-      "priority": 24,
-      "passes": true,
-      "notes": "Requires defining a cards table schema in the earlier SQL story (or add it here if missing)."
-    },
-    {
-      "id": "US-025",
-      "title": "Add Supabase SQL schema files for cards table",
-      "description": "As a developer, I want the cards table schema captured in-repo to match CARDS_SPEC.md and TECH_DECISIONS.md.",
-      "acceptanceCriteria": [
-        "Add SQL defining a cards table with canonical columns (card_key unique, character_key, tier, rarity, is_named, n/e/s/w, set, tags) plus definition jsonb",
-        "Add constraints for side values 1..10, tier 1..3, rarity 1..100",
-        "Add a small unit test that asserts the schema file exists and contains expected columns",
-        "pytest passes"
-      ],
-      "priority": 25,
-      "passes": true,
-      "notes": "Keep schema compatible with future keywords/tags expansion."
-    },
-    {
-      "id": "US-026",
-      "title": "Standardize API error responses and status codes",
-      "description": "As an API consumer, I want consistent errors (403/404/409/422) so clients can handle failures reliably.",
-      "acceptanceCriteria": [
-        "Return 422 on request validation errors",
-        "Return 404 when game_id does not exist",
-        "Return 403 when caller is not a game participant",
-        "Return 409 on optimistic lock conflicts",
-        "Integration tests cover these status codes",
-        "pytest passes"
-      ],
-      "priority": 28,
-      "passes": true,
-      "notes": "Keep error bodies stable and minimal; avoid leaking internal details."
-    },
-    {
-      "id": "US-027",
-      "title": "Document realtime event subscription contract",
-      "description": "As a client developer, I want clear guidance on subscribing to game_events and refetching snapshots.",
-      "acceptanceCriteria": [
-        "Add a short doc describing how clients subscribe to Supabase Realtime for game_events filtered by game_id",
-        "Document the event payload shape and seq ordering expectations",
-        "Document the MVP client behavior: on event, refetch GET /games/{game_id}",
-        "pytest passes"
-      ],
-      "priority": 29,
-      "passes": true,
-      "notes": "This is documentation-only, but must not break tests."
-    },
-    {
-      "id": "US-028",
-      "title": "Allow players to leave games (forfeit active, delete waiting)",
-      "description": "As a player, I want to be able to leave a game. If the game is active, leaving forfeits and the other player wins. If the game is waiting with only one player, leaving deletes the game.",
-      "acceptanceCriteria": [
-        "Add endpoint: POST /games/{id}/leave",
-        "If game status is ACTIVE and the caller is a participant, leaving ends the game and sets the other player as winner",
-        "If game status is WAITING and the caller is the only joined player, leaving deletes the game",
-        "For ACTIVE forfeits, append a game_forfeited event and update the snapshot transactionally",
-        "Support idempotency_key for leave (same semantics as moves)",
-        "Add store support for deleting a game with optimistic locking (in-memory + Supabase)",
-        "Unit and integration tests cover both ACTIVE and WAITING behaviors"
-      ],
-      "priority": 26,
-      "passes": true,
-      "notes": "MVP: only allow forfeit when status=ACTIVE and 2 players are present; WAITING delete is only for single-player lobbies. Supabase schema already uses ON DELETE CASCADE for game_events."
-    },
-    {
-      "id": "US-029",
-      "title": "Implement chain/combo capture resolution",
-      "description": "As a player, captures can trigger additional captures (combos) for extra excitement and strategy.",
-      "acceptanceCriteria": [
-        "Capture resolution supports chain/combo flips until no new captures occur",
-        "Combos propagate via newly-captured cards battling adjacent enemy cards",
-        "Mists and archetype modifiers apply only to the initially placed card's comparisons (combo captures use printed stats)",
-        "Unit tests cover a multi-step combo and modifier scoping",
-        "All existing tests pass"
-      ],
-      "priority": 27,
-      "passes": true,
-      "notes": "Keep it pure and deterministic; no Same/Plus or diagonal interactions."
+      "notes": "Auth in tests may require a test-only strategy (e.g., seeded test users or a stubbed auth mode)."
     }
   ]
 }

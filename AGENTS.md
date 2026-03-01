@@ -27,11 +27,37 @@ We intend to use `mise` for tool/runtime version management.
 - Activate in shell: follow mise docs for your shell (`mise activate` is commonly used).
 - Tip: prefer `mise x -- <cmd>` when you need a specific tool version.
 
+## Web frontend (React/Vite/TS)
+
+Source lives in `web/`. Uses bun as package manager.
+
+```bash
+# Install
+cd web && bun install
+
+# Dev server (proxies /api/* → FastAPI at localhost:8000)
+cd web && bun dev
+
+# Build
+cd web && bun run build
+
+# Unit tests (vitest)
+cd web && bun run test
+
+# Watch mode
+cd web && bun run test:watch
+
+# E2E smoke tests (Playwright; starts Vite dev server automatically)
+# One-time browser install: cd web && bunx playwright install chromium
+cd web && bun run test:e2e
+```
+
 ## Ralph (autonomous loop)
 This repo includes a Claude Code loop runner under `ralph/`.
 - Run: `./ralph/ralph.sh 10`
 - Prereqs: `jq`, and `claude` (Claude Code) installed/authenticated.
 - Each iteration should: do ONE story, run checks from this file, commit, update `ralph/prd.json`, append to `ralph/progress.txt`.
+- Prior API MVP backlog is archived in `ralph/prd.json.api-mvp`.
 
 ## Build / Lint / Test Commands
 

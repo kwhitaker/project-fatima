@@ -11,8 +11,10 @@ Covers:
 from unittest.mock import MagicMock
 
 import pytest
+from fastapi import Request
 from fastapi.testclient import TestClient
 
+from app.auth import get_caller_id
 from app.dependencies import get_card_store, get_game_store
 from app.main import app
 from app.models.cards import CardDefinition, CardSides
@@ -42,6 +44,14 @@ def _make_card(idx: int) -> CardDefinition:
 _TEST_CARDS = [_make_card(i) for i in range(20)]
 
 
+def _mock_caller_id(request: Request) -> str:
+    return request.headers.get("X-User-Id", "test-user")
+
+
+def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
+    return getattr(client, method)(path, headers={"X-User-Id": user}, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -57,22 +67,24 @@ def client(game_store: MemoryGameStore) -> TestClient:  # type: ignore[misc]
     card_store = MemoryCardStore(cards=_TEST_CARDS)
     app.dependency_overrides[get_game_store] = lambda: game_store
     app.dependency_overrides[get_card_store] = lambda: card_store
+    app.dependency_overrides[get_caller_id] = _mock_caller_id
     yield TestClient(app)  # type: ignore[misc]
     app.dependency_overrides.clear()
 
 
 def _create_active_game(client: TestClient) -> tuple[str, str, str]:
-    """Create an active game with two players; return (game_id, p1_id, p2_id)."""
-    game_id = client.post("/games", json={}).json()["game_id"]
-    client.post(f"/games/{game_id}/join", json={"player_id": "p1"})
-    client.post(f"/games/{game_id}/join", json={"player_id": "p2"})
+    """Create an active game; p1 creates (auto-joins), p2 joins.
+
+    Returns (game_id, p1_id, p2_id).
+    """
+    game_id = _as(client, "p1", "post", "/games", json={}).json()["game_id"]
+    _as(client, "p2", "post", f"/games/{game_id}/join", json={})
     return game_id, "p1", "p2"
 
 
 def _create_waiting_game(client: TestClient) -> tuple[str, str]:
-    """Create a waiting game with one player; return (game_id, player_id)."""
-    game_id = client.post("/games", json={}).json()["game_id"]
-    client.post(f"/games/{game_id}/join", json={"player_id": "p1"})
+    """Create a waiting game with one player. Returns (game_id, player_id)."""
+    game_id = _as(client, "p1", "post", "/games", json={}).json()["game_id"]
     return game_id, "p1"
 
 
@@ -83,9 +95,9 @@ def _create_waiting_game(client: TestClient) -> tuple[str, str]:
 
 def test_leave_active_game_returns_complete_state(client: TestClient) -> None:
     game_id, p1, _p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
 
-    resp = client.post(f"/games/{game_id}/leave", json={"player_id": p1, "state_version": sv})
+    resp = _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": sv})
 
     assert resp.status_code == 200
     body = resp.json()
@@ -99,9 +111,9 @@ def test_leave_active_game_appends_forfeited_event(
     client: TestClient, game_store: MemoryGameStore
 ) -> None:
     game_id, p1, p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
 
-    client.post(f"/games/{game_id}/leave", json={"player_id": p1, "state_version": sv})
+    _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": sv})
 
     events = game_store.get_events(game_id)
     event_types = [e.event_type for e in events]
@@ -114,9 +126,9 @@ def test_leave_active_game_appends_forfeited_event(
 
 def test_leave_active_game_second_player_can_forfeit(client: TestClient) -> None:
     game_id, _p1, p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p2, "get", f"/games/{game_id}").json()["state_version"]
 
-    resp = client.post(f"/games/{game_id}/leave", json={"player_id": p2, "state_version": sv})
+    resp = _as(client, p2, "post", f"/games/{game_id}/leave", json={"state_version": sv})
 
     assert resp.status_code == 200
     body = resp.json()
@@ -130,9 +142,9 @@ def test_leave_active_game_second_player_can_forfeit(client: TestClient) -> None
 
 def test_leave_waiting_game_returns_204(client: TestClient) -> None:
     game_id, p1 = _create_waiting_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
 
-    resp = client.post(f"/games/{game_id}/leave", json={"player_id": p1, "state_version": sv})
+    resp = _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": sv})
 
     assert resp.status_code == 204
     assert resp.content == b""
@@ -140,11 +152,11 @@ def test_leave_waiting_game_returns_204(client: TestClient) -> None:
 
 def test_leave_waiting_game_deletes_game(client: TestClient) -> None:
     game_id, p1 = _create_waiting_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
 
-    client.post(f"/games/{game_id}/leave", json={"player_id": p1, "state_version": sv})
+    _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": sv})
 
-    assert client.get(f"/games/{game_id}").status_code == 404
+    assert _as(client, p1, "get", f"/games/{game_id}").status_code == 404
 
 
 # ---------------------------------------------------------------------------
@@ -153,48 +165,40 @@ def test_leave_waiting_game_deletes_game(client: TestClient) -> None:
 
 
 def test_leave_nonexistent_game_returns_404(client: TestClient) -> None:
-    resp = client.post("/games/no-such/leave", json={"player_id": "p1", "state_version": 0})
+    resp = _as(client, "p1", "post", "/games/no-such/leave", json={"state_version": 0})
     assert resp.status_code == 404
 
 
 def test_leave_game_unknown_player_returns_403(client: TestClient) -> None:
     game_id, _p1, _p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, "p1", "get", f"/games/{game_id}").json()["state_version"]
 
-    resp = client.post(
-        f"/games/{game_id}/leave", json={"player_id": "stranger", "state_version": sv}
-    )
+    resp = _as(client, "stranger", "post", f"/games/{game_id}/leave", json={"state_version": sv})
     assert resp.status_code == 403
 
 
 def test_leave_active_game_version_conflict_returns_409(client: TestClient) -> None:
     game_id, p1, _p2 = _create_active_game(client)
 
-    resp = client.post(
-        f"/games/{game_id}/leave", json={"player_id": p1, "state_version": 9999}
-    )
+    resp = _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": 9999})
     assert resp.status_code == 409
 
 
 def test_leave_waiting_game_version_conflict_returns_409(client: TestClient) -> None:
     game_id, p1 = _create_waiting_game(client)
 
-    resp = client.post(
-        f"/games/{game_id}/leave", json={"player_id": p1, "state_version": 9999}
-    )
+    resp = _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": 9999})
     assert resp.status_code == 409
 
 
 def test_leave_complete_game_returns_400(client: TestClient) -> None:
     game_id, p1, _p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
     # Forfeit the game
-    client.post(f"/games/{game_id}/leave", json={"player_id": p1, "state_version": sv})
+    _as(client, p1, "post", f"/games/{game_id}/leave", json={"state_version": sv})
     # Try to leave the now-complete game
-    sv2 = client.get(f"/games/{game_id}").json()["state_version"]
-    resp = client.post(
-        f"/games/{game_id}/leave", json={"player_id": "p2", "state_version": sv2}
-    )
+    sv2 = _as(client, "p2", "get", f"/games/{game_id}").json()["state_version"]
+    resp = _as(client, "p2", "post", f"/games/{game_id}/leave", json={"state_version": sv2})
     assert resp.status_code == 400
 
 
@@ -205,17 +209,17 @@ def test_leave_complete_game_returns_400(client: TestClient) -> None:
 
 def test_leave_active_game_idempotency(client: TestClient) -> None:
     game_id, p1, _p2 = _create_active_game(client)
-    sv = client.get(f"/games/{game_id}").json()["state_version"]
+    sv = _as(client, p1, "get", f"/games/{game_id}").json()["state_version"]
 
-    payload = {"player_id": p1, "state_version": sv, "idempotency_key": "leave-001"}
+    payload = {"state_version": sv, "idempotency_key": "leave-001"}
 
-    resp1 = client.post(f"/games/{game_id}/leave", json=payload)
+    resp1 = _as(client, p1, "post", f"/games/{game_id}/leave", json=payload)
     assert resp1.status_code == 200
     assert resp1.json()["status"] == "complete"
 
     # Retry with stale version — idempotency_key matches, returns current state
     stale_payload = {**payload, "state_version": 999}
-    resp2 = client.post(f"/games/{game_id}/leave", json=stale_payload)
+    resp2 = _as(client, p1, "post", f"/games/{game_id}/leave", json=stale_payload)
     assert resp2.status_code == 200
     assert resp2.json()["status"] == "complete"
 

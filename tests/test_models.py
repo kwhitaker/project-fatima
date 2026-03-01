@@ -118,6 +118,17 @@ def test_game_state_json_roundtrip() -> None:
     assert state2 == state
 
 
+def test_game_state_drops_legacy_last_move_shape() -> None:
+    state = GameState.model_validate(
+        {
+            "game_id": "g1",
+            "seed": 1,
+            "last_move": {"mists_roll": 1, "mists_effect": "fog"},
+        }
+    )
+    assert state.last_move is None
+
+
 def test_board_cell_valid() -> None:
     cell = BoardCell(card_key="zombie_i", owner=0)
     assert cell.owner == 0

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -24,7 +24,7 @@ function CardInspectPreview({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
     >
-      <div className="bg-background border rounded-lg p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+      <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
         <h2 className="text-lg font-bold mb-3">{name}</h2>
         <div className="grid grid-cols-3 gap-1 text-sm text-center mb-4">
           <div />
@@ -53,16 +53,22 @@ function CardInspectPreview({
 function CardFace({ cardKey, def }: { cardKey: string; def?: CardDefinition }) {
   const name = def?.name ?? cardKey;
   return (
-    <div className="flex flex-col items-center justify-between w-full h-full p-0.5">
-      <span className="text-[9px] font-bold leading-none">{def?.sides.n ?? ""}</span>
+    <div className="flex flex-col items-center justify-between w-full h-full p-1">
+      <span className="text-[10px] sm:text-[11px] font-bold leading-none">{def?.sides.n ?? ""}</span>
       <div className="flex items-center justify-between w-full">
-        <span className="text-[9px] leading-none">{def?.sides.w ?? ""}</span>
-        <span className="text-[9px] font-semibold leading-tight text-center truncate max-w-[34px]">{name}</span>
-        <span className="text-[9px] leading-none">{def?.sides.e ?? ""}</span>
+        <span className="text-[10px] sm:text-[11px] leading-none">{def?.sides.w ?? ""}</span>
+        <span className="text-[10px] sm:text-[11px] font-semibold leading-tight text-center truncate max-w-[52px] sm:max-w-[64px]">{name}</span>
+        <span className="text-[10px] sm:text-[11px] leading-none">{def?.sides.e ?? ""}</span>
       </div>
-      <span className="text-[9px] font-bold leading-none">{def?.sides.s ?? ""}</span>
+      <span className="text-[10px] sm:text-[11px] font-bold leading-none">{def?.sides.s ?? ""}</span>
     </div>
   );
+}
+
+function cardTitle(cardKey: string, def?: CardDefinition) {
+  const name = def?.name ?? cardKey;
+  const tier = def?.tier;
+  return tier != null ? `${name} (Tier ${tier})` : name;
 }
 
 function BoardGrid({
@@ -88,62 +94,72 @@ function BoardGrid({
 }) {
   return (
     <div
-      className="grid grid-cols-3 gap-1.5 sm:gap-2 w-fit"
-      aria-label="game board"
+      className="w-full max-w-[22rem] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] mx-auto"
     >
-      {board.map((cell, i) => {
-        const isPlaced = placedCells?.has(i) ?? false;
-        const isCaptured = capturedCells?.has(i) ?? false;
-        const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
-        const cellClass = cn(
-          "w-16 h-16 sm:w-20 sm:h-20 border rounded flex items-center justify-center text-xs text-center p-0.5",
-          cell === null
-            ? "bg-muted text-muted-foreground"
-            : cell.owner === myIndex
-            ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
-            : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
-          isPlaced && "animate-card-placed",
-          isCaptured && "animate-card-captured",
-          isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
-        );
-        if (canPlace && cell === null) {
-          return (
-            <button
-              key={i}
-              aria-label={`cell ${i}`}
-              onClick={() => onCellClick?.(i)}
-              className={cn(cellClass, "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
-              data-last-move={isLastMove ? "true" : undefined}
-            />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="game board">
+        {board.map((cell, i) => {
+          const isPlaced = placedCells?.has(i) ?? false;
+          const isCaptured = capturedCells?.has(i) ?? false;
+          const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
+          const cellClass = cn(
+            "aspect-square w-full border rounded flex items-center justify-center text-xs text-center",
+            cell === null
+              ? "bg-muted text-muted-foreground"
+              : cell.owner === myIndex
+              ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
+              : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
+            isPlaced && "animate-card-placed",
+            isCaptured && "animate-card-captured",
+            isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
           );
-        }
-        if (cell !== null && onCellInspect) {
+          if (canPlace && cell === null) {
+            return (
+              <button
+                key={i}
+                aria-label={`cell ${i}`}
+                onClick={() => onCellClick?.(i)}
+                className={cn(
+                  cellClass,
+                  "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                )}
+                data-last-move={isLastMove ? "true" : undefined}
+              />
+            );
+          }
+          if (cell !== null && onCellInspect) {
+            const def = cardDefs?.get(cell.card_key);
+            return (
+              <button
+                key={i}
+                className={cn(
+                  cellClass,
+                  "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                )}
+                data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+                data-last-move={isLastMove ? "true" : undefined}
+                onClick={() => onCellInspect(cell.card_key)}
+                aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
+                title={cardTitle(cell.card_key, def)}
+              >
+                <CardFace cardKey={cell.card_key} def={def} />
+              </button>
+            );
+          }
           return (
-            <button
+            <div
               key={i}
-              className={cn(cellClass, "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
+              className={cellClass}
               data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
-              onClick={() => onCellInspect(cell.card_key)}
-              aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
+              title={cell ? cardTitle(cell.card_key, cardDefs?.get(cell.card_key)) : undefined}
             >
-              <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
-            </button>
+              {cell ? (
+                <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
+              ) : ""}
+            </div>
           );
-        }
-        return (
-          <div
-            key={i}
-            className={cellClass}
-            data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
-            data-last-move={isLastMove ? "true" : undefined}
-          >
-            {cell ? (
-              <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
-            ) : ""}
-          </div>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }
@@ -167,10 +183,27 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
+  const [drawerHeight, setDrawerHeight] = useState(0);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = drawerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      setDrawerHeight(el.getBoundingClientRect().height);
+    };
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [drawerOpen]);
 
   // Animation tracking: diff prev board vs new board on each game update
   const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
@@ -386,7 +419,7 @@ export default function GameRoom() {
       : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
 
   return (
-    <div className="container py-8">
+    <div className="container py-4 min-h-[100dvh] flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">{titleText}</h1>
         <Button
@@ -429,122 +462,99 @@ export default function GameRoom() {
         </Button>
       </div>
 
-      {/* WAITING */}
-      {game.status === "waiting" && (
-        <div className="mt-4 space-y-4">
-          <p className="text-muted-foreground text-sm">
-            Waiting for players… ({game.players.length}/2)
-          </p>
+      {game.status === "active" ? (
+        <>
+          <div
+            className="flex-1 min-h-0 overflow-y-auto"
+            style={{ paddingBottom: drawerHeight + 12 }}
+          >
+            <div className="space-y-4">
+              {/* Turn indicator */}
+              <p className="text-lg font-semibold">
+                {game.current_player_index === myIndex ? "Your turn" : "Opponent's turn"}
+              </p>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <span className="font-mono text-sm break-all">{window.location.href}</span>
-            <Button variant="outline" size="sm" onClick={handleCopyLink} className="shrink-0">
-              {copied ? "Copied!" : "Copy Link"}
-            </Button>
+              {/* Score */}
+              <p className="text-sm text-muted-foreground">
+                Score — You: {myScore} | Opponent: {opponentScore}
+              </p>
+
+              {/* Last move callout */}
+              {game.last_move != null && (
+                <div
+                  className="text-sm p-2 rounded border bg-muted border-border text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground"
+                  aria-label="last move callout"
+                  aria-live="polite"
+                >
+                  {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
+                  <span className="font-medium">
+                    {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
+                  </span>
+                </div>
+              )}
+
+              {/* Mists feedback */}
+              {game.last_move != null && (
+                <div
+                  className={cn(
+                    "p-3 rounded border text-sm",
+                    game.last_move.mists_effect === "fog" &&
+                      "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300",
+                    game.last_move.mists_effect === "omen" &&
+                      "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
+                    game.last_move.mists_effect === "none" && "bg-muted border-border text-muted-foreground"
+                  )}
+                  aria-label="mists feedback"
+                >
+                  <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
+                  {game.last_move.mists_effect === "fog" && " — Fog: −1 to comparisons"}
+                  {game.last_move.mists_effect === "omen" && " — Omen: +1 to comparisons"}
+                </div>
+              )}
+
+              {/* Capture feedback: single flip or combo */}
+              {capturedCells.size > 0 && (
+                <div
+                  className={cn(
+                    "text-sm font-semibold p-2 rounded border",
+                    capturedCells.size === 1
+                      ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
+                      : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
+                  )}
+                  aria-live="polite"
+                  aria-label="capture feedback"
+                >
+                  {capturedCells.size === 1 ? "1 card captured!" : `Combo! ×${capturedCells.size} captured`}
+                </div>
+              )}
+
+              {/* Board */}
+              <BoardGrid
+                board={game.board}
+                myIndex={myIndex}
+                canPlace={
+                  !!myPlayer?.archetype &&
+                  game.current_player_index === myIndex &&
+                  selectedCard !== null &&
+                  !movePending &&
+                  (!usePower ||
+                    !(myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence") ||
+                    powerSide !== null)
+                }
+                onCellClick={(i) => void handlePlaceCard(i)}
+                onCellInspect={(cardKey) =>
+                  setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })
+                }
+                placedCells={placedCells}
+                capturedCells={capturedCells}
+                cardDefs={cardDefs}
+                lastMoveCellIndex={game.last_move?.cell_index ?? null}
+              />
+
+              {/* Move error */}
+              {moveError && <p className="text-destructive text-sm">{moveError}</p>}
+            </div>
           </div>
-
-          {!isParticipant && !isFull && (
-            <Button onClick={() => void handleJoin()} disabled={joining}>
-              {joining ? "Joining…" : "Join Game"}
-            </Button>
-          )}
-          {!isParticipant && isFull && (
-            <p className="text-muted-foreground text-sm">
-              This game is full. You cannot join.
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* ACTIVE */}
-      {game.status === "active" && (
-        <div className="mt-4 space-y-4">
-          {/* Turn indicator */}
-          <p className="text-lg font-semibold">
-            {game.current_player_index === myIndex
-              ? "Your turn"
-              : "Opponent's turn"}
-          </p>
-
-          {/* Score */}
-          <p className="text-sm text-muted-foreground">
-            Score — You: {myScore} | Opponent: {opponentScore}
-          </p>
-
-          {/* Last move callout */}
-          {game.last_move != null && (
-            <div
-              className="text-sm p-2 rounded border bg-muted border-border text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground"
-              aria-label="last move callout"
-              aria-live="polite"
-            >
-              {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
-              <span className="font-medium">
-                {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
-              </span>
-            </div>
-          )}
-
-          {/* Mists feedback */}
-          {game.last_move != null && (
-            <div
-              className={cn(
-                "p-3 rounded border text-sm",
-                game.last_move.mists_effect === "fog" && "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300",
-                game.last_move.mists_effect === "omen" && "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
-                game.last_move.mists_effect === "none" && "bg-muted border-border text-muted-foreground"
-              )}
-              aria-label="mists feedback"
-            >
-              <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
-              {game.last_move.mists_effect === "fog" && " — Fog: −1 to comparisons"}
-              {game.last_move.mists_effect === "omen" && " — Omen: +1 to comparisons"}
-            </div>
-          )}
-
-          {/* Capture feedback: single flip or combo */}
-          {capturedCells.size > 0 && (
-            <div
-              className={cn(
-                "text-sm font-semibold p-2 rounded border",
-                capturedCells.size === 1
-                  ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
-                  : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
-              )}
-              aria-live="polite"
-              aria-label="capture feedback"
-            >
-              {capturedCells.size === 1
-                ? "1 card captured!"
-                : `Combo! ×${capturedCells.size} captured`}
-            </div>
-          )}
-
-          {/* Board */}
-          <BoardGrid
-            board={game.board}
-            myIndex={myIndex}
-            canPlace={
-              !!myPlayer?.archetype &&
-              game.current_player_index === myIndex &&
-              selectedCard !== null &&
-              !movePending &&
-              (!usePower ||
-                !(myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence") ||
-                powerSide !== null)
-            }
-            onCellClick={(i) => void handlePlaceCard(i)}
-            onCellInspect={(cardKey) => setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })}
-            placedCells={placedCells}
-            capturedCells={capturedCells}
-            cardDefs={cardDefs}
-            lastMoveCellIndex={game.last_move?.cell_index ?? null}
-          />
-
-          {/* Move error */}
-          {moveError && (
-            <p className="text-destructive text-sm">{moveError}</p>
-          )}
 
           {/* Archetype selection: unskippable blocking modal */}
           {myPlayer && !myPlayer.archetype && (
@@ -555,7 +565,7 @@ export default function GameRoom() {
               data-testid="archetype-modal"
               className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
             >
-              <div className="bg-background border rounded-lg p-6 w-full max-w-sm shadow-xl">
+              <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-sm shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
                 <h2 id="archetype-modal-title" className="text-lg font-bold mb-1">
                   Choose Your Archetype
                 </h2>
@@ -582,194 +592,276 @@ export default function GameRoom() {
             </div>
           )}
 
-          {/* Use Power toggle */}
-          {myPlayer?.archetype && !myPlayer.archetype_used && game.current_player_index === myIndex && (
-            <div>
-              <label className="flex items-center gap-2 text-sm cursor-pointer">
-                <input
-                  type="checkbox"
-                  aria-label="Use Power"
-                  checked={usePower}
-                  onChange={(e) => {
-                    setUsePower(e.target.checked);
-                    setPowerSide(null);
-                  }}
-                  disabled={movePending}
-                />
-                Use Power
-              </label>
-              {usePower && (myPlayer.archetype === "skulker" || myPlayer.archetype === "presence") && (
-                <div className="flex gap-2 mt-2">
-                  {(["n", "e", "s", "w"] as const).map((side) => (
-                    <Button
-                      key={side}
-                      variant={powerSide === side ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setPowerSide(powerSide === side ? null : side)}
-                    >
-                      {side}
-                    </Button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* My hand */}
-          <div>
-            <p className="text-sm font-medium mb-1">Your hand</p>
-            {game.current_player_index === myIndex && !movePending && (
-              <p className="text-xs text-muted-foreground mb-2">
-                {selectedCard
-                  ? `"${selectedCard}" selected — click an empty cell to place it`
-                  : "Click a card to select it, then click an empty cell on the board"}
-              </p>
-            )}
-            <div className="flex gap-2 flex-wrap">
-              {myPlayer?.hand.map((cardKey) => {
-                const def = cardDefs.get(cardKey);
-                const displayName = def?.name ?? cardKey;
-                return (
-                  <div key={cardKey} className="relative">
-                    <button
-                      onClick={() =>
-                        setSelectedCard(selectedCard === cardKey ? null : cardKey)
-                      }
-                      disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
-                      className={cn(
-                        "flex flex-col items-center min-w-[4rem] px-2 py-1.5 border rounded text-xs transition-transform hover:scale-105",
-                        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                        selectedCard === cardKey
-                          ? "border-primary bg-primary/10 cursor-pointer"
-                          : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
-                      )}
-                      aria-pressed={selectedCard === cardKey}
-                    >
-                      <span className="font-semibold truncate max-w-[5rem] text-center">{displayName}</span>
-                      <div className="flex flex-col items-center mt-0.5 text-[9px] text-muted-foreground w-full">
-                        <span>{def ? def.sides.n : ""}</span>
-                        <div className="flex justify-between w-full px-1">
-                          <span>{def ? def.sides.w : ""}</span>
-                          <span>{def ? def.sides.e : ""}</span>
-                        </div>
-                        <span>{def ? def.sides.s : ""}</span>
-                      </div>
-                    </button>
-                    <button
-                      aria-label={`inspect ${displayName}`}
-                      onClick={() => setPreviewCard({ cardKey, def })}
-                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-muted border text-[9px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
-                      tabIndex={0}
-                    >
-                      ⓘ
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Opponent hand */}
-          <div>
-            <p className="text-sm font-medium mb-1">Opponent's hand</p>
-            <p className="text-sm text-muted-foreground">
-              {opponentPlayer?.hand.length ?? 0} cards
-            </p>
-          </div>
-
-          {/* Archetypes */}
-          <div className="flex gap-8">
-            <div>
-              <p className="text-xs text-muted-foreground">Your archetype</p>
-              <p className="text-sm capitalize">{myPlayer?.archetype ?? "None"}</p>
-              {myPlayer?.archetype && (
-                <p className="text-xs text-muted-foreground">
-                  {myPlayer.archetype_used ? "Used" : "Available"}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Opponent archetype</p>
-              <p className="text-sm capitalize">{opponentPlayer?.archetype ?? "None"}</p>
-              {opponentPlayer?.archetype && (
-                <p className="text-xs text-muted-foreground">
-                  {opponentPlayer.archetype_used ? "Used" : "Available"}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Leave — opens forfeit confirmation dialog */}
-          <Button variant="outline" onClick={() => setShowLeaveConfirm(true)} disabled={leaving}>
-            Leave Game
-          </Button>
-
-          {/* Forfeit confirmation dialog */}
-          {showLeaveConfirm && (
+          <div className="fixed inset-x-0 bottom-0 z-40">
             <div
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="forfeit-dialog-title"
-              data-testid="forfeit-dialog"
-              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-              onKeyDown={(e) => { if (e.key === "Escape") setShowLeaveConfirm(false); }}
+              ref={drawerRef}
+              className="bg-white/95 dark:bg-zinc-900/95 border border-zinc-200 dark:border-zinc-700 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)]"
             >
-              <div className="bg-background border rounded-lg p-6 w-full max-w-sm shadow-xl">
-                <h2 id="forfeit-dialog-title" className="text-lg font-bold mb-1">
-                  Forfeit Game?
-                </h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Leaving now will count as a forfeit. Your opponent will be awarded the win.
-                </p>
-                <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="w-full px-4 py-2.5 flex items-center justify-between cursor-pointer"
+              aria-label="toggle hand drawer"
+              aria-expanded={drawerOpen}
+              onClick={() => setDrawerOpen(!drawerOpen)}
+            >
+              <div className="flex items-center gap-3">
+                <span className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                <span className="text-sm font-semibold">Hand & Players</span>
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {drawerOpen ? "Hide" : "Show"}
+              </span>
+            </button>
+
+            <div
+              className={cn(
+                "overflow-hidden transition-[max-height] duration-200 ease-out",
+                drawerOpen ? "max-h-[60vh]" : "max-h-0"
+              )}
+            >
+              <div className="px-4 pb-4 overflow-y-auto max-h-[60vh]">
+                <div className="space-y-4">
+                  {/* Use Power toggle */}
+                  {myPlayer?.archetype &&
+                    !myPlayer.archetype_used &&
+                    game.current_player_index === myIndex && (
+                      <div>
+                        <label className="flex items-center gap-2 text-sm cursor-pointer">
+                          <input
+                            type="checkbox"
+                            aria-label="Use Power"
+                            checked={usePower}
+                            onChange={(e) => {
+                              setUsePower(e.target.checked);
+                              setPowerSide(null);
+                            }}
+                            disabled={movePending}
+                          />
+                          Use Power
+                        </label>
+                        {usePower &&
+                          (myPlayer.archetype === "skulker" || myPlayer.archetype === "presence") && (
+                            <div className="flex gap-2 mt-2">
+                              {(["n", "e", "s", "w"] as const).map((side) => (
+                                <Button
+                                  key={side}
+                                  variant={powerSide === side ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() =>
+                                    setPowerSide(powerSide === side ? null : side)
+                                  }
+                                >
+                                  {side}
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    )}
+
+                  {/* My hand */}
+                  <div>
+                    <p className="text-sm font-medium mb-1">Your hand</p>
+                    {game.current_player_index === myIndex && !movePending && (
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {selectedCard
+                          ? `"${selectedCard}" selected — click an empty cell to place it`
+                          : "Click a card to select it, then click an empty cell on the board"}
+                      </p>
+                    )}
+                    <div className="flex gap-2 flex-wrap">
+                      {myPlayer?.hand.map((cardKey) => {
+                        const def = cardDefs.get(cardKey);
+                        const displayName = def?.name ?? cardKey;
+                        return (
+                          <div key={cardKey} className="relative">
+                            <button
+                              onClick={() =>
+                                setSelectedCard(selectedCard === cardKey ? null : cardKey)
+                              }
+                              disabled={
+                                !myPlayer?.archetype ||
+                                game.current_player_index !== myIndex ||
+                                movePending
+                              }
+                              title={cardTitle(cardKey, def)}
+                              className={cn(
+                                "flex aspect-square w-24 sm:w-28 flex-col items-center justify-between p-2 border rounded text-xs sm:text-sm transition-transform hover:scale-105",
+                                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                                selectedCard === cardKey
+                                  ? "border-primary bg-primary/10 cursor-pointer"
+                                  : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
+                              )}
+                              aria-pressed={selectedCard === cardKey}
+                            >
+                              <span className="font-semibold truncate max-w-full text-center">
+                                {displayName}
+                              </span>
+                              <div className="flex flex-col items-center mt-1 text-[11px] sm:text-[12px] text-muted-foreground w-full">
+                                <span>{def ? def.sides.n : ""}</span>
+                                <div className="flex justify-between w-full px-1">
+                                  <span>{def ? def.sides.w : ""}</span>
+                                  <span>{def ? def.sides.e : ""}</span>
+                                </div>
+                                <span>{def ? def.sides.s : ""}</span>
+                              </div>
+                            </button>
+                            <button
+                              aria-label={`inspect ${displayName}`}
+                              onClick={() => setPreviewCard({ cardKey, def })}
+                              title={`Preview: ${cardTitle(cardKey, def)}`}
+                              className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-muted border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                              tabIndex={0}
+                            >
+                              ⓘ
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Opponent hand */}
+                  <div>
+                    <p className="text-sm font-medium mb-1">Opponent's hand</p>
+                    <p className="text-sm text-muted-foreground">
+                      {opponentPlayer?.hand.length ?? 0} cards
+                    </p>
+                  </div>
+
+                  {/* Archetypes */}
+                  <div className="flex gap-8">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Your archetype</p>
+                      <p className="text-sm capitalize">{myPlayer?.archetype ?? "None"}</p>
+                      {myPlayer?.archetype && (
+                        <p className="text-xs text-muted-foreground">
+                          {myPlayer.archetype_used ? "Used" : "Available"}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Opponent archetype</p>
+                      <p className="text-sm capitalize">{opponentPlayer?.archetype ?? "None"}</p>
+                      {opponentPlayer?.archetype && (
+                        <p className="text-xs text-muted-foreground">
+                          {opponentPlayer.archetype_used ? "Used" : "Available"}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Leave — opens forfeit confirmation dialog */}
                   <Button
                     variant="outline"
-                    onClick={() => setShowLeaveConfirm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    data-confirm
-                    onClick={() => { setShowLeaveConfirm(false); void handleLeave(); }}
+                    onClick={() => setShowLeaveConfirm(true)}
                     disabled={leaving}
                   >
-                    {leaving ? "Leaving…" : "Forfeit & Leave"}
+                    Leave Game
                   </Button>
+
+                  {/* Forfeit confirmation dialog */}
+                  {showLeaveConfirm && (
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      aria-labelledby="forfeit-dialog-title"
+                      data-testid="forfeit-dialog"
+                      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") setShowLeaveConfirm(false);
+                      }}
+                    >
+                      <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-sm shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+                        <h2 id="forfeit-dialog-title" className="text-lg font-bold mb-1">
+                          Forfeit Game?
+                        </h2>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Leaving now will count as a forfeit. Your opponent will be awarded the win.
+                        </p>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" onClick={() => setShowLeaveConfirm(false)}>
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            data-confirm
+                            onClick={() => {
+                              setShowLeaveConfirm(false);
+                              void handleLeave();
+                            }}
+                            disabled={leaving}
+                          >
+                            {leaving ? "Leaving…" : "Forfeit & Leave"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* COMPLETE */}
-      {game.status === "complete" && (
-        <div className="mt-4 space-y-4">
-          {/* Result banner */}
-          <div className="p-4 rounded border">
-            {game.result?.is_draw ? (
-              <p className="text-xl font-bold">Draw!</p>
-            ) : game.result?.winner === myIndex ? (
-              <p className="text-xl font-bold text-green-600 dark:text-green-400">You win!</p>
-            ) : (
-              <p className="text-xl font-bold text-red-600 dark:text-red-400">You lose!</p>
-            )}
           </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          {/* WAITING */}
+          {game.status === "waiting" && (
+            <div className="mt-4 space-y-4">
+              <p className="text-muted-foreground text-sm">
+                Waiting for players… ({game.players.length}/2)
+              </p>
 
-          {/* Final score */}
-          <p className="text-sm text-muted-foreground">
-            Score — You: {myScore} | Opponent: {opponentScore}
-          </p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="font-mono text-sm break-all">{window.location.href}</span>
+                <Button variant="outline" size="sm" onClick={handleCopyLink} className="shrink-0">
+                  {copied ? "Copied!" : "Copy Link"}
+                </Button>
+              </div>
 
-          {/* Final board */}
-          <BoardGrid
-            board={game.board}
-            myIndex={myIndex}
-            cardDefs={cardDefs}
-            onCellInspect={(cardKey) => setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })}
-          />
+              {!isParticipant && !isFull && (
+                <Button onClick={() => void handleJoin()} disabled={joining}>
+                  {joining ? "Joining…" : "Join Game"}
+                </Button>
+              )}
+              {!isParticipant && isFull && (
+                <p className="text-muted-foreground text-sm">This game is full. You cannot join.</p>
+              )}
+            </div>
+          )}
+
+          {/* COMPLETE */}
+          {game.status === "complete" && (
+            <div className="mt-4 space-y-4">
+              {/* Result banner */}
+              <div className="p-4 rounded border">
+                {game.result?.is_draw ? (
+                  <p className="text-xl font-bold">Draw!</p>
+                ) : game.result?.winner === myIndex ? (
+                  <p className="text-xl font-bold text-green-600 dark:text-green-400">You win!</p>
+                ) : (
+                  <p className="text-xl font-bold text-red-600 dark:text-red-400">You lose!</p>
+                )}
+              </div>
+
+              {/* Final score */}
+              <p className="text-sm text-muted-foreground">
+                Score — You: {myScore} | Opponent: {opponentScore}
+              </p>
+
+              {/* Final board */}
+              <BoardGrid
+                board={game.board}
+                myIndex={myIndex}
+                cardDefs={cardDefs}
+                onCellInspect={(cardKey) =>
+                  setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 

@@ -11,6 +11,7 @@ export interface CardDefinition {
   card_key: string;
   name: string;
   version: string;
+  tier: number;
   sides: CardSides;
 }
 

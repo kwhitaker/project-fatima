@@ -222,9 +222,8 @@ class TestPresenceBoost:
     def test_boost_combined_with_mists_modifier(self):
         """Presence +1 and mists_modifier stack on the chosen direction.
 
-        placed N=5 vs neighbor S=7. Omen roll (+1) + Presence north (+1):
-        5+1+1=7 == 7 → no capture (strict >).
-        Increase placed N to 6: 6+1+1=8 > 7 → capture.
+        placed N=6 vs neighbor S=7. Omen roll (+2) + Presence north (+1):
+        6+2+1=9 > 7 → capture.
         """
         placed = make_card("placed", n=6, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=7, w=1)

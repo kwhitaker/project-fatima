@@ -76,7 +76,7 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 
 - **Board**: 3×3 grid, one card per cell.
 - **Card sides**: N/E/S/W integer values (1–10). Higher touching side wins a capture.
-- **Mists (1d6)**: Roll per placement. 1=Fog (−1 all comparisons), 6=Omen (+1), 2–5=no effect. Modifier is ephemeral — printed stats never change.
+- **Mists (1d6)**: Roll per placement. 1=Fog (−2 all comparisons), 6=Omen (+2), 2–5=no effect. Modifier is ephemeral — printed stats never change.
 - **Archetypes**: Once-per-game power. Martial (rotate card), Skulker (+2 one side), Caster (reroll Mists), Devout (negate Fog), Presence (+1 one comparison).
 - **Sudden Death**: Tie at board-full → same `game_id`, `round_number++`, each player's deck = the 9 cards they owned. Cap: 3 Sudden Death rounds, then draw.
 - **Deck (10 cards)**: Named character uniqueness by `character_key`; rarity slots (ultra≤1, very_rare≤2, rare≤3); copy limits by rarity bucket.

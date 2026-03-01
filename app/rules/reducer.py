@@ -36,14 +36,14 @@ class PlacementIntent:
 def mists_modifier_from_roll(roll: int) -> int:
     """Map a 1d6 Mists roll to a comparison modifier.
 
-    1 (Fog)  → -1 (all comparisons this placement reduced by 1)
-    6 (Omen) → +1 (all comparisons this placement increased by 1)
+    1 (Fog)  → -2 (all comparisons this placement reduced by 2)
+    6 (Omen) → +2 (all comparisons this placement increased by 2)
     2-5      →  0 (no effect)
     """
     if roll == 1:
-        return -1
+        return -2
     if roll == 6:
-        return 1
+        return 2
     return 0
 
 
@@ -51,9 +51,9 @@ def _mists_effect_label(roll: int, modifier: int) -> str:
     """Human-readable effect label for LastMoveInfo."""
     if roll == 1 and modifier == 0:
         return "fog_negated"  # Devout negated a Fog
-    if modifier == -1:
+    if modifier == -2:
         return "fog"
-    if modifier == 1:
+    if modifier == 2:
         return "omen"
     return "none"
 
@@ -202,7 +202,7 @@ def apply_intent(
         if caster_reroll:
             roll = rng.randint(1, 6)  # second result is used
         mists_modifier = mists_modifier_from_roll(roll)
-        if devout_negate_fog and mists_modifier == -1:
+        if devout_negate_fog and mists_modifier == -2:
             mists_modifier = 0  # Devout treats Fog as no effect
         mists_roll = roll
 

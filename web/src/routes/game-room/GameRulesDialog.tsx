@@ -71,8 +71,8 @@ export function GameRulesDialog({
             <section className="space-y-2">
               <h3 className="font-semibold text-base">The Mists</h3>
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                <li>Roll 1: Fog. Your placed card is -1 in fights this turn.</li>
-                <li>Roll 6: Omen. Your placed card is +1 in fights this turn.</li>
+                <li>Roll 1: Fog. Your placed card is -2 in fights this turn.</li>
+                <li>Roll 6: Omen. Your placed card is +2 in fights this turn.</li>
                 <li>Roll 2-5: No effect.</li>
               </ul>
               <p className="text-muted-foreground">

@@ -1,8 +1,8 @@
 """Tests for US-004: Mists randomness modifier.
 
 Each placement rolls 1d6:
-  1 (Fog)  → -1 modifier on all comparisons
-  6 (Omen) → +1 modifier on all comparisons
+  1 (Fog)  → -2 modifier on all comparisons
+  6 (Omen) → +2 modifier on all comparisons
   2-5      → no modifier
 """
 
@@ -46,11 +46,11 @@ def make_state(board: list[BoardCell | None] | None = None) -> GameState:
 
 
 class TestMistsModifierFromRoll:
-    def test_fog_roll_gives_minus_one(self):
-        assert mists_modifier_from_roll(1) == -1
+    def test_fog_roll_gives_minus_two(self):
+        assert mists_modifier_from_roll(1) == -2
 
-    def test_omen_roll_gives_plus_one(self):
-        assert mists_modifier_from_roll(6) == 1
+    def test_omen_roll_gives_plus_two(self):
+        assert mists_modifier_from_roll(6) == 2
 
     def test_roll_two_is_neutral(self):
         assert mists_modifier_from_roll(2) == 0
@@ -72,8 +72,8 @@ class TestMistsModifierFromRoll:
 
 class TestApplyIntentWithMists:
     def test_fog_suppresses_capture(self):
-        """Roll=1 (Fog, -1) turns a would-be capture into a tie → no flip."""
-        # placed W=6 vs enemy E=5: normally captures; with -1 → 6-1=5 == 5, no capture
+        """Roll=1 (Fog, -2) turns a would-be capture into a miss → no flip."""
+        # placed W=6 vs enemy E=5: normally captures; with -2 → 6-2=4 < 5, no capture
         enemy = make_card("enemy", n=5, e=5, s=5, w=5)
         placed = make_card("near", n=5, e=5, s=5, w=6)
         board: list[BoardCell | None] = [None] * 9
@@ -90,8 +90,8 @@ class TestApplyIntentWithMists:
         assert next_state.board[0].owner == 1, "Fog suppressed the capture"
 
     def test_omen_enables_capture_from_tie(self):
-        """Roll=6 (Omen, +1) pushes a tie over the threshold → capture."""
-        # placed W=5 vs enemy E=5: normally a tie; with +1 → 5+1=6 > 5, capture
+        """Roll=6 (Omen, +2) pushes a tie over the threshold → capture."""
+        # placed W=5 vs enemy E=5: normally a tie; with +2 → 5+2=7 > 5, capture
         enemy = make_card("enemy", n=5, e=5, s=5, w=5)
         placed = make_card("tie", n=5, e=5, s=5, w=5)
         board: list[BoardCell | None] = [None] * 9

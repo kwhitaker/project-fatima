@@ -123,8 +123,8 @@ export function ActiveGameView({
               aria-label="mists feedback"
             >
               <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
-              {game.last_move.mists_effect === "fog" && " — Fog: −1 to comparisons"}
-              {game.last_move.mists_effect === "omen" && " — Omen: +1 to comparisons"}
+              {game.last_move.mists_effect === "fog" && " — Fog: −2 to comparisons"}
+              {game.last_move.mists_effect === "omen" && " — Omen: +2 to comparisons"}
             </div>
           )}
 

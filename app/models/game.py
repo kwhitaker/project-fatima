@@ -44,6 +44,7 @@ class LastMoveInfo(BaseModel):
     cell_index: int  # 0-8
     mists_roll: int  # 1-6 die result
     mists_effect: str  # "fog" | "omen" | "none" | "fog_negated"
+    plus_triggered: bool = False  # True when the Plus rule fired this placement
 
 
 class GameState(BaseModel):

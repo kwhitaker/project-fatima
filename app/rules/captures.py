@@ -37,18 +37,39 @@ def resolve_captures(
     card_lookup: dict[str, CardDefinition],
     mists_modifier: int = 0,
     presence_direction: str | None = None,
-) -> list[BoardCell | None]:
-    """Return a new board with ownership flipped for all captured cards (including combos).
+) -> tuple[list[BoardCell | None], bool]:
+    """Return a new board with ownership flipped for all captured cards (including combos),
+    and a bool indicating whether the Plus rule fired.
 
-    The placed card's comparisons use mists_modifier and presence_direction.
-    Newly-captured cards trigger combo resolution using printed stats only — no modifiers.
-    Combo propagation continues via BFS until no new captures occur.
+    Plus rule (pre-step): if 2+ adjacent opponent-owned cards each yield the same
+    sum (placed card's attacking side + neighbor's defending side, raw printed values
+    only — no Mists modifier, no elemental bonus), all matching neighbors are captured
+    immediately and added to the BFS combo queue with zero modifiers.
 
-    A card is captured when the attacker's touching side (+ any applicable modifier)
-    is strictly greater than the defender's opposing side.
+    After the Plus pre-step, standard comparison captures run via BFS for all remaining
+    adjacent opponent cards (including the initial placed card's comparisons).
+
+    Combo propagation continues via BFS until no new captures occur. The placed card's
+    initial comparisons use mists_modifier and presence_direction; newly-captured cards
+    trigger combo resolution using printed stats only — no modifiers.
+
     Printed stats never change; modifiers are ephemeral and scoped to the initial placement.
     """
     new_board: list[BoardCell | None] = list(board)
+    plus_triggered = False
+
+    # --- Plus rule pre-step ---
+    # Compute raw side-sums for each adjacent opponent-owned cell.
+    # Group by sum; if any sum appears 2+ times, capture all matching cells.
+    sum_to_neighbors: dict[int, list[tuple[int, str]]] = {}  # sum → [(neighbor_idx, card_key)]
+    for neighbor_index, placed_side, neighbor_side in _ADJACENCY[placed_index]:
+        neighbor_cell = new_board[neighbor_index]
+        if neighbor_cell is None or neighbor_cell.owner == placed_owner:
+            continue
+        attacking_raw = getattr(placed_card.sides, placed_side)
+        defending_raw = getattr(card_lookup[neighbor_cell.card_key].sides, neighbor_side)
+        s = attacking_raw + defending_raw
+        sum_to_neighbors.setdefault(s, []).append((neighbor_index, neighbor_cell.card_key))
 
     # Queue entries: (source_index, source_card, mist_mod, presence_dir)
     # Initial entry: placed card with full modifiers.
@@ -57,6 +78,18 @@ def resolve_captures(
         (placed_index, placed_card, mists_modifier, presence_direction)
     ]
 
+    for s, matches in sum_to_neighbors.items():
+        if len(matches) >= 2:
+            plus_triggered = True
+            for neighbor_index, neighbor_card_key in matches:
+                neighbor_def = card_lookup[neighbor_card_key]
+                new_board[neighbor_index] = BoardCell(
+                    card_key=neighbor_card_key,
+                    owner=placed_owner,
+                )
+                queue.append((neighbor_index, neighbor_def, 0, None))
+
+    # --- Standard BFS ---
     while queue:
         src_index, src_card, mist_mod, pres_dir = queue.pop(0)
 
@@ -79,4 +112,4 @@ def resolve_captures(
                 # Captured card participates in combo; use printed stats only.
                 queue.append((neighbor_index, neighbor_def, 0, None))
 
-    return new_board
+    return new_board, plus_triggered

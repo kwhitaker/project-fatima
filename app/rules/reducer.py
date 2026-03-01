@@ -210,7 +210,7 @@ def apply_intent(
     new_board: list[BoardCell | None] = list(state.board)
     new_board[intent.cell_index] = BoardCell(card_key=intent.card_key, owner=placed_owner)
 
-    new_board = resolve_captures(
+    new_board, plus_triggered = resolve_captures(
         new_board,
         intent.cell_index,
         placed_card,
@@ -233,6 +233,7 @@ def apply_intent(
             cell_index=intent.cell_index,
             mists_roll=mists_roll,
             mists_effect=_mists_effect_label(mists_roll, mists_modifier),
+            plus_triggered=plus_triggered,
         )
 
     if state.players:

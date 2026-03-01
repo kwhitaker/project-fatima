@@ -113,10 +113,11 @@ class TestPresenceBoost:
         """Presence +1 applies only to the chosen direction; other comparisons unaffected.
 
         Placed at cell 4 with neighbors to the north (cell 1) and east (cell 5).
-        placed N=5, E=5 vs neighbor_n S=5 and neighbor_e W=5.
-        Boost direction = "n": north gets +1 (5+1=6 > 5 → capture), east stays 5 == 5 (no capture).
+        placed N=5 vs neighbor_n S=5: boost "n" → 5+1=6 > 5 → capture.
+        placed E=4 vs neighbor_e W=5: no boost → 4 < 5 → no capture.
+        Sums differ (5+5=10 vs 4+5=9) so Plus rule does not fire.
         """
-        placed = make_card("placed", n=5, e=5, s=1, w=1)
+        placed = make_card("placed", n=5, e=4, s=1, w=1)
         neighbor_n = make_card("neighbor_n", n=1, e=1, s=5, w=1)
         neighbor_e = make_card("neighbor_e", n=1, e=1, s=1, w=5)
         board: list[BoardCell | None] = [None] * 9

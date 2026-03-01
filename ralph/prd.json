@@ -169,7 +169,7 @@
         "No client-side inference: all details come from snapshot/definitions"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "Requires US-UX-011 and US-UX-008/US-UX-009 for names."
     },
     {

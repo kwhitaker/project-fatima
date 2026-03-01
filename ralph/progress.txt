@@ -1,5 +1,14 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:15 - US-UX-012
+- Updated `LastMoveInfo` interface in `web/src/lib/api.ts` to add `player_index`, `card_key`, `cell_index` (matching US-UX-011 backend fields)
+- Added last move callout div in `GameRoom.tsx` (ACTIVE section): shows "You played <Name>" or "Opponent played <Name>" using `game.last_move.player_index` and `cardDefs` for display name; `aria-label="last move callout"` + `aria-live="polite"` + dark: classes
+- Added `lastMoveCellIndex` prop to `BoardGrid`; applies `ring-2 ring-yellow-400 dark:ring-yellow-300` + `data-last-move="true"` to the matching cell
+- Tests: `ux012.test.tsx` (5 frontend: opponent/you callout text, no callout when null, display name not card_key, data-last-move on cell, dark mode classes); also fixed pre-existing lint issues in `test_ux011.py` (unused var) and formatted `test_supabase_store.py`; 475 backend + 127 frontend tests pass
+- Files: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux012.test.tsx`, `tests/test_ux011.py`, `tests/test_supabase_store.py`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: `lastMoveCellIndex` is snapshot-first (`game.last_move?.cell_index`) — no client-side inference; `data-last-move` attribute enables reliable test querying via `querySelectorAll("[data-last-move]")`
+---
+
 ## 2026-03-01 16:00 - US-UX-011
 - Added `player_index: int`, `card_key: str`, `cell_index: int` to `LastMoveInfo` model in `app/models/game.py` (additive fields, backward-compatible)
 - Updated `apply_intent` in `app/rules/reducer.py` to populate all three new fields when building `LastMoveInfo`; existing `mists_roll`/`mists_effect` and `begin_sudden_death_round` logic unchanged

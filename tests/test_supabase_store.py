@@ -285,6 +285,99 @@ class TestGetEvents:
 
 
 # ---------------------------------------------------------------------------
+# maybe_single() returns None (supabase-py v2.10+ regression)
+# ---------------------------------------------------------------------------
+#
+# In supabase-py >=2.10, when no rows match, maybe_single().execute() returns
+# None directly rather than a response object with data=None.  Every call site
+# that uses maybe_single() must guard against this.  These tests reproduce the
+# AttributeError that occurred before the fix and verify it no longer crashes.
+
+
+class TestMaybeSingleNullResponse:
+    """Regression: execute() returns None, not a response with data=None."""
+
+    def test_get_game_returns_none_without_crashing(self, mock_client: tuple) -> None:
+        client, games_table, _ = mock_client
+        (
+            games_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value
+        ) = None
+
+        result = SupabaseGameStore(client=client).get_game("missing")
+        assert result is None
+
+    def test_has_idempotency_key_returns_false_without_crashing(
+        self, mock_client: tuple
+    ) -> None:
+        client, _, events_table = mock_client
+        (
+            events_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value
+        ) = None
+
+        result = SupabaseGameStore(client=client).has_idempotency_key("g1", "idem-key")
+        assert result is False
+
+    def test_append_event_dup_check_proceeds_when_execute_returns_none(
+        self, mock_client: tuple
+    ) -> None:
+        """None dup-check response means no existing key — append should succeed."""
+        client, games_table, events_table = mock_client
+        # Dup-check: execute() returns None (no matching row)
+        (
+            events_table.select.return_value.eq.return_value.eq.return_value.maybe_single.return_value.execute.return_value
+        ) = None
+        # Update succeeds
+        (
+            games_table.update.return_value.eq.return_value.eq.return_value.execute.return_value.data
+        ) = [{"id": "g1"}]
+        # Seq query returns empty (first event)
+        (
+            events_table.select.return_value.eq.return_value.order.return_value.limit.return_value.execute.return_value.data
+        ) = []
+
+        event = SupabaseGameStore(client=client).append_event(
+            "g1", "MOVE", {}, 0, make_state(version=1), idempotency_key="fresh-key"
+        )
+        assert event.seq == 1
+
+    def test_append_event_conflict_check_raises_key_error_when_execute_returns_none(
+        self, mock_client: tuple
+    ) -> None:
+        """None conflict-check response means game is missing — should raise KeyError."""
+        client, games_table, _ = mock_client
+        # Update returns empty rows (game missing or version mismatch)
+        (
+            games_table.update.return_value.eq.return_value.eq.return_value.execute.return_value.data
+        ) = []
+        # Conflict check: execute() returns None (game truly missing)
+        (
+            games_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value
+        ) = None
+
+        with pytest.raises(KeyError, match="does not exist"):
+            SupabaseGameStore(client=client).append_event(
+                "missing", "MOVE", {}, 0, make_state(version=1)
+            )
+
+    def test_delete_game_conflict_check_raises_key_error_when_execute_returns_none(
+        self, mock_client: tuple
+    ) -> None:
+        """None conflict-check response on delete means game is missing — KeyError."""
+        client, games_table, _ = mock_client
+        # Delete returns empty rows
+        (
+            games_table.delete.return_value.eq.return_value.eq.return_value.execute.return_value.data
+        ) = []
+        # Conflict check: execute() returns None
+        (
+            games_table.select.return_value.eq.return_value.maybe_single.return_value.execute.return_value
+        ) = None
+
+        with pytest.raises(KeyError, match="does not exist"):
+            SupabaseGameStore(client=client).delete_game("missing", 0)
+
+
+# ---------------------------------------------------------------------------
 # Constructor / injection
 # ---------------------------------------------------------------------------
 

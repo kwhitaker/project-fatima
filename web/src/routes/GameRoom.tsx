@@ -428,6 +428,13 @@ export default function GameRoom() {
           {/* My hand */}
           <div>
             <p className="text-sm font-medium mb-1">Your hand</p>
+            {game.current_player_index === myIndex && !movePending && (
+              <p className="text-xs text-muted-foreground mb-2">
+                {selectedCard
+                  ? `"${selectedCard}" selected — click an empty cell to place it`
+                  : "Click a card to select it, then click an empty cell on the board"}
+              </p>
+            )}
             <div className="flex gap-2 flex-wrap">
               {myPlayer?.hand.map((cardKey) => (
                 <button
@@ -437,10 +444,11 @@ export default function GameRoom() {
                   }
                   disabled={game.current_player_index !== myIndex || movePending}
                   className={cn(
-                    "px-3 py-2 border rounded text-xs font-mono",
+                    "px-3 py-2 border rounded text-xs font-mono transition-colors",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
                     selectedCard === cardKey
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/10 cursor-pointer"
+                      : "border-border hover:border-primary hover:bg-accent cursor-pointer"
                   )}
                   aria-pressed={selectedCard === cardKey}
                 >

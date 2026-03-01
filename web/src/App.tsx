@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import RequireAuth from "./components/RequireAuth";
 import Login from "./routes/Login";
+import ResetPassword from "./routes/ResetPassword";
 import Games from "./routes/Games";
 import GameRoom from "./routes/GameRoom";
 
@@ -10,6 +11,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/games"
           element={

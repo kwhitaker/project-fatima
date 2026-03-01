@@ -62,7 +62,7 @@ class SupabaseGameStore:
             .maybe_single()
             .execute()
         )
-        return response.data is not None
+        return response is not None and response.data is not None
 
     def get_game(self, game_id: str) -> GameState | None:
         response = (
@@ -72,7 +72,7 @@ class SupabaseGameStore:
             .maybe_single()
             .execute()
         )
-        if response.data is None:
+        if response is None or response.data is None:
             return None
         return GameState.model_validate(response.data["current_state"])
 
@@ -109,7 +109,7 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if dup_response.data is not None:
+            if dup_response is not None and dup_response.data is not None:
                 raise DuplicateEventError(
                     f"Idempotency key {idempotency_key!r} already used for game {game_id!r}"
                 )
@@ -142,7 +142,7 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if check.data is None:
+            if check is None or check.data is None:
                 raise KeyError(f"Game {game_id!r} does not exist")
             raise ConflictError(
                 f"Version conflict for game {game_id!r}: "
@@ -193,7 +193,7 @@ class SupabaseGameStore:
                 .maybe_single()
                 .execute()
             )
-            if check.data is None:
+            if check is None or check.data is None:
                 raise KeyError(f"Game {game_id!r} does not exist")
             raise ConflictError(
                 f"Version conflict for game {game_id!r}: "

@@ -10,12 +10,18 @@ import type { BoardCell, GameState, PlayerState } from "@/lib/api";
 const {
   mockGetSession,
   mockOnAuthStateChange,
-  mockSignInWithOtp,
+  mockSignInWithPassword,
+  mockSignUp,
+  mockResetPasswordForEmail,
+  mockUpdateUser,
   mockSignOut,
 } = vi.hoisted(() => ({
   mockGetSession: vi.fn(),
   mockOnAuthStateChange: vi.fn(),
-  mockSignInWithOtp: vi.fn(),
+  mockSignInWithPassword: vi.fn(),
+  mockSignUp: vi.fn(),
+  mockResetPasswordForEmail: vi.fn(),
+  mockUpdateUser: vi.fn(),
   mockSignOut: vi.fn(),
 }));
 
@@ -52,7 +58,10 @@ vi.mock("@/lib/supabase", () => ({
     auth: {
       getSession: mockGetSession,
       onAuthStateChange: mockOnAuthStateChange,
-      signInWithOtp: mockSignInWithOtp,
+      signInWithPassword: mockSignInWithPassword,
+      signUp: mockSignUp,
+      resetPasswordForEmail: mockResetPasswordForEmail,
+      updateUser: mockUpdateUser,
       signOut: mockSignOut,
     },
     channel: mockChannel,
@@ -134,6 +143,11 @@ beforeEach(() => {
   mockJoinGame.mockResolvedValue(DEFAULT_GAME);
   mockLeaveGame.mockResolvedValue(null);
   mockSelectArchetype.mockResolvedValue(makeGame({ game_id: "abc-123" }));
+  // Auth form defaults
+  mockSignInWithPassword.mockResolvedValue({ error: null });
+  mockSignUp.mockResolvedValue({ error: null });
+  mockResetPasswordForEmail.mockResolvedValue({ error: null });
+  mockUpdateUser.mockResolvedValue({ error: null });
 });
 
 // --- Auth guards -------------------------------------------------------------
@@ -198,40 +212,266 @@ describe("routes", () => {
   });
 });
 
-// --- Login form --------------------------------------------------------------
+// --- Login form — sign-in (password) -----------------------------------------
 
-describe("login form", () => {
-  it("sends magic link and shows confirmation message", async () => {
-    mockSignInWithOtp.mockResolvedValue({ error: null });
+describe("login form — sign-in", () => {
+  it("renders email and password fields by default", async () => {
+    renderAt("/login");
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
+    });
+  });
+
+  it("calls signInWithPassword with entered credentials", async () => {
     const user = userEvent.setup();
     renderAt("/login");
-
-    await user.type(
-      screen.getByPlaceholderText(/you@example.com/i),
-      "test@example.com"
-    );
-    await user.click(screen.getByRole("button", { name: /send magic link/i }));
-
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "test@example.com");
+    await user.type(screen.getByPlaceholderText(/password/i), "secret123");
+    await user.click(screen.getByRole("button", { name: /^sign in$/i }));
     await waitFor(() => {
+      expect(mockSignInWithPassword).toHaveBeenCalledWith({
+        email: "test@example.com",
+        password: "secret123",
+      });
+    });
+  });
+
+  it("shows error message on sign-in failure", async () => {
+    mockSignInWithPassword.mockResolvedValue({ error: { message: "Invalid credentials" } });
+    const user = userEvent.setup();
+    renderAt("/login");
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "bad@example.com");
+    await user.type(screen.getByPlaceholderText(/password/i), "wrong");
+    await user.click(screen.getByRole("button", { name: /^sign in$/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/invalid credentials/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows Create an account and Forgot password links", async () => {
+    renderAt("/login");
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /create an account/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /forgot password/i })).toBeInTheDocument();
+    });
+  });
+});
+
+// --- Login form — sign-up mode -----------------------------------------------
+
+describe("login form — sign-up mode", () => {
+  it("switches to sign-up form when Create an account is clicked", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /create an account/i }));
+    await user.click(screen.getByRole("button", { name: /create an account/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /create account/i })).toBeInTheDocument();
+    });
+  });
+
+  it("sign-up form has email and password fields", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /create an account/i }));
+    await user.click(screen.getByRole("button", { name: /create an account/i }));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
+    });
+  });
+
+  it("calls signUp with entered credentials and shows confirmation", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /create an account/i }));
+    await user.click(screen.getByRole("button", { name: /create an account/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "new@example.com");
+    await user.type(screen.getByPlaceholderText(/password/i), "newpass123");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+    await waitFor(() => {
+      expect(mockSignUp).toHaveBeenCalledWith({ email: "new@example.com", password: "newpass123" });
       expect(screen.getByText(/check your email/i)).toBeInTheDocument();
     });
   });
 
-  it("shows error message on magic link failure", async () => {
-    mockSignInWithOtp.mockResolvedValue({
-      error: { message: "Invalid email address" },
-    });
+  it("shows error message on sign-up failure", async () => {
+    mockSignUp.mockResolvedValue({ error: { message: "Email already in use" } });
     const user = userEvent.setup();
     renderAt("/login");
-
-    await user.type(
-      screen.getByPlaceholderText(/you@example.com/i),
-      "bad@example.com"
-    );
-    await user.click(screen.getByRole("button", { name: /send magic link/i }));
-
+    await waitFor(() => screen.getByRole("button", { name: /create an account/i }));
+    await user.click(screen.getByRole("button", { name: /create an account/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "dup@example.com");
+    await user.type(screen.getByPlaceholderText(/password/i), "pass");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
     await waitFor(() => {
-      expect(screen.getByText(/invalid email address/i)).toBeInTheDocument();
+      expect(screen.getByText(/email already in use/i)).toBeInTheDocument();
+    });
+  });
+
+  it("Back to sign in returns to sign-in form", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /create an account/i }));
+    await user.click(screen.getByRole("button", { name: /create an account/i }));
+    await waitFor(() => screen.getByRole("button", { name: /back to sign in/i }));
+    await user.click(screen.getByRole("button", { name: /back to sign in/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /^sign in$/i })).toBeInTheDocument();
+    });
+  });
+});
+
+// --- Login form — forgot password mode ---------------------------------------
+
+describe("login form — forgot password mode", () => {
+  it("switches to forgot-password form when Forgot password is clicked", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /forgot password/i }));
+    await user.click(screen.getByRole("button", { name: /forgot password/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /reset password/i })).toBeInTheDocument();
+    });
+  });
+
+  it("forgot-password form has only an email field (no password)", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /forgot password/i }));
+    await user.click(screen.getByRole("button", { name: /forgot password/i }));
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText(/you@example.com/i)).toBeInTheDocument();
+      expect(screen.queryByPlaceholderText(/password/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it("calls resetPasswordForEmail and shows confirmation", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /forgot password/i }));
+    await user.click(screen.getByRole("button", { name: /forgot password/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "me@example.com");
+    await user.click(screen.getByRole("button", { name: /send reset link/i }));
+    await waitFor(() => {
+      expect(mockResetPasswordForEmail).toHaveBeenCalledWith(
+        "me@example.com",
+        expect.objectContaining({ redirectTo: expect.stringContaining("/reset-password") })
+      );
+      expect(screen.getByText(/check your email/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error message when reset email fails", async () => {
+    mockResetPasswordForEmail.mockResolvedValue({ error: { message: "User not found" } });
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /forgot password/i }));
+    await user.click(screen.getByRole("button", { name: /forgot password/i }));
+    await user.type(screen.getByPlaceholderText(/you@example.com/i), "nobody@example.com");
+    await user.click(screen.getByRole("button", { name: /send reset link/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/user not found/i)).toBeInTheDocument();
+    });
+  });
+
+  it("Back to sign in returns to sign-in form", async () => {
+    const user = userEvent.setup();
+    renderAt("/login");
+    await waitFor(() => screen.getByRole("button", { name: /forgot password/i }));
+    await user.click(screen.getByRole("button", { name: /forgot password/i }));
+    await waitFor(() => screen.getByRole("button", { name: /back to sign in/i }));
+    await user.click(screen.getByRole("button", { name: /back to sign in/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /^sign in$/i })).toBeInTheDocument();
+    });
+  });
+});
+
+// --- Reset password page (/reset-password) -----------------------------------
+
+describe("reset password page", () => {
+  function setupPasswordRecovery() {
+    // Make onAuthStateChange immediately fire PASSWORD_RECOVERY for all subscribers.
+    mockOnAuthStateChange.mockImplementation((cb: (event: string, session: null) => void) => {
+      cb("PASSWORD_RECOVERY", null);
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+  }
+
+  it("shows verifying state before PASSWORD_RECOVERY event", async () => {
+    // onAuthStateChange never fires — component stays in verifying state
+    renderAt("/reset-password");
+    await waitFor(() => {
+      expect(screen.getByText(/verifying reset link/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows set-password form after PASSWORD_RECOVERY event", async () => {
+    setupPasswordRecovery();
+    renderAt("/reset-password");
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: /set new password/i })).toBeInTheDocument();
+      expect(screen.getAllByPlaceholderText(/password/i).length).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("shows error when passwords do not match", async () => {
+    setupPasswordRecovery();
+    const user = userEvent.setup();
+    renderAt("/reset-password");
+    await waitFor(() => screen.getByRole("heading", { name: /set new password/i }));
+    const [newPass, confirmPass] = screen.getAllByPlaceholderText(/password/i);
+    await user.type(newPass, "hunter2");
+    await user.type(confirmPass, "different");
+    await user.click(screen.getByRole("button", { name: /set password/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+    });
+    expect(mockUpdateUser).not.toHaveBeenCalled();
+  });
+
+  it("calls updateUser with new password on valid submit", async () => {
+    setupPasswordRecovery();
+    const user = userEvent.setup();
+    renderAt("/reset-password");
+    await waitFor(() => screen.getByRole("heading", { name: /set new password/i }));
+    const [newPass, confirmPass] = screen.getAllByPlaceholderText(/password/i);
+    await user.type(newPass, "newSecret99");
+    await user.type(confirmPass, "newSecret99");
+    await user.click(screen.getByRole("button", { name: /set password/i }));
+    await waitFor(() => {
+      expect(mockUpdateUser).toHaveBeenCalledWith({ password: "newSecret99" });
+    });
+  });
+
+  it("shows success message after password is updated", async () => {
+    setupPasswordRecovery();
+    const user = userEvent.setup();
+    renderAt("/reset-password");
+    await waitFor(() => screen.getByRole("heading", { name: /set new password/i }));
+    const [newPass, confirmPass] = screen.getAllByPlaceholderText(/password/i);
+    await user.type(newPass, "newSecret99");
+    await user.type(confirmPass, "newSecret99");
+    await user.click(screen.getByRole("button", { name: /set password/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/password updated/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error message when updateUser fails", async () => {
+    setupPasswordRecovery();
+    mockUpdateUser.mockResolvedValue({ error: { message: "Password too short" } });
+    const user = userEvent.setup();
+    renderAt("/reset-password");
+    await waitFor(() => screen.getByRole("heading", { name: /set new password/i }));
+    const [newPass, confirmPass] = screen.getAllByPlaceholderText(/password/i);
+    await user.type(newPass, "x");
+    await user.type(confirmPass, "x");
+    await user.click(screen.getByRole("button", { name: /set password/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/password too short/i)).toBeInTheDocument();
     });
   });
 });
@@ -1078,7 +1318,7 @@ describe("Button component", () => {
     renderAt("/login");
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /send magic link/i })
+        screen.getByRole("button", { name: /^sign in$/i })
       ).toBeInTheDocument();
     });
   });

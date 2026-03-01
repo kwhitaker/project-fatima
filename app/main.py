@@ -1,3 +1,7 @@
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
 from fastapi import FastAPI
 
 from app.routers.games import router as games_router

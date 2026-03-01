@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 
 export interface PlayerState {
   player_id: string;
+  email?: string | null;
   archetype: "martial" | "skulker" | "caster" | "devout" | "presence" | null;
   hand: string[];
   archetype_used: boolean;

@@ -276,9 +276,24 @@ export default function GameRoom() {
     ? game.board.filter((c) => c !== null && c.owner === opponentIndex).length
     : 0;
 
+  const titleText =
+    game.status === "waiting"
+      ? "Waiting for opponent"
+      : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
+
   return (
     <div className="container py-8">
-      <h1 className="text-2xl font-bold">Game {gameId}</h1>
+      <div className="flex items-center justify-between mb-2">
+        <h1 className="text-2xl font-bold">{titleText}</h1>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/games")}
+          className="hover:bg-accent cursor-pointer"
+        >
+          ← Back to Games
+        </Button>
+      </div>
 
       {/* WAITING */}
       {game.status === "waiting" && (
@@ -529,11 +544,6 @@ export default function GameRoom() {
 
           {/* Final board */}
           <BoardGrid board={game.board} myIndex={myIndex} />
-
-          {/* Leave */}
-          <Button variant="outline" onClick={() => void handleLeave()} disabled={leaving}>
-            {leaving ? "Leaving…" : "Leave Game"}
-          </Button>
         </div>
       )}
     </div>

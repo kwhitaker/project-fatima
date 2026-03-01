@@ -186,7 +186,7 @@ describe("auth guards", () => {
     renderAt("/g/abc-123");
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /game abc-123/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -526,7 +526,7 @@ describe("games page", () => {
     await user.click(screen.getByText("game-ccc"));
     await waitFor(() => {
       expect(
-        screen.getByRole("heading", { name: /game game-ccc/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -542,7 +542,7 @@ describe("games page", () => {
     await waitFor(() => {
       expect(mockCreateGame).toHaveBeenCalledOnce();
       expect(
-        screen.getByRole("heading", { name: /game new-game-id/i })
+        screen.getByRole("heading", { name: /waiting for opponent/i })
       ).toBeInTheDocument();
     });
   });
@@ -591,7 +591,7 @@ describe("game room lobby", () => {
     });
     renderAt("/g/game-xyz");
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /game game-xyz/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: /waiting for opponent/i })).toBeInTheDocument();
     });
     expect(screen.queryByRole("button", { name: /join/i })).not.toBeInTheDocument();
   });

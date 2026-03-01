@@ -105,7 +105,7 @@ export default function Games() {
             return (
               <li key={game.game_id}>
                 <button
-                  className="hover:bg-muted w-full cursor-pointer rounded-lg border p-4 text-left transition-colors"
+                  className="hover:bg-muted w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   onClick={() => void navigate(`/g/${game.game_id}`)}
                 >
                   <div className="flex items-center justify-between gap-2">

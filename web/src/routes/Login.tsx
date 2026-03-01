@@ -66,9 +66,9 @@ export default function Login() {
 
         {status === "done" ? (
           <div className="space-y-4">
-            <p className="text-sm text-green-600">{doneMessages[mode]}</p>
+            <p className="text-sm text-green-600 dark:text-green-400">{doneMessages[mode]}</p>
             <button
-              className="text-sm underline"
+              className="text-sm underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
               onClick={() => switchMode("signin")}
             >
               Back to sign in
@@ -82,7 +82,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             {mode !== "forgot" && (
               <input
@@ -91,7 +91,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             )}
             <Button type="submit" className="w-full" disabled={status === "sending"}>
@@ -104,7 +104,7 @@ export default function Login() {
                     : "Send reset link"}
             </Button>
             {status === "error" && (
-              <p className="text-sm text-red-600">{errorMsg}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{errorMsg}</p>
             )}
           </form>
         )}
@@ -112,16 +112,16 @@ export default function Login() {
         <div className="flex flex-col gap-1 text-sm text-center">
           {mode === "signin" && (
             <>
-              <button className="underline" onClick={() => switchMode("signup")}>
+              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signup")}>
                 Create an account
               </button>
-              <button className="underline" onClick={() => switchMode("forgot")}>
+              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("forgot")}>
                 Forgot password?
               </button>
             </>
           )}
           {mode !== "signin" && (
-            <button className="underline" onClick={() => switchMode("signin")}>
+            <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signin")}>
               Back to sign in
             </button>
           )}

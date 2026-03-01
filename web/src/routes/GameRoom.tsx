@@ -112,7 +112,7 @@ function BoardGrid({
               key={i}
               aria-label={`cell ${i}`}
               onClick={() => onCellClick?.(i)}
-              className={cn(cellClass, "hover:bg-accent cursor-pointer")}
+              className={cn(cellClass, "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
               data-last-move={isLastMove ? "true" : undefined}
             />
           );
@@ -121,7 +121,7 @@ function BoardGrid({
           return (
             <button
               key={i}
-              className={cn(cellClass, "cursor-pointer hover:brightness-110")}
+              className={cn(cellClass, "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2")}
               data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
               onClick={() => onCellInspect(cell.card_key)}
@@ -639,6 +639,7 @@ export default function GameRoom() {
                       className={cn(
                         "flex flex-col items-center min-w-[4rem] px-2 py-1.5 border rounded text-xs transition-transform hover:scale-105",
                         "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                         selectedCard === cardKey
                           ? "border-primary bg-primary/10 cursor-pointer"
                           : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
@@ -658,7 +659,7 @@ export default function GameRoom() {
                     <button
                       aria-label={`inspect ${displayName}`}
                       onClick={() => setPreviewCard({ cardKey, def })}
-                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-muted border text-[9px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600"
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-muted border text-[9px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                       tabIndex={0}
                     >
                       ⓘ

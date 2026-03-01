@@ -6,6 +6,50 @@ import { cn } from "@/lib/utils";
 import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type BoardCell, type CardDefinition, type GameState } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
+function CardInspectPreview({
+  cardKey,
+  def,
+  onClose,
+}: {
+  cardKey: string;
+  def?: CardDefinition;
+  onClose: () => void;
+}) {
+  const name = def?.name ?? cardKey;
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="card preview"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onKeyDown={(e) => { if (e.key === "Escape") onClose(); }}
+    >
+      <div className="bg-background border rounded-lg p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+        <h2 className="text-lg font-bold mb-3">{name}</h2>
+        <div className="grid grid-cols-3 gap-1 text-sm text-center mb-4">
+          <div />
+          <div className="font-semibold">N: {def?.sides.n ?? "—"}</div>
+          <div />
+          <div className="font-semibold">W: {def?.sides.w ?? "—"}</div>
+          <div />
+          <div className="font-semibold">E: {def?.sides.e ?? "—"}</div>
+          <div />
+          <div className="font-semibold">S: {def?.sides.s ?? "—"}</div>
+          <div />
+        </div>
+        <Button
+          variant="outline"
+          className="w-full"
+          onClick={onClose}
+          autoFocus
+        >
+          Close
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CardFace({ cardKey, def }: { cardKey: string; def?: CardDefinition }) {
   const name = def?.name ?? cardKey;
   return (
@@ -26,6 +70,7 @@ function BoardGrid({
   myIndex,
   canPlace = false,
   onCellClick,
+  onCellInspect,
   placedCells,
   capturedCells,
   cardDefs,
@@ -35,6 +80,7 @@ function BoardGrid({
   myIndex: number;
   canPlace?: boolean;
   onCellClick?: (index: number) => void;
+  onCellInspect?: (cardKey: string) => void;
   placedCells?: Set<number>;
   capturedCells?: Set<number>;
   cardDefs?: Map<string, CardDefinition>;
@@ -69,6 +115,20 @@ function BoardGrid({
               className={cn(cellClass, "hover:bg-accent cursor-pointer")}
               data-last-move={isLastMove ? "true" : undefined}
             />
+          );
+        }
+        if (cell !== null && onCellInspect) {
+          return (
+            <button
+              key={i}
+              className={cn(cellClass, "cursor-pointer hover:brightness-110")}
+              data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+              data-last-move={isLastMove ? "true" : undefined}
+              onClick={() => onCellInspect(cell.card_key)}
+              aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
+            >
+              <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
+            </button>
           );
         }
         return (
@@ -110,6 +170,7 @@ export default function GameRoom() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>("connecting");
+  const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
   // Animation tracking: diff prev board vs new board on each game update
   const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
@@ -473,6 +534,7 @@ export default function GameRoom() {
                 powerSide !== null)
             }
             onCellClick={(i) => void handlePlaceCard(i)}
+            onCellInspect={(cardKey) => setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })}
             placedCells={placedCells}
             capturedCells={capturedCells}
             cardDefs={cardDefs}
@@ -566,32 +628,42 @@ export default function GameRoom() {
             <div className="flex gap-2 flex-wrap">
               {myPlayer?.hand.map((cardKey) => {
                 const def = cardDefs.get(cardKey);
+                const displayName = def?.name ?? cardKey;
                 return (
-                  <button
-                    key={cardKey}
-                    onClick={() =>
-                      setSelectedCard(selectedCard === cardKey ? null : cardKey)
-                    }
-                    disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
-                    className={cn(
-                      "flex flex-col items-center min-w-[4rem] px-2 py-1.5 border rounded text-xs transition-transform hover:scale-105",
-                      "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-                      selectedCard === cardKey
-                        ? "border-primary bg-primary/10 cursor-pointer"
-                        : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
-                    )}
-                    aria-pressed={selectedCard === cardKey}
-                  >
-                    <span className="font-semibold truncate max-w-[5rem] text-center">{def?.name ?? cardKey}</span>
-                    <div className="flex flex-col items-center mt-0.5 text-[9px] text-muted-foreground w-full">
-                      <span>{def ? def.sides.n : ""}</span>
-                      <div className="flex justify-between w-full px-1">
-                        <span>{def ? def.sides.w : ""}</span>
-                        <span>{def ? def.sides.e : ""}</span>
+                  <div key={cardKey} className="relative">
+                    <button
+                      onClick={() =>
+                        setSelectedCard(selectedCard === cardKey ? null : cardKey)
+                      }
+                      disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
+                      className={cn(
+                        "flex flex-col items-center min-w-[4rem] px-2 py-1.5 border rounded text-xs transition-transform hover:scale-105",
+                        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
+                        selectedCard === cardKey
+                          ? "border-primary bg-primary/10 cursor-pointer"
+                          : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
+                      )}
+                      aria-pressed={selectedCard === cardKey}
+                    >
+                      <span className="font-semibold truncate max-w-[5rem] text-center">{displayName}</span>
+                      <div className="flex flex-col items-center mt-0.5 text-[9px] text-muted-foreground w-full">
+                        <span>{def ? def.sides.n : ""}</span>
+                        <div className="flex justify-between w-full px-1">
+                          <span>{def ? def.sides.w : ""}</span>
+                          <span>{def ? def.sides.e : ""}</span>
+                        </div>
+                        <span>{def ? def.sides.s : ""}</span>
                       </div>
-                      <span>{def ? def.sides.s : ""}</span>
-                    </div>
-                  </button>
+                    </button>
+                    <button
+                      aria-label={`inspect ${displayName}`}
+                      onClick={() => setPreviewCard({ cardKey, def })}
+                      className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-muted border text-[9px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600"
+                      tabIndex={0}
+                    >
+                      ⓘ
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -691,8 +763,22 @@ export default function GameRoom() {
           </p>
 
           {/* Final board */}
-          <BoardGrid board={game.board} myIndex={myIndex} cardDefs={cardDefs} />
+          <BoardGrid
+            board={game.board}
+            myIndex={myIndex}
+            cardDefs={cardDefs}
+            onCellInspect={(cardKey) => setPreviewCard({ cardKey, def: cardDefs.get(cardKey) })}
+          />
         </div>
+      )}
+
+      {/* Card inspect preview dialog */}
+      {previewCard !== null && (
+        <CardInspectPreview
+          cardKey={previewCard.cardKey}
+          def={previewCard.def}
+          onClose={() => setPreviewCard(null)}
+        />
       )}
     </div>
   );

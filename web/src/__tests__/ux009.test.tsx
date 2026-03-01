@@ -157,12 +157,15 @@ describe("US-UX-009: card visuals — board and hand", () => {
 
     await screen.findByText(/your turn/i);
 
-    // Hand cards should show display names
-    expect(screen.getByRole("button", { name: /barovia guard/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /night hag/i })).toBeTruthy();
+    // Hand cards should show display names (main card buttons have aria-pressed)
+    const cardBtn1 = screen.getAllByRole("button", { name: /barovia guard/i })
+      .find((b) => b.hasAttribute("aria-pressed"));
+    const cardBtn2 = screen.getAllByRole("button", { name: /night hag/i })
+      .find((b) => b.hasAttribute("aria-pressed"));
+    expect(cardBtn1).toBeTruthy();
+    expect(cardBtn2).toBeTruthy();
     // Raw card_keys should NOT be visible in the hand buttons
-    const handBtn1 = screen.getByRole("button", { name: /barovia guard/i });
-    expect(handBtn1.textContent).not.toContain("card_001");
+    expect(cardBtn1!.textContent).not.toContain("card_001");
   });
 
   it("hand cards show N/E/S/W side values", async () => {
@@ -171,12 +174,14 @@ describe("US-UX-009: card visuals — board and hand", () => {
 
     await screen.findByText(/your hand/i);
 
-    // Find the hand section and verify side values for card_001 (n:4, e:5, s:3, w:2)
-    const handBtn = screen.getByRole("button", { name: /barovia guard/i });
-    expect(handBtn.textContent).toContain("4"); // N
-    expect(handBtn.textContent).toContain("5"); // E
-    expect(handBtn.textContent).toContain("3"); // S
-    expect(handBtn.textContent).toContain("2"); // W
+    // Find the main card button (has aria-pressed) for card_001 (n:4, e:5, s:3, w:2)
+    const handBtn = screen.getAllByRole("button", { name: /barovia guard/i })
+      .find((b) => b.hasAttribute("aria-pressed"));
+    expect(handBtn).toBeTruthy();
+    expect(handBtn!.textContent).toContain("4"); // N
+    expect(handBtn!.textContent).toContain("5"); // E
+    expect(handBtn!.textContent).toContain("3"); // S
+    expect(handBtn!.textContent).toContain("2"); // W
   });
 
   it("hand cards have hover scale class for enlargement", async () => {
@@ -185,8 +190,11 @@ describe("US-UX-009: card visuals — board and hand", () => {
 
     await screen.findByText(/your turn/i);
 
-    const cardBtn = screen.getByRole("button", { name: /barovia guard/i });
-    expect(cardBtn.className).toMatch(/hover:scale/);
+    // Main card button has aria-pressed and hover:scale
+    const cardBtn = screen.getAllByRole("button", { name: /barovia guard/i })
+      .find((b) => b.hasAttribute("aria-pressed"));
+    expect(cardBtn).toBeTruthy();
+    expect(cardBtn!.className).toMatch(/hover:scale/);
   });
 
   it("selected hand card has aria-pressed=true, unselected has aria-pressed=false", async () => {
@@ -195,8 +203,11 @@ describe("US-UX-009: card visuals — board and hand", () => {
 
     await screen.findByText(/your turn/i);
 
-    const cardBtn = screen.getByRole("button", { name: /barovia guard/i });
+    // Main card button has aria-pressed attribute
+    const cardBtn = screen.getAllByRole("button", { name: /barovia guard/i })
+      .find((b) => b.hasAttribute("aria-pressed"));
+    expect(cardBtn).toBeTruthy();
     // Initially unselected
-    expect(cardBtn.getAttribute("aria-pressed")).toBe("false");
+    expect(cardBtn!.getAttribute("aria-pressed")).toBe("false");
   });
 });

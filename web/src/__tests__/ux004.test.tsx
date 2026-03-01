@@ -120,8 +120,9 @@ describe("US-UX-004: unskippable archetype modal", () => {
     // Wait for the modal to appear (implies game loaded)
     await screen.findByRole("dialog", { name: /choose your archetype/i });
 
-    // Hand card buttons should be disabled
-    const handButtons = screen.queryAllByRole("button", { name: /card_00/i });
+    // Hand card selection buttons (those with aria-pressed) should be disabled
+    const handButtons = screen.queryAllByRole("button", { name: /card_00/i })
+      .filter((b) => b.hasAttribute("aria-pressed"));
     for (const btn of handButtons) {
       expect((btn as HTMLButtonElement).disabled).toBe(true);
     }
@@ -133,8 +134,9 @@ describe("US-UX-004: unskippable archetype modal", () => {
 
     await screen.findByText(/your turn|opponent's turn/i);
 
-    // Hand card buttons should not be disabled (it's player 0's turn and they have an archetype)
-    const handButtons = screen.queryAllByRole("button", { name: /card_00/i });
+    // Hand card selection buttons (those with aria-pressed) should not be disabled
+    const handButtons = screen.queryAllByRole("button", { name: /card_00/i })
+      .filter((b) => b.hasAttribute("aria-pressed"));
     expect(handButtons.length).toBeGreaterThan(0);
     for (const btn of handButtons) {
       expect((btn as HTMLButtonElement).disabled).toBe(false);

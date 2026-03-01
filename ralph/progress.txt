@@ -1,26 +1,19 @@
 # Ralph Progress Log
 
 ## Codebase Patterns
-- `app/rules/reducer.py`: pure function `apply_intent(state, intent, card_lookup, rng)` — all game logic here; no side effects
-- `app/rules/captures.py`: `resolve_captures(board, placed_index, placed_card, placed_owner, card_lookup, mists_modifier, presence_direction)` — BFS queue; combo entries get zero modifier
-- `app/rules/cards.py`: `validate_card_balance(card)` returns list[str] of errors; `rarity_bucket(rarity)` maps int→str
-- `app/models/game.py`: `LastMoveInfo` and `GameState` Pydantic models; additive fields are safe (JSONB snapshot)
-- `app/models/cards.py`: `CardDefinition` Pydantic model with `CardSides`
-- `cards.jsonl`: JSON Lines, one card per line; 65 cards total; loaded at startup via `app/rules/cards.py`
-- Frontend tests use vitest + jsdom; mock API via `vi.mock('../../lib/api')`; use `mock`-prefixed vars in vi.mock factories
-- `bun run test --run` for frontend; `uv run pytest` for backend
-- Commit format: `feat: [US-XXX] - Title`
-
-## Context: Why These Mechanics
-
-Analysis run before this sprint revealed:
-- Ultra cards average 8.0/side vs common cards at 4.0/side — a 4-point gap
-- Ultra→Common win rate per comparison: 89%; Common→Ultra: 3.3%
-- Mists ±1 only flips a capture outcome in ~8.5% of placements — effectively noise
-- Plus rule (simulated): would trigger on 22% of eligible placements — meaningful without overwhelming
-- These four mechanics address the core "race to play high-power cards" problem
+- balance errors in validate_card_balance return list[str]; loader wraps them in CardLoadError with line number
+- Test fixtures that create cards with specific sides must now satisfy min(sides) ≤ 3
 
 ---
 Started: 2026-03-01
+---
+
+## 2026-03-01 - US-GM-001
+- Added weak-side validation to `validate_card_balance` in `app/rules/cards.py`: min(sides) must be ≤ 3
+- Fixed 43 cards in `cards.jsonl` that violated the rule (reduced lowest side to 3, added deficit to highest non-capped side); budget sums preserved
+- Updated 4 test fixtures in `test_cards_balance.py` that used min-side ≥ 4; documented weak-side rule in `CARDS_SPEC.md`
+- Tests run: `uv run pytest` — 490 passed
+- Files changed: `app/rules/cards.py`, `cards.jsonl`, `tests/test_gm001_weak_side.py`, `tests/test_cards_balance.py`, `CARDS_SPEC.md`
+- Learnings: T3 ultra cards (budget=32, cap=10) all converge to n=10, e=10, s=9, w=3 or similar; that's unavoidable with the strict sum+cap constraints. Tests that test ONLY budget/cap failures need sides with min≤3 to avoid dual-failure interference.
 ---
 

@@ -15,7 +15,7 @@
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "Do not change tier/rarity budgets — only add the min-side floor. When adjusting cards.jsonl, prefer reducing the side that is already the card's lowest. Ultra cards likely violate this (avg side 8.0) and will need the biggest adjustment."
     },
     {

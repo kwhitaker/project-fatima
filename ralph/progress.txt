@@ -7,6 +7,15 @@
 Started: 2026-03-01
 ---
 
+## 2026-03-01 14:30 - US-UX-003
+- Added `completion_reason: str | None` and `forfeit_by_index: int | None` to `GameResult` model (backward-compatible, defaults to None)
+- Updated `compute_round_result` and `begin_sudden_death_round` (SD cap draw) to set `completion_reason="normal"`
+- Updated `leave_game` in `game_service.py` to set `completion_reason="forfeit"` and `forfeit_by_index=player_index` on forfeit
+- Tests: `test_ux003.py` (13 tests: model fields, compute_round_result normal reason, SD cap draw reason, forfeit API metadata); updated `test_scoring.py` equality assertions to include `completion_reason="normal"`; 457 total tests pass
+- Files: `app/models/game.py`, `app/rules/reducer.py`, `app/services/game_service.py`, `tests/test_ux003.py`, `tests/test_scoring.py`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: adding optional fields with `None` default to Pydantic models is safe backward-compat; existing tests that do `== GameResult(...)` exact equality need updating when new fields are added
+---
+
 ## 2026-03-01 14:10 - US-UX-002
 - Added `email: str | None = None` to `PlayerState` model
 - Added `get_caller_email` dependency to `app/auth.py` (returns email from JWT, never raises)

@@ -1,5 +1,16 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:16 - US-UX-014
+- Added `CardInspectPreview` inline dialog component in `GameRoom.tsx` (role="dialog", aria-modal, aria-label="card preview", escape key, autoFocus Close button, dark: classes)
+- Added `onCellInspect` prop to `BoardGrid`; occupied cells rendered as `<button>` with aria-label `"inspect <name>"` that open the preview; passed to both ACTIVE and COMPLETE board sections
+- Added inspect icon button (`ⓘ`) as sibling to each hand card button (inside a relative wrapper div, stops propagation, opens preview without interfering with card selection)
+- Tests: `ux014.test.tsx` (8 frontend: inspect button opens dialog, shows name, shows N/E/S/W, Close button closes, Escape closes, board cell tap opens, aria-pressed not broken, dark mode classes); updated `ux009.test.tsx` and `ux004.test.tsx` to filter hand card buttons by `hasAttribute("aria-pressed")` to distinguish from inspect buttons; 475 backend + 141 frontend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux014.test.tsx`, `web/src/__tests__/ux009.test.tsx`, `web/src/__tests__/ux004.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: when adding a sibling inspect button alongside a card selection button, pre-existing tests that query `getByRole("button", { name: /card name/i })` find both; fix by filtering by `hasAttribute("aria-pressed")` which only the selection button has; the inspect button uses `aria-label="inspect <Name>"` so ux014 tests can query `{ name: /inspect .../i }` specifically
+---
+
+
+
 ## 2026-03-01 15:09 - US-UX-013
 - Added `realtimeStatus: "connecting" | "live" | "reconnecting"` state to `GameRoom.tsx`; subscribe callback now calls `setRealtimeStatus("live")` on SUBSCRIBED and `setRealtimeStatus("reconnecting")` on CLOSED/CHANNEL_ERROR
 - Added `handleRefresh` function (calls `getGame(gameId)` and updates game state); added realtime status badge (green "Live" / yellow pulsing "Reconnecting…") + "Refresh" button rendered between the header and the status-specific sections, visible in all game states (waiting/active/complete)

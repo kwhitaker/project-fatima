@@ -197,7 +197,7 @@
         "Works well in dark mode"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Use shadcn Dialog/Sheet; keep the component reusable."
     },
     {

@@ -39,8 +39,11 @@ class GameResult(BaseModel):
 
 
 class LastMoveInfo(BaseModel):
+    player_index: int  # 0 or 1
+    card_key: str
+    cell_index: int  # 0-8
     mists_roll: int  # 1-6 die result
-    mists_effect: str  # "fog" | "omen" | "none"
+    mists_effect: str  # "fog" | "omen" | "none" | "fog_negated"
 
 
 class GameState(BaseModel):

@@ -228,6 +228,9 @@ def apply_intent(
 
     if mists_roll is not None:
         updates["last_move"] = LastMoveInfo(
+            player_index=intent.player_index,
+            card_key=intent.card_key,
+            cell_index=intent.cell_index,
             mists_roll=mists_roll,
             mists_effect=_mists_effect_label(mists_roll, mists_modifier),
         )

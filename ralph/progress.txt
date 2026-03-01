@@ -1,5 +1,14 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:10 - US-UX-009
+- Added `CardFace` component to `GameRoom.tsx` rendering display name + N/E/S/W in a diamond layout (N top, W/E sides, S bottom); used by `BoardGrid` for occupied cells
+- Updated hand card buttons to show display name + N/E/S/W values with `hover:scale-105 transition-transform` for enlargement and `disabled:hover:scale-100` to suppress scale when disabled
+- Fetches `getCardDefinitions()` via `Promise.all` alongside `getGame()` on initial load; empty-Map fallback keeps card_key display when defs unavailable
+- Tests: `ux009.test.tsx` (6 frontend: board shows name not key, board shows N/E/S/W values, hand shows name not key, hand shows N/E/S/W values, hover:scale class present, aria-pressed state); updated ux004/ux005/ux006/routes.test.tsx api mocks to include `getCardDefinitions: vi.fn().mockResolvedValue(new Map())`; 469 backend + 115 frontend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux009.test.tsx`, `web/src/__tests__/ux004.test.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/ux006.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: when a new async call is added to GameRoom's init effect, ALL existing test mocks for `@/lib/api` must include it with a safe default (empty Map) to avoid unhandled rejections; `disabled:hover:scale-100` cancels hover transform for disabled buttons in Tailwind v4
+---
+
 ## 2026-03-01 15:00 - US-UX-008
 - Added `GET /cards` endpoint (`app/routers/cards.py`): requires auth, returns full `CardDefinition` list from `CardStore`; registered router in `app/main.py` (added `# noqa: E402` for intentional post-`load_dotenv` imports)
 - Added `CardSides`, `CardDefinition` interfaces + `listCards()` + `getCardDefinitions()` module-level cache to `web/src/lib/api.ts`; cache keyed by `card_key` using a module-level `Map`

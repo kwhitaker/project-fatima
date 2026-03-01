@@ -127,7 +127,7 @@
         "Mobile-first sizing keeps cards legible without horizontal scrolling"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "Keep implementation lightweight (Tailwind + existing shadcn primitives)."
     },
     {

@@ -381,10 +381,21 @@ export default function GameRoom() {
             </div>
           )}
 
-          {/* Combo indicator */}
-          {capturedCells.size >= 2 && (
-            <div className="text-center font-bold text-purple-700 dark:text-purple-400" aria-live="polite">
-              Combo! ×{capturedCells.size}
+          {/* Capture feedback: single flip or combo */}
+          {capturedCells.size > 0 && (
+            <div
+              className={cn(
+                "text-sm font-semibold p-2 rounded border",
+                capturedCells.size === 1
+                  ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
+                  : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
+              )}
+              aria-live="polite"
+              aria-label="capture feedback"
+            >
+              {capturedCells.size === 1
+                ? "1 card captured!"
+                : `Combo! ×${capturedCells.size} captured`}
             </div>
           )}
 

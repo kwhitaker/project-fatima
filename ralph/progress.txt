@@ -17,6 +17,15 @@ Started: 2026-03-01
 - Learnings: T3 ultra cards (budget=32, cap=10) all converge to n=10, e=10, s=9, w=3 or similar; that's unavoidable with the strict sum+cap constraints. Tests that test ONLY budget/cap failures need sides with min≤3 to avoid dual-failure interference.
 ---
 
+## 2026-03-01 - US-GM-003
+- Added Plus rule as pre-step in `resolve_captures`: computes raw side-sums for adjacent opponent cells; if 2+ share the same sum, captures all matching cells immediately and enqueues them for BFS combo
+- Changed `resolve_captures` return type to `tuple[list[BoardCell | None], bool]`; updated all callers (reducer, test_captures rc wrapper, test_combo_captures direct calls)
+- Added `plus_triggered: bool = False` to `LastMoveInfo`; reducer passes it from resolve_captures result
+- Fixed pre-existing `test_presence.py` test that coincidentally produced equal Plus sums (changed placed.e from 5 to 4 to differentiate sums)
+- Tests run: `uv run pytest` — 502 passed; Files: `app/rules/captures.py`, `app/rules/reducer.py`, `app/models/game.py`, `tests/test_gm003_plus_rule.py`, `tests/test_captures.py`, `tests/test_combo_captures.py`, `tests/test_presence.py`
+- Learnings: Card sides are bounded 1-10 by CardSides validation — test cards exceeding 10 fail Pydantic validation. When adding pre-steps to BFS, watch for unintended Plus triggers in existing tests that use equal card values (sum matches coincidentally).
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

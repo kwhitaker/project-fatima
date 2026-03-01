@@ -49,7 +49,7 @@
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Plus rule fires based on raw printed values. The 'sum' is: placed_card_side_value + neighbor_facing_side_value. Example: placing a card with N=6; cell 1 has S=7 → sum=13; cell 3 has E=10 (placing card's W=3) → W+E=13 → Plus triggers, both captured. Standard > comparison then still runs for any unfired neighbors."
     },
     {

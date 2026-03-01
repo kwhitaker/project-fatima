@@ -16,6 +16,8 @@ export interface BoardCell {
 export interface GameResult {
   winner: 0 | 1 | null;
   is_draw: boolean;
+  completion_reason?: string | null;
+  forfeit_by_index?: number | null;
 }
 
 export interface LastMoveInfo {

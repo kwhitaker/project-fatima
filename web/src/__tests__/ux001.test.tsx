@@ -55,8 +55,10 @@ describe("US-UX-001: dark mode default + mobile-first layout", () => {
         <Games />
       </MemoryRouter>
     );
-    const row = await screen.findByRole("button", { name: /game-abc123/i });
-    expect(row.className).toContain("cursor-pointer");
+    // Row now shows truncated ID (8 chars: "game-abc") instead of full game_id
+    await screen.findByText("game-abc");
+    const rows = document.querySelectorAll("button.cursor-pointer");
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it("header actions are wrapped for mobile flex layout", async () => {

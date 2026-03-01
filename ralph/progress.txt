@@ -1,5 +1,13 @@
 # Ralph Progress Log
 
+## 2026-03-01 14:40 - US-UX-007
+- Updated `Games.tsx`: rows now show opponent email (or "Waiting..."), 8-char truncated game id (full UUID in `title` attr), and Win/Loss/Draw/Forfeit result labels for COMPLETE games; added `ResultBadge` helper component with color coding; destructured `user` from `useAuth` to determine current player index for result classification
+- Added `completion_reason?: string | null` and `forfeit_by_index?: number | null` to `GameResult` interface in `api.ts` (surfacing US-UX-003 backend fields in the frontend type)
+- Tests: `ux007.test.tsx` (8 tests: opponent email shown, "Waiting..." for lobby, truncated id / no full UUID, Win/Loss/Draw/Forfeit labels, cursor-pointer); updated `ux001.test.tsx` button name assertion to use truncated id; 104 frontend + 463 backend tests pass
+- Files: `web/src/routes/Games.tsx`, `web/src/lib/api.ts`, `web/src/__tests__/ux007.test.tsx`, `web/src/__tests__/ux001.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: to compute result label, find `myIndex` via `players.findIndex(p => p.player_id === myId)`; `forfeit_by_index === myIndex` → "Forfeit" (I lost), otherwise "Win" (opponent forfeited); truncate with `.slice(0, 8)` and keep full UUID in `title` for debugging
+---
+
 ## 2026-03-01 14:35 - US-UX-006
 - Added `showLeaveConfirm` state to `GameRoom.tsx`; changed ACTIVE "Leave Game" button from direct `handleLeave()` to `setShowLeaveConfirm(true)`; added inline forfeit confirmation dialog (role="dialog" aria-modal, escape key, Cancel + Forfeit & Leave buttons)
 - Tests: `ux006.test.tsx` (5 tests: dialog opens on Leave click, forfeit language in dialog, Cancel closes without calling leaveGame, Confirm calls leaveGame + navigates, WAITING has no Leave button); updated `routes.test.tsx` Leave test to click "Forfeit & Leave" in the new dialog; 95 frontend + 463 backend tests pass

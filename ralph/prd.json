@@ -99,7 +99,7 @@
         "Row and button interactions have clear hover/disabled feedback and correct cursors"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Truncation target: 8 chars is fine (GitHub-ish), but keep full id available somewhere for debugging."
     },
     {

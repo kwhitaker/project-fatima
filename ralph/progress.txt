@@ -1,5 +1,13 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:00 - US-UX-008
+- Added `GET /cards` endpoint (`app/routers/cards.py`): requires auth, returns full `CardDefinition` list from `CardStore`; registered router in `app/main.py` (added `# noqa: E402` for intentional post-`load_dotenv` imports)
+- Added `CardSides`, `CardDefinition` interfaces + `listCards()` + `getCardDefinitions()` module-level cache to `web/src/lib/api.ts`; cache keyed by `card_key` using a module-level `Map`
+- Tests: `test_ux008.py` (6 backend: 200, list length, required fields, correct values, empty store, auth required); `ux008.test.tsx` (5 frontend: fetch path+auth header, required fields, Map keyed by card_key, name/side resolution, cache deduplication); 469 backend + 109 frontend tests pass
+- Files: `app/routers/cards.py`, `app/main.py`, `tests/test_ux008.py`, `web/src/lib/api.ts`, `web/src/__tests__/ux008.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: module-level `_cardCache: Map | null` in `api.ts` is reset by `vi.resetModules()` in `beforeEach` — this allows cache-deduplication tests without exported reset helpers; `vi.stubGlobal("fetch", mockFetch)` + dynamic imports give each test a fresh module instance
+---
+
 ## 2026-03-01 14:40 - US-UX-007
 - Updated `Games.tsx`: rows now show opponent email (or "Waiting..."), 8-char truncated game id (full UUID in `title` attr), and Win/Loss/Draw/Forfeit result labels for COMPLETE games; added `ResultBadge` helper component with color coding; destructured `user` from `useAuth` to determine current player index for result classification
 - Added `completion_reason?: string | null` and `forfeit_by_index?: number | null` to `GameResult` interface in `api.ts` (surfacing US-UX-003 backend fields in the frontend type)

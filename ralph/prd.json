@@ -113,7 +113,7 @@
         "Add/adjust tests for the new endpoint"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Use the server's CardStore as the source so UI stays snapshot-first and deterministic."
     },
     {

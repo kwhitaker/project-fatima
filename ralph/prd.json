@@ -76,14 +76,17 @@
       "acceptanceCriteria": [
         "Add `element: str` field to `CardDefinition` in `app/models/cards.py`; valid values are exactly: 'blood', 'holy', 'arcane', 'shadow', 'nature'",
         "Update `app/rules/cards.py` card loader to validate that `element` is one of the five valid values; missing or invalid element is a load error",
-        "Assign an element to every card in `cards.jsonl` using this thematic mapping: tags containing 'undead', 'vampire', or 'boss' (undead bosses) → blood; tags containing 'cleric', 'paladin', or 'devout' → holy; tags containing 'wizard', 'warlock', 'arcane', or 'spellcaster' → arcane; tags containing 'rogue', 'assassin', 'werewolf', or 'shadow' → shadow; tags containing 'ranger', 'druid', 'beast', 'wolf', or 'nature' → nature; for cards with no clear match use best thematic judgment (document each choice with a comment in the jsonl or via a clear rule in the PR notes)",
+        "Assign an element to every card in `cards.jsonl` using `ralph/card_elements.json` as the SOLE authoritative source — do not guess from tags",
         "Update `CARDS_SPEC.md`: document the element field, the five valid values, and the thematic assignment guidelines",
-        "Add unit tests: card with valid element loads; card with invalid element fails; card missing element fails",
+        "Add `element` column (`text NOT NULL`) to the `cards` DB table: create `supabase/migrations/004_add_element_to_cards.sql` with `ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS element text NOT NULL DEFAULT 'shadow';` followed by a comment explaining the default is a placeholder that gets overwritten by the seed script",
+        "Update `card_to_row` in `scripts/seed_cards.py` to include `element: card.element` in the returned dict",
+        "Update `tests/test_seed_cards.py`: add `'element'` to the expected columns set in `test_all_expected_columns_present`; add `element` field to both `_VALID_LINE` and `_VALID_LINE_2` fixture strings (use `'element':'blood'` for zombie and skeleton); add a test asserting `element` is present in the upserted row",
+        "Add unit tests in the main test suite: card with valid element loads; card with invalid element fails; card missing element fails",
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 5,
       "passes": false,
-      "notes": "cards.jsonl is JSON Lines — add 'element' key to each object. DO NOT guess element assignments from tags alone. Use `ralph/card_elements.json` as the authoritative lookup — it contains the correct element and a reason for all 65 cards. Apply exactly what is listed there."
+      "notes": "cards.jsonl is JSON Lines — add 'element' key to each object using ralph/card_elements.json exclusively. The DB cards table needs a new migration (004) to add the element column — the seed script upserts element as a flat column AND inside the definition JSONB. test_seed_cards.py fixture strings and column assertion must be updated or tests will fail as soon as CardDefinition requires element."
     },
     {
       "id": "US-GM-006",
@@ -98,24 +101,27 @@
         "Elemental bonus does NOT apply to Plus rule sum calculations (Plus always uses raw printed values)",
         "Backward compatibility: if `board_elements` is None or absent from a persisted snapshot, elemental bonus is 0 for all placements",
         "`GET /games/:gameId` response includes `board_elements` (it is already part of GameState JSONB — verify the field serializes correctly)",
-        "New tests in `tests/test_gm006_elemental.py`: match gives +1 bonus and can flip a capture; mismatch gives no bonus; combo chain has no elemental bonus; Plus sums ignore elemental; old snapshot without board_elements works; board_elements present in GET response",
+        "Add `elemental_triggered: bool` field to `LastMoveInfo` in `app/models/game.py`; set to `True` when an elemental bonus was applied (card element matched cell element), `False` otherwise; default `False` for backward compat with old snapshots",
+        "New tests in `tests/test_gm006_elemental.py`: match gives +1 bonus and can flip a capture; mismatch gives no bonus; combo chain has no elemental bonus; Plus sums ignore elemental; old snapshot without board_elements works; board_elements present in GET response; elemental_triggered is True on match, False on mismatch",
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 6,
       "passes": false,
-      "notes": "Depends on US-GM-005 for element field on CardDefinition. board_elements is stored in the JSONB snapshot — no DB schema migration needed. Generation happens once at game creation and is deterministic. The modifier stacking (mists + elemental) uses the existing single modifier parameter already passed to resolve_captures."
+      "notes": "Depends on US-GM-005 for element field on CardDefinition. board_elements is stored in the JSONB snapshot — no DB schema migration needed. Generation happens once at game creation and is deterministic. The modifier stacking (mists + elemental) uses the existing single modifier parameter already passed to resolve_captures. elemental_triggered in last_move follows the same additive pattern as plus_triggered."
     },
     {
       "id": "US-GM-007",
       "title": "Elemental system — UI: board cell elements and match highlighting",
       "description": "As a player, I want to see the element of each board cell and get a visual cue when my selected card matches a cell's element, so I can plan elemental bonus plays.",
       "acceptanceCriteria": [
-        "Each board cell displays a small element label or icon. Use short themed labels: Blood (🩸), Holy (✦), Arcane (✦ or ✧), Shadow (◆), Nature (✿) — or simple colored text tags if emoji are problematic in the font stack. Empty cells should still show their element.",
+        "Each board cell displays a small element label or icon. Use short themed labels: Blood (🩸), Holy (✦), Arcane (✧), Shadow (◆), Nature (✿) — or simple colored text tags if emoji are problematic in the font stack. Empty cells should still show their element.",
         "When a hand card is selected, cells whose element matches the selected card's element are visually highlighted (e.g., a distinct ring/glow color, separate from the standard 'can place here' indicator)",
         "When no card is selected, no highlight is shown (element labels still visible but no glow)",
         "Update `web/src/lib/api.ts` `GameState` interface to include `board_elements: string[] | null`",
+        "Update `web/src/lib/api.ts` `LastMoveInfo` interface to include `elemental_triggered: boolean`",
+        "When `game.last_move.elemental_triggered === true`, show a small 'Elemental!' callout alongside the existing capture feedback (use a gold/amber color distinct from Plus! cyan and standard amber); include which element fired (e.g. 'Blood Elemental!')",
         "Element display works in dark mode and on mobile without cluttering the board",
-        "Add frontend tests: element label renders on empty cell; element label renders on occupied cell; selected card highlights matching cells; no highlight when no card selected; non-matching cells not highlighted",
+        "Add frontend tests: element label renders on empty cell; element label renders on occupied cell; selected card highlights matching cells; no highlight when no card selected; non-matching cells not highlighted; Elemental! callout shown when elemental_triggered=true; no callout when elemental_triggered=false",
         "`bun run test --run` passes"
       ],
       "priority": 7,

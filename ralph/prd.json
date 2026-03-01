@@ -71,7 +71,7 @@
         "Buttons show proper hover/disabled states and cursors"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "Leaving a completed game should just be navigation; no extra API call needed."
     },
     {

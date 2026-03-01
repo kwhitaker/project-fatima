@@ -7,6 +7,14 @@
 Started: 2026-03-01
 ---
 
+## 2026-03-01 15:50 - US-UX-005
+- Added `email?: string | null` to `PlayerState` in `web/src/lib/api.ts` (surfacing US-UX-002 backend field in the frontend type)
+- Updated `GameRoom.tsx`: replaced static `<h1>Game {gameId}</h1>` with contextual title ("Waiting for opponent" / "Playing against <email>"); added "← Back to Games" ghost button in header (no API call, pure navigation); removed the "Leave Game" button from the COMPLETE section (the header back link covers post-game navigation)
+- Tests: `ux005.test.tsx` (7 tests: correct title for WAITING/ACTIVE, back button present in all states, no Leave in COMPLETE, Leave still present in ACTIVE); updated 4 assertions in `routes.test.tsx` from old `/game game-xxx/i` heading to `/waiting for opponent/i`; 90 frontend + 463 backend tests pass
+- Files: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: when title logic depends on game state, compute it just before the return (after early loading/error returns) so all derived state is available; the back-link is a `<Button variant="ghost">` with `navigate("/games")` — no leave API, so no forfeit for WAITING/COMPLETE navigation
+---
+
 ## 2026-03-01 15:30 - US-UX-004
 - Added `ArchetypeNotSelectedError(InvalidMoveError)` to `app/rules/errors.py`; raised in `submit_move` before `apply_intent` when `player.archetype is None` → router maps to 422 with actionable detail
 - Replaced inline archetype selection prompt in `GameRoom.tsx` with a fixed `role="dialog" aria-modal="true"` overlay; added `!!myPlayer?.archetype` guard to `canPlace` and hand card `disabled` prop to block all move interactions until archetype chosen

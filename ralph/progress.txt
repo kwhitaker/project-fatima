@@ -1,5 +1,15 @@
 # Ralph Progress Log
 
+## 2026-03-01 15:09 - US-UX-013
+- Added `realtimeStatus: "connecting" | "live" | "reconnecting"` state to `GameRoom.tsx`; subscribe callback now calls `setRealtimeStatus("live")` on SUBSCRIBED and `setRealtimeStatus("reconnecting")` on CLOSED/CHANNEL_ERROR
+- Added `handleRefresh` function (calls `getGame(gameId)` and updates game state); added realtime status badge (green "Live" / yellow pulsing "Reconnecting…") + "Refresh" button rendered between the header and the status-specific sections, visible in all game states (waiting/active/complete)
+- Tests: `ux013.test.tsx` (6 frontend: Live on SUBSCRIBED, Reconnecting on CLOSED, Reconnecting on CHANNEL_ERROR, Refresh button present, Refresh calls getGame, dark mode classes on indicator); `mockSubscribeCallback` pattern (variables starting with "mock" bypass vi.mock hoisting restriction); 475 backend + 133 frontend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux013.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: use `mock`-prefixed variable in vi.mock factory closure to capture subscribe callback for status simulation in tests; `realtimeStatus` state cleanly separates UI display from the underlying fallback interval logic
+---
+
+
+
 ## 2026-03-01 15:15 - US-UX-012
 - Updated `LastMoveInfo` interface in `web/src/lib/api.ts` to add `player_index`, `card_key`, `cell_index` (matching US-UX-011 backend fields)
 - Added last move callout div in `GameRoom.tsx` (ACTIVE section): shows "You played <Name>" or "Opponent played <Name>" using `game.last_move.player_index` and `cardDefs` for display name; `aria-label="last move callout"` + `aria-live="polite"` + dark: classes

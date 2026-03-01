@@ -183,7 +183,7 @@
         "Update/extend tests where practical (at least unit-level state rendering)"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Keep it minimal; no complicated reconnection logic beyond what exists."
     },
     {

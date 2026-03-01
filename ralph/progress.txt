@@ -17,3 +17,12 @@ Started: 2026-03-01
 - Learnings: T3 ultra cards (budget=32, cap=10) all converge to n=10, e=10, s=9, w=3 or similar; that's unavoidable with the strict sum+cap constraints. Tests that test ONLY budget/cap failures need sides with min≤3 to avoid dual-failure interference.
 ---
 
+## 2026-03-01 - US-GM-002
+- Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
+- Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`
+- Updated UI strings in `GameRulesDialog.tsx` and `ActiveGameView.tsx` from ±1 to ±2; updated `CLAUDE.md` Mists entry
+- Tests run: `uv run pytest` — 490 passed; `bun run test --run` — 151 passed
+- Files changed: `app/rules/reducer.py`, `tests/test_mists.py`, `tests/test_presence.py`, `web/src/routes/game-room/GameRulesDialog.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `CLAUDE.md`
+- Learnings: Integration test scenarios for fog/omen still work without adjusting card values since -2 still suppresses the same marginal captures and +2 still enables ties-to-capture. Only the direct modifier-value assertions needed changing.
+---
+

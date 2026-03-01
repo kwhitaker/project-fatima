@@ -32,7 +32,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "This is a targeted one-number change in the reducer; the main work is finding and updating all test assertions and any UI strings that mention the old value."
     },
     {

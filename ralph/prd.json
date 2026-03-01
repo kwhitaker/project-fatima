@@ -141,7 +141,7 @@
         "Buttons and interactive elements have consistent hover/disabled/cursor feedback"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer using the existing board diff logic; only add new snapshot fields if truly needed."
     },
     {

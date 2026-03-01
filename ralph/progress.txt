@@ -1,5 +1,12 @@
 # Ralph Progress Log
 
+## 2026-03-01 14:57 - US-UX-010
+- Extended capture feedback in `GameRoom.tsx`: replaced `capturedCells.size >= 2` combo-only indicator with a unified `capturedCells.size > 0` block; single flip shows "1 card captured!" (amber styling), combo shows "Combo! ×N captured" (purple styling); both share `aria-label="capture feedback"` and `aria-live="polite"`
+- Tests: `ux010.test.tsx` (5 frontend: single flip shows indicator, single flip no "combo" text, combo shows "Combo" text, no indicator for no captures, aria-live="polite" present); existing `routes.test.tsx` combo + single-capture tests still pass unchanged (single-capture still has no "combo" text; combo still matches `/combo/i`); 469 backend + 121 frontend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux010.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: single/combo distinction handled entirely in existing `capturedCells` diff — no new snapshot fields needed; `aria-label` on the feedback div enables `getByLabelText(/capture feedback/i)` for robust test queries; dark mode amber/purple palette mirrors the existing mists banner pattern
+---
+
 ## 2026-03-01 15:10 - US-UX-009
 - Added `CardFace` component to `GameRoom.tsx` rendering display name + N/E/S/W in a diamond layout (N top, W/E sides, S bottom); used by `BoardGrid` for occupied cells
 - Updated hand card buttons to show display name + N/E/S/W values with `hover:scale-105 transition-transform` for enlargement and `disabled:hover:scale-100` to suppress scale when disabled

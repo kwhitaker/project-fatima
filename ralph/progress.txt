@@ -1,5 +1,13 @@
 # Ralph Progress Log
 
+## 2026-03-01 14:35 - US-UX-006
+- Added `showLeaveConfirm` state to `GameRoom.tsx`; changed ACTIVE "Leave Game" button from direct `handleLeave()` to `setShowLeaveConfirm(true)`; added inline forfeit confirmation dialog (role="dialog" aria-modal, escape key, Cancel + Forfeit & Leave buttons)
+- Tests: `ux006.test.tsx` (5 tests: dialog opens on Leave click, forfeit language in dialog, Cancel closes without calling leaveGame, Confirm calls leaveGame + navigates, WAITING has no Leave button); updated `routes.test.tsx` Leave test to click "Forfeit & Leave" in the new dialog; 95 frontend + 463 backend tests pass
+- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux006.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: since `@radix-ui/react-dialog` is not installed, used same inline `role="dialog"` pattern as the archetype modal; the confirm button has `data-confirm` attribute for reliable selector querying in tests; WAITING state requires no change (already has no Leave button per US-UX-005)
+---
+
+
 ## Codebase Patterns
 - (add stable patterns here as they are discovered)
 

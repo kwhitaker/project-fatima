@@ -85,7 +85,7 @@
         "WAITING lobby leave remains fast (no forfeit language)"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer a shadcn/ui Dialog so keyboard focus and escape behavior are correct by default."
     },
     {

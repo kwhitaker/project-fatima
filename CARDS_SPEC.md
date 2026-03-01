@@ -64,6 +64,7 @@ MVP is "pure stats" (no card keywords). Strength comes from rarity + tier.
 Constraints:
 
 - Side values: `1..10`.
+- **Weak-side rule**: every card must have at least one side ≤ 3 (`min(n, e, s, w) ≤ 3`). Cards where all four sides are ≥ 4 are rejected. This ensures filler cards can threaten powerful ones on at least one edge.
 - Each card must meet the sum budget for its tier and rarity bucket.
 - Each card must not exceed the per-side cap for its tier and rarity bucket.
 

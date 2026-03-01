@@ -108,7 +108,7 @@ def test_balance_passes_tier1_common_above_budget() -> None:
 
 
 def test_balance_passes_tier3_ultra_example() -> None:
-    # Strahd III from CARDS_SPEC.md: T3 ultra (32, cap 10), sum=32
+    # Strahd III: T3 ultra (32, cap 10), sum=32, min side=3 (weak-side compliant)
     card = CardDefinition(
         card_key="strahd_iii",
         character_key="strahd_von_zarovich",
@@ -117,15 +117,15 @@ def test_balance_passes_tier3_ultra_example() -> None:
         tier=3,
         rarity=100,
         is_named=True,
-        sides=CardSides(n=10, e=9, s=7, w=6),
+        sides=CardSides(n=10, e=10, s=9, w=3),
         set="barovia",
     )
     assert validate_card_balance(card) == []
 
 
 def test_balance_passes_tier2_very_rare() -> None:
-    # T2 very_rare: (26, cap 10). Sum=26, max=10
-    card = _make_card(2, 95, n=10, e=7, s=5, w=4)
+    # T2 very_rare: (26, cap 10). Sum=26, max=10, min side=3 (weak-side compliant)
+    card = _make_card(2, 95, n=10, e=7, s=6, w=3)
     assert validate_card_balance(card) == []
 
 
@@ -144,16 +144,16 @@ def test_balance_fails_sum_below_budget_tier1_common() -> None:
 
 
 def test_balance_fails_sum_below_budget_tier2_rare() -> None:
-    # T2 rare budget=24; sides sum to 23
-    card = _make_card(2, 80, n=7, e=6, s=5, w=5)
+    # T2 rare budget=24; sides sum to 23, min side=3 so only budget fails
+    card = _make_card(2, 80, n=7, e=6, s=7, w=3)
     errs = validate_card_balance(card)
     assert len(errs) == 1
     assert "budget" in errs[0].lower()
 
 
 def test_balance_fails_sum_below_budget_tier3_uncommon() -> None:
-    # T3 uncommon budget=26; sides sum to 25
-    card = _make_card(3, 60, n=7, e=7, s=6, w=5)
+    # T3 uncommon budget=26; sides sum to 25, min side=3 so only budget fails
+    card = _make_card(3, 60, n=7, e=7, s=8, w=3)
     errs = validate_card_balance(card)
     assert len(errs) == 1
     assert "budget" in errs[0].lower()

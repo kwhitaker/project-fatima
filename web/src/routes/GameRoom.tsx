@@ -29,6 +29,7 @@ function BoardGrid({
   placedCells,
   capturedCells,
   cardDefs,
+  lastMoveCellIndex,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -37,6 +38,7 @@ function BoardGrid({
   placedCells?: Set<number>;
   capturedCells?: Set<number>;
   cardDefs?: Map<string, CardDefinition>;
+  lastMoveCellIndex?: number | null;
 }) {
   return (
     <div
@@ -46,6 +48,7 @@ function BoardGrid({
       {board.map((cell, i) => {
         const isPlaced = placedCells?.has(i) ?? false;
         const isCaptured = capturedCells?.has(i) ?? false;
+        const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
         const cellClass = cn(
           "w-16 h-16 sm:w-20 sm:h-20 border rounded flex items-center justify-center text-xs text-center p-0.5",
           cell === null
@@ -54,7 +57,8 @@ function BoardGrid({
             ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
             : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
           isPlaced && "animate-card-placed",
-          isCaptured && "animate-card-captured"
+          isCaptured && "animate-card-captured",
+          isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
         );
         if (canPlace && cell === null) {
           return (
@@ -63,6 +67,7 @@ function BoardGrid({
               aria-label={`cell ${i}`}
               onClick={() => onCellClick?.(i)}
               className={cn(cellClass, "hover:bg-accent cursor-pointer")}
+              data-last-move={isLastMove ? "true" : undefined}
             />
           );
         }
@@ -71,6 +76,7 @@ function BoardGrid({
             key={i}
             className={cellClass}
             data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+            data-last-move={isLastMove ? "true" : undefined}
           >
             {cell ? (
               <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
@@ -364,6 +370,20 @@ export default function GameRoom() {
             Score — You: {myScore} | Opponent: {opponentScore}
           </p>
 
+          {/* Last move callout */}
+          {game.last_move != null && (
+            <div
+              className="text-sm p-2 rounded border bg-muted border-border text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground"
+              aria-label="last move callout"
+              aria-live="polite"
+            >
+              {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
+              <span className="font-medium">
+                {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
+              </span>
+            </div>
+          )}
+
           {/* Mists feedback */}
           {game.last_move != null && (
             <div
@@ -416,6 +436,7 @@ export default function GameRoom() {
             placedCells={placedCells}
             capturedCells={capturedCells}
             cardDefs={cardDefs}
+            lastMoveCellIndex={game.last_move?.cell_index ?? null}
           />
 
           {/* Move error */}

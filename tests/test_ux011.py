@@ -208,9 +208,6 @@ def test_last_move_with_archetype_activated(client: TestClient) -> None:
     """Archetype activation (martial rotate) does not break last_move population."""
     game_id, state = _setup_active_game(client, seed=23)
     # alice is index 0, archetype=martial
-    alice_idx = next(i for i, p in enumerate(state["players"]) if p["player_id"] == "alice")
-    alice_hand = state["players"][alice_idx]["hand"]
-
     # Make alice go first (use whichever player goes first)
     first_idx = state["current_player_index"]
     first_user = "alice" if first_idx == 0 else "bob"

@@ -35,6 +35,9 @@ export interface GameResult {
 }
 
 export interface LastMoveInfo {
+  player_index: number; // 0 or 1
+  card_key: string;
+  cell_index: number;   // 0-8
   mists_roll: number;   // 1–6 die result
   mists_effect: string; // "fog" | "omen" | "none"
 }

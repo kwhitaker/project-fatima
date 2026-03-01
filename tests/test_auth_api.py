@@ -219,7 +219,11 @@ def test_last_move_populated_after_first_move(client: TestClient) -> None:
     """last_move should contain mists_roll and mists_effect after any move."""
     resp = as_user(client, "alice", "post", "/games", json={"seed": 77})
     game_id = resp.json()["game_id"]
-    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    as_user(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
+    resp = as_user(
+        client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}
+    )
     data = resp.json()
     state_version = data["state_version"]
     first_player_index = data["current_player_index"]

@@ -802,8 +802,8 @@ describe("game room move submission (US-UI-007)", () => {
     state_version: 5,
     current_player_index: 0,
     players: [
-      { player_id: "user-123", archetype: null, hand: ["card-a", "card-b"], archetype_used: false },
-      { player_id: "other-user", archetype: null, hand: ["card-c"], archetype_used: false },
+      { player_id: "user-123", archetype: "martial" as const, hand: ["card-a", "card-b"], archetype_used: false },
+      { player_id: "other-user", archetype: "devout" as const, hand: ["card-c"], archetype_used: false },
     ],
     board: EMPTY_BOARD,
   });
@@ -1201,8 +1201,8 @@ describe("effects (US-UI-011)", () => {
     state_version: 4,
     current_player_index: 0,
     players: [
-      { player_id: "user-123", archetype: null, hand: ["card-a"], archetype_used: false },
-      { player_id: "other-user", archetype: null, hand: ["card-c", "card-d"], archetype_used: false },
+      { player_id: "user-123", archetype: "martial" as const, hand: ["card-a"], archetype_used: false },
+      { player_id: "other-user", archetype: "devout" as const, hand: ["card-c", "card-d"], archetype_used: false },
     ],
     board: [
       { card_key: "card-x", owner: 1 } as BoardCell,

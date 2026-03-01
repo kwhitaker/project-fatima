@@ -351,6 +351,7 @@ export default function GameRoom() {
             board={game.board}
             myIndex={myIndex}
             canPlace={
+              !!myPlayer?.archetype &&
               game.current_player_index === myIndex &&
               selectedCard !== null &&
               !movePending &&
@@ -368,27 +369,39 @@ export default function GameRoom() {
             <p className="text-destructive text-sm">{moveError}</p>
           )}
 
-          {/* Archetype selection prompt */}
+          {/* Archetype selection: unskippable blocking modal */}
           {myPlayer && !myPlayer.archetype && (
-            <div>
-              <p className="text-sm font-medium mb-2">Choose your archetype</p>
-              <div className="flex gap-2 flex-wrap">
-                {(["martial", "skulker", "caster", "devout", "presence"] as const).map((arch) => (
-                  <Button
-                    key={arch}
-                    variant="outline"
-                    size="sm"
-                    className="capitalize"
-                    onClick={() => void handleSelectArchetype(arch)}
-                    disabled={archetypePending}
-                  >
-                    {arch}
-                  </Button>
-                ))}
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="archetype-modal-title"
+              data-testid="archetype-modal"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+            >
+              <div className="bg-background border rounded-lg p-6 w-full max-w-sm shadow-xl">
+                <h2 id="archetype-modal-title" className="text-lg font-bold mb-1">
+                  Choose Your Archetype
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select a once-per-game power before you can place cards.
+                </p>
+                <div className="flex flex-col gap-2">
+                  {(["martial", "skulker", "caster", "devout", "presence"] as const).map((arch) => (
+                    <Button
+                      key={arch}
+                      variant="outline"
+                      className="capitalize w-full justify-start"
+                      onClick={() => void handleSelectArchetype(arch)}
+                      disabled={archetypePending}
+                    >
+                      {arch}
+                    </Button>
+                  ))}
+                </div>
+                {archetypeError && (
+                  <p className="text-destructive text-sm mt-3">{archetypeError}</p>
+                )}
               </div>
-              {archetypeError && (
-                <p className="text-destructive text-sm mt-1">{archetypeError}</p>
-              )}
             </div>
           )}
 
@@ -442,7 +455,7 @@ export default function GameRoom() {
                   onClick={() =>
                     setSelectedCard(selectedCard === cardKey ? null : cardKey)
                   }
-                  disabled={game.current_player_index !== myIndex || movePending}
+                  disabled={!myPlayer?.archetype || game.current_player_index !== myIndex || movePending}
                   className={cn(
                     "px-3 py-2 border rounded text-xs font-mono transition-colors",
                     "disabled:opacity-50 disabled:cursor-not-allowed",

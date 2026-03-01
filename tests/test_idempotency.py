@@ -156,11 +156,18 @@ class TestMemoryStoreIdempotency:
 
 class TestApiIdempotency:
     def _setup_active_game(self, client: TestClient) -> tuple[str, list[str], int, int]:
-        """Returns (game_id, first_player_hand, state_version, first_player_index)."""
+        """Returns (game_id, first_player_hand, state_version, first_player_index).
+
+        Also selects archetypes for both players so that moves can be submitted.
+        state_version is the version after both archetype selections.
+        """
         resp = _as(client, "alice", "post", "/games", json={"seed": 77})
         game_id = resp.json()["game_id"]
         _as(client, "bob", "post", f"/games/{game_id}/join", json={})
-        data = _as(client, "alice", "get", f"/games/{game_id}").json()
+        _as(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
+        data = _as(
+            client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}
+        ).json()
         first_player_index = data["current_player_index"]
         first_hand = data["players"][first_player_index]["hand"]
         return game_id, first_hand, data["state_version"], first_player_index

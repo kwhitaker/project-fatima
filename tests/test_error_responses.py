@@ -57,10 +57,17 @@ def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # typ
 
 
 def _active_game(client: TestClient) -> tuple[str, list[str], list[str], int, int]:
-    """Create and return (game_id, p0_hand, p1_hand, state_version, first_player_index)."""
+    """Create and return (game_id, p0_hand, p1_hand, state_version, first_player_index).
+
+    Also selects archetypes for both players so that moves can be submitted immediately.
+    state_version is the version after both archetype selections.
+    """
     game_id = _as(client, "alice", "post", "/games", json={"seed": 1}).json()["game_id"]
-    resp = _as(client, "bob", "post", f"/games/{game_id}/join", json={})
-    data = resp.json()
+    _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+    _as(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
+    data = _as(
+        client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}
+    ).json()
     return (
         game_id,
         data["players"][0]["hand"],

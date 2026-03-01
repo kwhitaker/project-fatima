@@ -5,6 +5,7 @@ from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
 from app.rules.deck import generate_matched_decks
+from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
 
@@ -193,6 +194,13 @@ def submit_move(
         raise ConflictError(
             f"Version conflict for game {game_id!r}: "
             f"expected {expected_version}, got {state.state_version}"
+        )
+
+    player = state.players[player_index]
+    if player.archetype is None:
+        raise ArchetypeNotSelectedError(
+            "You must select an archetype before placing cards. "
+            "Use POST /games/{game_id}/archetype to select one."
         )
 
     card_lookup = {c.card_key: c for c in card_store.list_cards()}

@@ -9,6 +9,7 @@ import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
 import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
 import { CompleteGameView } from "@/routes/game-room/CompleteGameView";
 import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
+import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
 
 import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
 import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
@@ -36,6 +37,7 @@ export default function GameRoom() {
     drawerOpen,
   ]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
@@ -195,14 +197,24 @@ export default function GameRoom() {
     <div className="container py-4 min-h-[100dvh] flex flex-col">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">{titleText}</h1>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate("/games")}
-          className="hover:bg-accent cursor-pointer"
-        >
-          ← Back to Games
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowRules(true)}
+            className="cursor-pointer"
+          >
+            Rules
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/games")}
+            className="hover:bg-accent cursor-pointer"
+          >
+            ← Back to Games
+          </Button>
+        </div>
       </div>
 
       {/* Realtime status indicator + manual refresh */}
@@ -306,6 +318,8 @@ export default function GameRoom() {
           onClose={() => setPreviewCard(null)}
         />
       )}
+
+      <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>
   );
 }

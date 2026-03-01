@@ -1,8 +1,9 @@
-import type React from "react";
+import { useState, type RefObject } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 
@@ -29,7 +30,7 @@ export function HandDrawer({
   onCloseLeaveConfirm,
   onConfirmLeave,
 }: {
-  drawerRef: React.RefObject<HTMLDivElement | null>;
+  drawerRef: RefObject<HTMLDivElement | null>;
   open: boolean;
   onToggle: () => void;
   game: GameState;
@@ -51,6 +52,8 @@ export function HandDrawer({
   onCloseLeaveConfirm: () => void;
   onConfirmLeave: () => void;
 }) {
+  const [showArchetypePowers, setShowArchetypePowers] = useState(false);
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40">
       <div
@@ -203,6 +206,43 @@ export function HandDrawer({
                   )}
                 </div>
               </div>
+
+              {(myPlayer?.archetype || opponentPlayer?.archetype) && (
+                <div>
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-sm font-medium">Archetype powers</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowArchetypePowers((v) => !v)}
+                      className="h-8 px-2"
+                      aria-label={
+                        showArchetypePowers
+                          ? "hide archetype powers"
+                          : "show archetype powers"
+                      }
+                    >
+                      {showArchetypePowers ? "Hide" : "Show"}
+                    </Button>
+                  </div>
+                  {showArchetypePowers && (
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {myPlayer?.archetype && (
+                        <ArchetypePowerAside
+                          archetype={myPlayer.archetype}
+                          label="your archetype power"
+                        />
+                      )}
+                      {opponentPlayer?.archetype && (
+                        <ArchetypePowerAside
+                          archetype={opponentPlayer.archetype}
+                          label="opponent archetype power"
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Leave — opens forfeit confirmation dialog */}
               <Button variant="outline" onClick={onOpenLeaveConfirm} disabled={leaving}>

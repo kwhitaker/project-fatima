@@ -14,6 +14,7 @@ def create_game(
     card_store: CardStore,
     player_id: str,
     seed: int | None = None,
+    email: str | None = None,
 ) -> GameState:
     """Create a new game and auto-join the caller as player 1."""
     game_id = str(uuid.uuid4())
@@ -23,14 +24,18 @@ def create_game(
         game_id=game_id,
         seed=seed,
         status=GameStatus.WAITING,
-        players=[PlayerState(player_id=player_id)],
+        players=[PlayerState(player_id=player_id, email=email)],
     )
     game_store.create_game(game_id, initial_state)
     return initial_state
 
 
 def join_game(
-    game_store: GameStore, card_store: CardStore, game_id: str, player_id: str
+    game_store: GameStore,
+    card_store: CardStore,
+    game_id: str,
+    player_id: str,
+    email: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
     if state is None:
@@ -42,7 +47,7 @@ def join_game(
     if len(state.players) >= 2:
         raise ValueError("Game already has 2 players")
 
-    new_players = list(state.players) + [PlayerState(player_id=player_id)]
+    new_players = list(state.players) + [PlayerState(player_id=player_id, email=email)]
 
     extra_updates: dict[str, object] = {}
     if len(new_players) == 2:

@@ -25,6 +25,7 @@ class BoardCell(BaseModel):
 
 class PlayerState(BaseModel):
     player_id: str
+    email: str | None = None
     archetype: Archetype | None = None
     hand: list[str] = []
     archetype_used: bool = False

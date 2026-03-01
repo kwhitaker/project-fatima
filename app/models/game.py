@@ -34,6 +34,8 @@ class PlayerState(BaseModel):
 class GameResult(BaseModel):
     winner: int | None  # player index (0 or 1), or None for draw
     is_draw: bool
+    completion_reason: str | None = None  # "normal" | "forfeit"
+    forfeit_by_index: int | None = None  # player index who forfeited (only when reason="forfeit")
 
 
 class LastMoveInfo(BaseModel):

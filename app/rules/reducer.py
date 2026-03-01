@@ -67,10 +67,10 @@ def compute_round_result(board: list[BoardCell | None]) -> GameResult:
     p0 = sum(1 for cell in board if cell is not None and cell.owner == 0)
     p1 = sum(1 for cell in board if cell is not None and cell.owner == 1)
     if p0 > p1:
-        return GameResult(winner=0, is_draw=False)
+        return GameResult(winner=0, is_draw=False, completion_reason="normal")
     if p1 > p0:
-        return GameResult(winner=1, is_draw=False)
-    return GameResult(winner=None, is_draw=True)
+        return GameResult(winner=1, is_draw=False, completion_reason="normal")
+    return GameResult(winner=None, is_draw=True, completion_reason="normal")
 
 
 def begin_sudden_death_round(state: GameState) -> GameState:
@@ -88,7 +88,7 @@ def begin_sudden_death_round(state: GameState) -> GameState:
     if state.sudden_death_rounds_used >= 3:
         return state.model_copy(
             update={
-                "result": GameResult(winner=None, is_draw=True),
+                "result": GameResult(winner=None, is_draw=True, completion_reason="normal"),
                 "status": GameStatus.COMPLETE,
             }
         )

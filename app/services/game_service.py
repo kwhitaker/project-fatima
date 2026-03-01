@@ -135,7 +135,12 @@ def leave_game(
 
     if state.status == GameStatus.ACTIVE:
         other_index = 1 - player_index
-        new_result = GameResult(winner=other_index, is_draw=False)
+        new_result = GameResult(
+            winner=other_index,
+            is_draw=False,
+            completion_reason="forfeit",
+            forfeit_by_index=player_index,
+        )
         new_state = state.model_copy(
             update={
                 "status": GameStatus.COMPLETE,

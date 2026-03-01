@@ -80,6 +80,7 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   // Animation tracking: diff prev board vs new board on each game update
   const prevBoardRef = useRef<(BoardCell | null)[] | null>(null);
@@ -516,10 +517,47 @@ export default function GameRoom() {
             </div>
           </div>
 
-          {/* Leave */}
-          <Button variant="outline" onClick={() => void handleLeave()} disabled={leaving}>
-            {leaving ? "Leaving…" : "Leave Game"}
+          {/* Leave — opens forfeit confirmation dialog */}
+          <Button variant="outline" onClick={() => setShowLeaveConfirm(true)} disabled={leaving}>
+            Leave Game
           </Button>
+
+          {/* Forfeit confirmation dialog */}
+          {showLeaveConfirm && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="forfeit-dialog-title"
+              data-testid="forfeit-dialog"
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+              onKeyDown={(e) => { if (e.key === "Escape") setShowLeaveConfirm(false); }}
+            >
+              <div className="bg-background border rounded-lg p-6 w-full max-w-sm shadow-xl">
+                <h2 id="forfeit-dialog-title" className="text-lg font-bold mb-1">
+                  Forfeit Game?
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Leaving now will count as a forfeit. Your opponent will be awarded the win.
+                </p>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowLeaveConfirm(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    data-confirm
+                    onClick={() => { setShowLeaveConfirm(false); void handleLeave(); }}
+                    disabled={leaving}
+                  >
+                    {leaving ? "Leaving…" : "Forfeit & Leave"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

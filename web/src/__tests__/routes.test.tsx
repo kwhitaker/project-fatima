@@ -725,9 +725,15 @@ describe("game room active state", () => {
     const user = userEvent.setup();
     renderAt("/g/game-active");
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /leave/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /leave game/i })).toBeInTheDocument();
     });
-    await user.click(screen.getByRole("button", { name: /leave/i }));
+    // Click Leave — this now opens a forfeit confirmation dialog
+    await user.click(screen.getByRole("button", { name: /leave game/i }));
+    // Confirm the forfeit in the dialog
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /forfeit.*leave/i })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole("button", { name: /forfeit.*leave/i }));
     await waitFor(() => {
       expect(mockLeaveGame).toHaveBeenCalledWith("game-active", 5);
       expect(screen.getByRole("heading", { name: /my games/i })).toBeInTheDocument();

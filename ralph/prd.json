@@ -1,190 +1,218 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/ui-mvp",
-  "description": "UI MVP: React/Vite web app in web/ with Supabase auth, backend-backed game list, join-by-link flow, realtime snapshot refetch, and lightweight animations for mists/captures/combos/wins. Includes required API adjustments (JWT-derived player identity, create auto-join, list games, mists feedback fields).",
+  "branchName": "ralph/ui-ux-polish",
+  "description": "Gameplay UX polish: dark-mode-first, mobile-first UI, clearer lobby/game list rows, stronger in-game card rendering (names + side values), unskippable archetype selection, leave/forfeit confirmation, and better capture feedback. Includes small API extensions (player email, completion reason, cards endpoint) to keep the UI snapshot-first.",
   "userStories": [
     {
-      "id": "US-UI-001",
-      "title": "Scaffold web frontend (React/Vite/TS + Tailwind + shadcn/ui)",
-      "description": "As a developer, I want a working frontend scaffold in web/ so we can iterate on UI quickly.",
+      "id": "US-UX-001",
+      "title": "Dark mode default + mobile-first layout baseline",
+      "description": "As a player, I want the UI to feel good on mobile and in dark mode so the game is comfortable to play.",
       "acceptanceCriteria": [
-        "Create a Vite React + TypeScript app under web/",
-        "Install and configure Tailwind CSS",
-        "Install shadcn/ui and render at least one shadcn component on a route",
-        "Add React Router with routes: /login, /games, /g/:gameId",
-        "Configure Vite dev proxy so requests to /api/* reach FastAPI at http://localhost:8000/*",
-        "Document canonical commands for web dev/build/test in a short web/README.md"
+        "App renders in dark mode by default (no manual toggle required)",
+        "Update /games and /g/:gameId layouts to be mobile-first (spacing, stacking, widths)",
+        "Clickable elements (buttons, cards, board cells) show correct hover/disabled states and cursors",
+        "Existing unit/e2e tests still pass (update expectations only when required)"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Keep styling plain shadcn/ui; we will add effects later in a dedicated story."
+      "notes": "Keep it incremental: adjust tokens + layout primitives first, then refine per-screen."
     },
     {
-      "id": "US-UI-002",
-      "title": "Supabase auth UI (magic link) + session restore",
-      "description": "As a player, I want to log in via Supabase magic link so my games can be tied to my account.",
+      "id": "US-UX-002",
+      "title": "API: expose participant emails in GameState",
+      "description": "As a UI client, I want player display identities (email) so the lobby and game room can say who I'm playing.",
       "acceptanceCriteria": [
-        "Add Supabase JS client configuration via web env vars (no secrets committed)",
-        "Implement /login screen with magic link sign-in",
-        "Persist and restore session on refresh",
-        "Add logout",
-        "Unauthenticated users are redirected to /login when visiting /games or /g/:gameId"
+        "JWT validation exposes caller email in addition to user_id (sub)",
+        "GameState includes optional player email fields for participants",
+        "POST /games and POST /games/:gameId/join record the caller email into the snapshot",
+        "GET /games and GET /games/:gameId return these email fields",
+        "Do not weaken spectator blocking: non-participants still cannot read ACTIVE/COMPLETE snapshots"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "MVP: email magic link only; no usernames/profile editing yet."
+      "passes": false,
+      "notes": "Prefer storing email in snapshot so listGames can render without extra DB joins."
     },
     {
-      "id": "US-UI-003",
-      "title": "API adjustments for UI MVP (JWT identity, create auto-join, list games, mists feedback)",
-      "description": "As a UI client, I want the API to be auth-scoped and UI-friendly so game list, spectator blocking, and realtime updates work end-to-end.",
+      "id": "US-UX-003",
+      "title": "API: record completion reason (normal vs forfeit) for result labels",
+      "description": "As a player, I want completed games to show Win/Loss/Forfeit accurately.",
       "acceptanceCriteria": [
-        "FastAPI validates Supabase JWT and derives caller user_id for game actions",
-        "Remove player_id from request bodies for join/archetype/moves/leave; server uses caller identity",
-        "POST /games auto-joins the caller as player1 and returns the GameState",
-        "Add GET /games endpoint returning games where caller is a participant",
-        "Enforce spectator blocking: non-participants cannot read game snapshots (403)",
-        "Pick starting player when game becomes ACTIVE using a deterministic RNG seeded from GameState.seed",
-        "Sudden Death alternates starting player each round",
-        "Expose per-move Mists outcome in the snapshot (e.g., last_move includes mists_roll and derived effect)",
-        "Fix Supabase schema mismatch by adding game_events.idempotency_key column (store already uses it)",
-        "Add/adjust tests covering the new auth-scoped behavior and list endpoint"
+        "GameState exposes enough result metadata to distinguish normal wins from forfeits",
+        "Leaving an ACTIVE game sets completion metadata (who forfeited) in the snapshot",
+        "Normal (non-forfeit) completions keep existing win/lose/draw behavior",
+        "Add/adjust tests to cover the new result metadata"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "This story intentionally spans backend + schema to unblock the UI. Keep snapshot-first; do not add client-side rules."
+      "passes": false,
+      "notes": "Keep backwards-compatible JSON fields where possible; the web UI will use the new metadata."
     },
     {
-      "id": "US-UI-004",
-      "title": "Games list screen (/games) backed by GET /games",
-      "description": "As a player, I want to see my games so I can resume or start matches.",
+      "id": "US-UX-004",
+      "title": "Archetype selection is an unskippable modal (and moves are blocked until chosen)",
+      "description": "As a player, I must choose an archetype when the match starts so the game loop is consistent.",
       "acceptanceCriteria": [
-        "Implement /games screen that fetches and renders the caller's games",
-        "Show status (waiting/active/complete) and updated_at/created_at if available",
-        "Add Create Game button that calls POST /games and navigates to /g/:gameId",
-        "Clicking a game navigates to /g/:gameId"
+        "When the game is ACTIVE and the caller has no archetype, show a blocking modal dialog to choose one",
+        "Disable move interactions (hand selection and board placement) until archetype is selected",
+        "Backend rejects move submission for a player with no archetype (422 with actionable detail)",
+        "Add/adjust tests covering the blocking behavior (API + UI)"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "MVP: basic list; filtering/search can come later."
+      "passes": false,
+      "notes": "Do not rely on UI-only gating; enforce on the backend too."
     },
     {
-      "id": "US-UI-005",
-      "title": "Join-by-link lobby flow (waiting state)",
-      "description": "As a player, I want to join a game from a shared link and see a lobby until the match starts.",
+      "id": "US-UX-005",
+      "title": "Game room header UX: opponent title + back link; remove Leave after completion",
+      "description": "As a player, I want clear navigation and context while playing.",
       "acceptanceCriteria": [
-        "Implement /g/:gameId route that loads GET /games/:gameId and renders WAITING vs ACTIVE vs COMPLETE",
-        "When WAITING and the caller is not yet a participant, show a Join button",
-        "Join button calls POST /games/:gameId/join (no player_id in body) and transitions the UI",
-        "Display a copyable invite link for the current game",
-        "If the game has 2 players and the caller is not a participant, show a blocked state"
+        "Game title reads: Playing against <opponent email> (or Waiting for opponent)",
+        "Add a non-forfeit navigation link back to /games from /g/:gameId",
+        "After game completion, remove the Leave Game button (keep navigation back to /games)",
+        "Buttons show proper hover/disabled states and cursors"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "No spectators for MVP."
+      "passes": false,
+      "notes": "Leaving a completed game should just be navigation; no extra API call needed."
     },
     {
-      "id": "US-UI-006",
-      "title": "Game room core rendering (snapshot-first)",
-      "description": "As a player, I want to see the board, hands, and turn state so I can play the game.",
+      "id": "US-UX-006",
+      "title": "Leaving ACTIVE games requires confirmation (forfeit warning dialog)",
+      "description": "As a player, I want a clear warning before forfeiting so I don't misclick.",
       "acceptanceCriteria": [
-        "Render 3x3 board with ownership styling per cell",
-        "Render the caller's hand as selectable cards (no move submission yet)",
-        "Render opponent hand as face-down count (or list if MVP prefers), plus both archetype states",
-        "Show turn indicator based on current_player_index",
-        "Show current score (controlled card count) and game result when complete",
-        "Add Leave button calling POST /games/:gameId/leave (no player_id in body)"
+        "In ACTIVE games, clicking Leave shows a confirmation dialog explaining it will forfeit",
+        "Cancel keeps the player in the game",
+        "Confirm triggers the leave/forfeit call and returns to /games",
+        "WAITING lobby leave remains fast (no forfeit language)"
       ],
       "priority": 6,
-      "passes": true,
-      "notes": "Keep UI read-only for moves in this story; move interaction comes next."
+      "passes": false,
+      "notes": "Prefer a shadcn/ui Dialog so keyboard focus and escape behavior are correct by default."
     },
     {
-      "id": "US-UI-007",
-      "title": "Place a card (no archetype power UX yet)",
-      "description": "As a player, I want to place a card on my turn and see the updated snapshot.",
+      "id": "US-UX-007",
+      "title": "Games list UX: opponent + truncated id + Win/Loss/Forfeit labels",
+      "description": "As a player, I want the games list to be scannable so I can quickly resume matches.",
       "acceptanceCriteria": [
-        "Allow selecting a card from hand and an empty cell",
-        "Submit POST /games/:gameId/moves with card_key, cell_index, state_version, idempotency_key",
-        "Disable interactions when it is not the caller's turn or the game is complete",
-        "Handle 409/422 responses by showing an error and refetching GET /games/:gameId",
-        "After a successful move, update UI from the returned snapshot"
+        "Each row shows opponent email (or Waiting...) plus a truncated game id",
+        "Rows show status and, when COMPLETE, a result label for the current viewer: Win/Loss/Forfeit/Draw",
+        "Avoid showing the full UUID by default (still accessible via copy or secondary text if desired)",
+        "Row and button interactions have clear hover/disabled feedback and correct cursors"
       ],
       "priority": 7,
-      "passes": true,
-      "notes": "Keep power inputs out of scope here; focus on the base move loop."
+      "passes": false,
+      "notes": "Truncation target: 8 chars is fine (GitHub-ish), but keep full id available somewhere for debugging."
     },
     {
-      "id": "US-UI-008",
-      "title": "Archetype selection UX",
-      "description": "As a player, I want to select my archetype once so my power is available.",
+      "id": "US-UX-008",
+      "title": "API: add GET /cards for UI card rendering",
+      "description": "As a UI client, I want card definitions (name + side values) so gameplay is readable.",
       "acceptanceCriteria": [
-        "If the caller has no archetype, prompt for selection",
-        "Submit POST /games/:gameId/archetype with archetype (no player_id in body)",
-        "Display selected archetypes for both players",
-        "Display whether the caller's archetype power is available or already used"
+        "Add GET /cards endpoint returning card_key, name/version (display), and sides n/e/s/w",
+        "Frontend adds a small card-definition fetch/cache layer",
+        "Hand and board rendering can resolve card_key -> display fields",
+        "Add/adjust tests for the new endpoint"
       ],
       "priority": 8,
-      "passes": true,
-      "notes": "MVP: simple selector UI; no lore text required."
+      "passes": false,
+      "notes": "Use the server's CardStore as the source so UI stays snapshot-first and deterministic."
     },
     {
-      "id": "US-UI-009",
-      "title": "Use archetype power on a move (power-specific params)",
-      "description": "As a player, I want to activate my once-per-game archetype power when placing a card.",
+      "id": "US-UX-009",
+      "title": "Card visuals: render name + side values on board and in hand (with hover enlargement)",
+      "description": "As a player, I need to see card stats clearly so I can make decisions.",
       "acceptanceCriteria": [
-        "Add a Use Power toggle that is enabled only when archetype_used is false",
-        "Martial/Caster/Devout require no extra inputs",
-        "Skulker prompts for a side (n/e/s/w) and passes skulker_boost_side",
-        "Presence prompts for a direction (n/e/s/w) and passes presence_boost_direction",
-        "Submit moves with use_archetype=true and the correct params",
-        "On 422, show an actionable error message and refetch snapshot"
+        "Cards render display name (not card_key) plus numeric side values (N/E/S/W) in both hand and board",
+        "Hovering a hand card improves readability (background change + slight scale/enlarge)",
+        "Selection state remains clear (selected vs unselected, disabled vs enabled)",
+        "Mobile-first sizing keeps cards legible without horizontal scrolling"
       ],
       "priority": 9,
-      "passes": true,
-      "notes": "Do not attempt client-side prediction; server decides outcomes."
+      "passes": false,
+      "notes": "Keep implementation lightweight (Tailwind + existing shadcn primitives)."
     },
     {
-      "id": "US-UI-010",
-      "title": "Realtime subscription: refetch snapshot on game_events insert",
-      "description": "As a player, I want to see opponent moves without polling so the game feels alive.",
+      "id": "US-UX-010",
+      "title": "Capture feedback: clear indication of flips/combos after a move",
+      "description": "As a player, I want immediate feedback when captures occur so I understand what happened.",
       "acceptanceCriteria": [
-        "Subscribe to Supabase Realtime inserts on game_events filtered by game_id",
-        "On INSERT, refetch GET /games/:gameId and replace local snapshot state",
-        "Unsubscribe on unmount / route change",
-        "Implement a simple fallback refetch interval when realtime disconnects"
+        "When captures occur, show a clear per-move indicator (count and/or which cards flipped)",
+        "Combos feel distinct from single flips (reuse capturedCells diff, no client-side rules)",
+        "Effects work in dark mode and remain readable on mobile",
+        "Buttons and interactive elements have consistent hover/disabled/cursor feedback"
       ],
       "priority": 10,
-      "passes": true,
-      "notes": "Follow docs/realtime.md contract; MVP-simple refetch strategy only."
+      "passes": false,
+      "notes": "Prefer using the existing board diff logic; only add new snapshot fields if truly needed."
     },
     {
-      "id": "US-UI-011",
-      "title": "Make captures/combos/wins + Mists feel good (lightweight effects)",
-      "description": "As a player, I want satisfying feedback for captures, combos, and Mists so the MVP is fun.",
+      "id": "US-UX-011",
+      "title": "API: enrich last_move snapshot details (who/what/where)",
+      "description": "As a UI client, I want authoritative last-move details so I can highlight and describe the last action without guessing.",
       "acceptanceCriteria": [
-        "Animate card placement into a cell",
-        "Animate ownership flips when captures occur (including multi-flip combos)",
-        "Show a simple combo indicator when multiple flips occur from a single move",
-        "Show Mists feedback using last-move snapshot data (Fog/Omen visuals + roll) without guessing",
-        "Show an end-of-game banner when the game completes (win/lose/draw/forfeit)"
+        "GameState.last_move includes: player_index (0/1), card_key, and cell_index (0-8) in addition to mists_roll and mists_effect",
+        "Move submission updates these fields for every successful placement",
+        "Sudden Death and archetype usage do not break last_move population",
+        "Add/adjust tests to assert the new last_move fields are present and correct"
       ],
       "priority": 11,
-      "passes": true,
-      "notes": "Keep implementation low-effort and replaceable; prefer CSS/Framer Motion-level work over heavy canvas/3D."
+      "passes": false,
+      "notes": "Keep this snapshot-first; do not add client-side rules."
     },
     {
-      "id": "US-UI-012",
-      "title": "UI MVP tests: component sanity + Playwright smoke",
-      "description": "As a developer, I want a minimal test suite so we can refactor UI safely.",
+      "id": "US-UX-012",
+      "title": "Last move highlight + text callout in game room",
+      "description": "As a player, I want to quickly understand what just happened.",
       "acceptanceCriteria": [
-        "Add Vitest + Testing Library tests for at least: blocked spectator view, disabled move when not your turn",
-        "Add a Playwright smoke test that exercises create -> share link -> join -> play one move",
-        "Document canonical commands to run unit + smoke tests"
+        "Game room highlights the last placed cell for a short period after updates",
+        "Show a short callout line using snapshot data (e.g., 'Opponent played <Name>')",
+        "Works on mobile and in dark mode",
+        "No client-side inference: all details come from snapshot/definitions"
       ],
       "priority": 12,
-      "passes": true,
-      "notes": "Auth in tests may require a test-only strategy (e.g., seeded test users or a stubbed auth mode)."
+      "passes": false,
+      "notes": "Requires US-UX-011 and US-UX-008/US-UX-009 for names."
+    },
+    {
+      "id": "US-UX-013",
+      "title": "Realtime status indicator + manual refresh/resync",
+      "description": "As a player, I want to know if live updates are working and be able to resync when they aren't.",
+      "acceptanceCriteria": [
+        "Show a small connection state indicator (Live / Reconnecting) in the game room",
+        "Provide a manual Refresh action that refetches GET /games/:gameId",
+        "When realtime disconnects, keep the existing interval refetch fallback and surface the state",
+        "Update/extend tests where practical (at least unit-level state rendering)"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Keep it minimal; no complicated reconnection logic beyond what exists."
+    },
+    {
+      "id": "US-UX-014",
+      "title": "Mobile card inspect: tap-to-preview for hand and board",
+      "description": "As a mobile player, I need a way to inspect cards since hover effects don't exist on touch.",
+      "acceptanceCriteria": [
+        "Tapping a card (hand or board) opens a readable preview (dialog/sheet) with name + N/E/S/W",
+        "Preview is accessible (focus trap, close button, escape key)",
+        "Does not interfere with move placement UX (placing still requires explicit selection + cell tap)",
+        "Works well in dark mode"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Use shadcn Dialog/Sheet; keep the component reusable."
+    },
+    {
+      "id": "US-UX-015",
+      "title": "Accessibility and interaction polish pass",
+      "description": "As a player, I want the UI to be usable with keyboard and readable with good contrast.",
+      "acceptanceCriteria": [
+        "Interactive elements have visible focus styles (keyboard navigation works across key screens)",
+        "Color/contrast remains readable in dark mode (text and status indicators)",
+        "Hand/board interactions are operable without a mouse where feasible",
+        "Update/add a small unit test to prevent regression (e.g., presence of focusable controls)"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Keep this as a bounded pass; avoid redesigning everything."
     }
   ]
 }

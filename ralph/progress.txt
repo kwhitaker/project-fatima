@@ -7,6 +7,16 @@
 Started: 2026-03-01
 ---
 
+## 2026-03-01 14:10 - US-UX-002
+- Added `email: str | None = None` to `PlayerState` model
+- Added `get_caller_email` dependency to `app/auth.py` (returns email from JWT, never raises)
+- Updated `game_service.create_game` and `join_game` to accept and store `email` param
+- Updated `routers/games.py` create_game and join_game to inject `CallerEmailDep` and forward email
+- Tests: `test_ux002.py` (7 tests: email stored on create/join, preserved through deck-deal, GET/list return emails, spectator blocking unchanged); 444 total tests pass
+- Files: `app/auth.py`, `app/models/game.py`, `app/routers/games.py`, `app/services/game_service.py`, `tests/test_ux002.py`, `ralph/prd.json`, `ralph/progress.txt`
+- Pattern: `get_caller_email` is separate from `get_caller_id` and returns `None` (not 401) when header is absent — safe to add to existing endpoints without breaking legacy test fixtures that only override `get_caller_id`
+---
+
 ## 2026-03-01 13:46 - US-UX-001
 - Added `class="dark"` to `<html>` in `index.html` for dark mode default
 - Updated `Games.tsx` header to `flex-col sm:flex-row` for mobile-first stacking; added `cursor-pointer` to game list row buttons

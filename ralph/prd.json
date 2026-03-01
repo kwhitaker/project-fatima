@@ -29,7 +29,7 @@
         "Do not weaken spectator blocking: non-participants still cannot read ACTIVE/COMPLETE snapshots"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer storing email in snapshot so listGames can render without extra DB joins."
     },
     {

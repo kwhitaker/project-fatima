@@ -44,6 +44,14 @@ Started: 2026-03-01
 - Learnings: `element` as a required Pydantic `Literal` field is the cleanest validation approach — the model itself rejects bad values, no loader-level check needed beyond what Pydantic provides. All module-level CardDefinition constructions in tests will fail collection if element is missing — easier to catch than runtime-only failures.
 ---
 
+## 2026-03-02 - US-GM-006
+- Added `board_elements: list[str] | None = None` to `GameState`; added `elemental_triggered: bool = False` to `LastMoveInfo`
+- Generated `board_elements` (9 cells) deterministically in `join_game` via `Random(seed).choices([...], k=9)` when second player joins; computed `elemental_bonus = 1` in reducer when cell element matches placed card element, stacked onto `mists_modifier` before `resolve_captures`; set `elemental_triggered` in `LastMoveInfo`
+- 13 new tests in `tests/test_gm006_elemental.py`; 534 total passing
+- Files changed: `app/models/game.py`, `app/services/game_service.py`, `app/rules/reducer.py`, `tests/test_gm006_elemental.py`
+- Learnings: Elemental bonus stacks naturally into the existing `mists_modifier` parameter — no new param needed. Both `plus_triggered` and `elemental_triggered` follow the same optional-bool-with-default pattern in `LastMoveInfo` for backward compat. `Random(seed).choices(...)` and `Random(seed).randint(...)` in `join_game` are independent instances so no state sharing issues.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

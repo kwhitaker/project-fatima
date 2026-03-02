@@ -106,7 +106,7 @@
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-GM-005 for element field on CardDefinition. board_elements is stored in the JSONB snapshot — no DB schema migration needed. Generation happens once at game creation and is deterministic. The modifier stacking (mists + elemental) uses the existing single modifier parameter already passed to resolve_captures. elemental_triggered in last_move follows the same additive pattern as plus_triggered."
     },
     {

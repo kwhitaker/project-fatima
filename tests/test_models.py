@@ -37,6 +37,7 @@ def _valid_card_kwargs(**overrides: object) -> dict:
         "is_named": True,
         "sides": {"n": 10, "e": 9, "s": 7, "w": 6},
         "set": "barovia_200y_v1",
+        "element": "shadow",
     }
     defaults.update(overrides)
     return defaults

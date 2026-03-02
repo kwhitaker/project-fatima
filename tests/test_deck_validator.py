@@ -32,6 +32,7 @@ def _card(
         is_named=is_named,
         sides=sides,
         set="test",
+        element="shadow",
     )
 
 

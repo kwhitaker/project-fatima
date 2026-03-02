@@ -1,8 +1,11 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
 
 SideValue = Annotated[int, Field(ge=1, le=10)]
+
+VALID_ELEMENTS = ("blood", "holy", "arcane", "shadow", "nature")
+ElementType = Literal["blood", "holy", "arcane", "shadow", "nature"]
 
 
 class CardSides(BaseModel):
@@ -23,3 +26,4 @@ class CardDefinition(BaseModel):
     sides: CardSides
     set: str
     tags: list[str] = []
+    element: ElementType

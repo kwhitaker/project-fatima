@@ -39,6 +39,7 @@ def make_card(
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="test",
+        element="shadow",
     )
 
 

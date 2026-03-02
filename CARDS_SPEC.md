@@ -43,6 +43,12 @@ Required fields (MVP):
 - `set` (string)
   - Card set identifier (used for grouping).
 
+- `element` (string)
+  - The card's elemental affiliation. Required.
+  - Valid values: `"blood"`, `"holy"`, `"arcane"`, `"shadow"`, `"nature"`.
+  - Thematic assignments: undead → blood; beasts/nature-aligned → nature; clerics/radiant → holy; constructs/spellcasters → arcane; shadow creatures/criminals/assassins → shadow.
+  - Authoritative assignments are in `ralph/card_elements.json`.
+
 Optional fields:
 
 - `tags` (array of strings)
@@ -143,9 +149,10 @@ Also driven by rarity bucket:
   - `tier` in `{1,2,3}`.
   - side values in `1..10`.
   - sum budget and cap compliance.
+  - `element` is one of `blood`, `holy`, `arcane`, `shadow`, `nature`.
 
 ## Example Entry
 
 ```json
-{"card_key":"strahd_iii","character_key":"strahd_von_zarovich","name":"Strahd von Zarovich","version":"Strahd III","tier":3,"rarity":100,"is_named":true,"sides":{"n":10,"e":9,"s":7,"w":6},"set":"barovia_200y_v1","tags":["boss","ravenloft"]}
+{"card_key":"strahd_iii","character_key":"strahd_von_zarovich","name":"Strahd von Zarovich","version":"Strahd III","tier":3,"rarity":100,"is_named":true,"sides":{"n":10,"e":10,"s":9,"w":3},"set":"barovia_200y_v1","tags":["boss","ravenloft"],"element":"blood"}
 ```

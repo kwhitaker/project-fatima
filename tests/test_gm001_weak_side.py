@@ -28,6 +28,7 @@ def _make_card(tier: int, rarity: int, n: int, e: int, s: int, w: int) -> CardDe
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="s",
+        element="shadow",
     )
 
 
@@ -43,6 +44,7 @@ def _card_line(tier: int, rarity: int, n: int, e: int, s: int, w: int, key: str 
             "is_named": False,
             "sides": {"n": n, "e": e, "s": s, "w": w},
             "set": "s",
+            "element": "shadow",
         }
     )
 

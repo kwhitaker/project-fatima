@@ -35,6 +35,7 @@ def card_to_row(card: CardDefinition) -> dict[str, Any]:
         "w": card.sides.w,
         "set": card.set,
         "tags": card.tags,
+        "element": card.element,
         "definition": card.model_dump(mode="json"),
     }
 

@@ -20,13 +20,13 @@ from scripts.seed_cards import card_to_row, seed_cards
 _VALID_LINE = (
     '{"card_key":"zombie_i","character_key":"zombie","name":"Zombie",'
     '"version":"Shambling Dead","tier":1,"rarity":15,"is_named":false,'
-    '"sides":{"n":6,"e":4,"s":3,"w":3},"set":"barovia_v1","tags":["undead"]}'
+    '"sides":{"n":6,"e":4,"s":3,"w":3},"set":"barovia_v1","tags":["undead"],"element":"blood"}'
 )
 
 _VALID_LINE_2 = (
     '{"card_key":"skeleton_i","character_key":"skeleton","name":"Skeleton",'
     '"version":"Rattling Bones","tier":1,"rarity":18,"is_named":false,'
-    '"sides":{"n":5,"e":5,"s":4,"w":2},"set":"barovia_v1","tags":["undead"]}'
+    '"sides":{"n":5,"e":5,"s":4,"w":2},"set":"barovia_v1","tags":["undead"],"element":"blood"}'
 )
 
 
@@ -42,6 +42,7 @@ def _make_card(**overrides: object) -> CardDefinition:
         "sides": CardSides(n=6, e=4, s=3, w=3),
         "set": "barovia_v1",
         "tags": ["undead"],
+        "element": "blood",
     }
     defaults.update(overrides)
     return CardDefinition(**defaults)  # type: ignore[arg-type]
@@ -84,9 +85,14 @@ class TestCardToRow:
             "w",
             "set",
             "tags",
+            "element",
             "definition",
         }
         assert set(row.keys()) == expected
+
+    def test_element_in_row(self) -> None:
+        row = card_to_row(_make_card(element="blood"))
+        assert row["element"] == "blood"
 
     def test_tags_preserved(self) -> None:
         card = _make_card(tags=["undead", "generic"])

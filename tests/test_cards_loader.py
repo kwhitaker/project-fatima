@@ -19,6 +19,7 @@ VALID_CARD = {
     "sides": {"n": 6, "e": 4, "s": 3, "w": 3},
     "set": "barovia_200y_v1",
     "tags": ["undead"],
+    "element": "shadow",
 }
 
 VALID_CARD_2 = {
@@ -31,6 +32,7 @@ VALID_CARD_2 = {
     "is_named": False,
     "sides": {"n": 5, "e": 5, "s": 4, "w": 2},
     "set": "barovia_200y_v1",
+    "element": "shadow",
 }
 
 

@@ -30,6 +30,7 @@ def make_card(key: str, n: int = 5, e: int = 5, s: int = 5, w: int = 5) -> CardD
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="test",
+        element="shadow",
     )
 
 

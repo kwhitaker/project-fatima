@@ -28,6 +28,7 @@ def _make_card(idx: int) -> CardDefinition:
         is_named=False,
         sides=CardSides(n=4, e=4, s=4, w=4),
         set="test",
+        element="shadow",
     )
 
 

@@ -28,6 +28,7 @@ def _card(tier: int, rarity: int, sides: dict[str, int], **kwargs) -> dict:
         "is_named": False,
         "sides": sides,
         "set": "test_set",
+        "element": "shadow",
     }
 
 
@@ -46,6 +47,7 @@ def _make_card(tier: int, rarity: int, n: int, e: int, s: int, w: int) -> CardDe
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="s",
+        element="shadow",
     )
 
 
@@ -119,6 +121,7 @@ def test_balance_passes_tier3_ultra_example() -> None:
         is_named=True,
         sides=CardSides(n=10, e=10, s=9, w=3),
         set="barovia",
+        element="blood",
     )
     assert validate_card_balance(card) == []
 

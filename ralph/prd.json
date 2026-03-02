@@ -142,7 +142,7 @@
         "This story is primarily docs + UI copy; no backend/gameplay logic changes required"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Do this last so the docs accurately reflect the final implemented behavior. Cross-check the implemented code against what the docs say — fix any discrepancies found."
     },
     {

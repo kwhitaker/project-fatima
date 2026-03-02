@@ -71,6 +71,14 @@ Started: 2026-03-01
 - Learnings: GAME_RULES_OVERVIEW.md had stale ±1 Mists values even after US-GM-002 updated the code — docs lag behind code changes unless explicitly refreshed. A dedicated docs story at sprint end is the right pattern.
 ---
 
+## 2026-03-02 - US-GM-008 (second pass)
+- Added Plus rule and Elemental System sections to `GameRulesDialog.tsx` (previously only docs/GAME_RULES_OVERVIEW.md had been updated; the in-game dialog was missing these two sections)
+- Plus rule section explains sum-matching pre-capture with concrete example; Elemental section covers 5 elements, +1 bonus on cell match, and that Plus/combos use raw values
+- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
+- Files changed: `web/src/routes/game-room/GameRulesDialog.tsx`, `ralph/prd.json`
+- Learnings: When a PRD story is expanded in a later commit (e.g. adding a UI copy requirement to an otherwise-docs story), the passes flag is correctly reset — always re-read the current acceptance criteria rather than relying on progress log entries from a prior pass.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

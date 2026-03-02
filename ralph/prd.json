@@ -157,7 +157,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "This is UI copy-only; gameplay already uses elements. Reuse the existing element symbols mapping used by the board so the UI language is consistent."
     },
     {

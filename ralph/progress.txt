@@ -79,6 +79,15 @@ Started: 2026-03-01
 - Learnings: When a PRD story is expanded in a later commit (e.g. adding a UI copy requirement to an otherwise-docs story), the passes flag is correctly reset — always re-read the current acceptance criteria rather than relying on progress log entries from a prior pass.
 ---
 
+## 2026-03-02 - US-GM-009
+- Exported `ELEMENT_SYMBOLS` from `BoardGrid.tsx`; imported it in `HandDrawer.tsx` and `CardInspectPreview.tsx` to keep element symbol mapping consistent across UI
+- Added element badge (absolute bottom-left, aria-label="element {name}") to each hand card tile in `HandDrawer.tsx`; graceful: badge only renders when `def?.element` is present
+- Added "Element: 🩸 Blood" row (or "Element: —" fallback) to `CardInspectPreview.tsx` between title and sides grid
+- Added 3 new tests to `ux014.test.tsx`: preview shows element for card_001 (blood); preview shows "Element: —" for card without element; hand tile shows element badge aria-label; 172 frontend tests + 534 backend tests all pass
+- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/HandDrawer.tsx`, `web/src/routes/game-room/CardInspectPreview.tsx`, `web/src/__tests__/ux014.test.tsx`, `ralph/prd.json`
+- Learnings: Exporting a `const` mapping from one component file so other components can reuse it avoids symbol drift; `aria-label="element {name}"` on element badges enables direct testing via `getByLabelText`.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

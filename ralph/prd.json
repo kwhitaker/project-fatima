@@ -125,7 +125,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "Depends on US-GM-006. board_elements index maps directly to cell_index (0-8, row-major). BoardGrid already receives board state — add board_elements and selectedCardElement as props. Keep element indicators small so they don't compete with card name/stat display."
     },
     {

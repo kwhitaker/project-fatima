@@ -52,6 +52,15 @@ Started: 2026-03-01
 - Learnings: Elemental bonus stacks naturally into the existing `mists_modifier` parameter — no new param needed. Both `plus_triggered` and `elemental_triggered` follow the same optional-bool-with-default pattern in `LastMoveInfo` for backward compat. `Random(seed).choices(...)` and `Random(seed).randint(...)` in `join_game` are independent instances so no state sharing issues.
 ---
 
+## 2026-03-02 - US-GM-007
+- Added `board_elements: string[] | null` to `GameState` and `elemental_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`; added `element?: string` to `CardDefinition`
+- Updated `BoardGrid.tsx`: element symbol badges (🩸 ✦ ✧ ◆ ✿) on every cell (aria-label="element {name}"); emerald ring highlight on cells matching selected card's element; passes `boardElements` and `selectedCardElement` as optional props
+- Added Elemental! callout in `ActiveGameView.tsx` (gold/yellow, distinct from Plus! cyan and amber capture); shows element name ("Blood Elemental!"); updated `GameRoom.tsx` to compute `selectedCardElement` from selected card's def
+- 12 new tests in `gm007.test.tsx`: direct BoardGrid tests for labels and highlight; GameRoom-level tests for callout; 169 total passing
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm007.test.tsx`
+- Learnings: Direct component tests (rendering `<BoardGrid>` without full router) are cleaner for visual/structural tests; GameRoom-level tests for behavioral callouts. ring-emerald conflicts with ring-yellow are avoided with `!isLastMove` guard. IIFE in JSX works for inline computation but helper vars before return are cleaner.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

@@ -61,6 +61,16 @@ Started: 2026-03-01
 - Learnings: Direct component tests (rendering `<BoardGrid>` without full router) are cleaner for visual/structural tests; GameRoom-level tests for behavioral callouts. ring-emerald conflicts with ring-yellow are avoided with `!isLastMove` guard. IIFE in JSX works for inline computation but helper vars before return are cleaner.
 ---
 
+## 2026-03-02 - US-GM-008
+- Updated `CLAUDE.md` Key Domain Concepts: added weak-side rule description, Plus rule entry, Elemental system entry (5 elements, match=+1, Plus/combo use raw values)
+- Rewrote `GAME_RULES_OVERVIEW.md`: fixed Mists from ±1 to ±2; fixed Devout to say "negate the −2"; added weak-side rule to Components/Cards; added full Plus Rule section with example; added full Elemental System section with thematic mapping; updated MVP Defaults to reflect all implemented systems; removed out-of-scope callouts for now-implemented features
+- `CARDS_SPEC.md`: already up-to-date from US-GM-001 and US-GM-005 (no changes needed)
+- `AGENTS.md`: verified commands unchanged (no changes needed)
+- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
+- Files changed: `CLAUDE.md`, `GAME_RULES_OVERVIEW.md`
+- Learnings: GAME_RULES_OVERVIEW.md had stale ±1 Mists values even after US-GM-002 updated the code — docs lag behind code changes unless explicitly refreshed. A dedicated docs story at sprint end is the right pattern.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

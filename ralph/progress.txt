@@ -26,6 +26,15 @@ Started: 2026-03-01
 - Learnings: Card sides are bounded 1-10 by CardSides validation — test cards exceeding 10 fail Pydantic validation. When adding pre-steps to BFS, watch for unintended Plus triggers in existing tests that use equal card values (sum matches coincidentally).
 ---
 
+## 2026-03-02 - US-GM-004
+- Added `plus_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`
+- Added cyan "Plus!" callout in `ActiveGameView.tsx` rendered when `game.last_move?.plus_triggered === true`; callout is visually distinct from amber/purple capture feedback; has `aria-live="polite"` and dark mode classes
+- Added 6 tests in `tests/gm004.test.tsx`: Plus! shown on true; hidden on false; hidden when absent; coexists with capture feedback; has aria-live; has dark: classes
+- Tests run: `bun run test --run` — 157 passed
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/gm004.test.tsx`
+- Learnings: `plus_triggered` as optional (`?`) in the TS interface handles backward compat naturally; `=== true` check ensures undefined/absent field shows no callout
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

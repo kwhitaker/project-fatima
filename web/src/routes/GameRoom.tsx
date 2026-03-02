@@ -43,6 +43,9 @@ export default function GameRoom() {
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
 
+  const selectedCardElement =
+    (selectedCard && cardDefs.get(selectedCard)?.element) ?? null;
+
   const refetchGame = useCallback(() => {
     if (!gameId) return;
     void getGame(gameId).then(setGame).catch(() => null);
@@ -288,6 +291,8 @@ export default function GameRoom() {
           archetypePending={archetypePending}
           archetypeError={archetypeError}
           onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
+          boardElements={game.board_elements ?? null}
+          selectedCardElement={selectedCardElement}
         />
       ) : game.status === "waiting" ? (
         <WaitingGameView

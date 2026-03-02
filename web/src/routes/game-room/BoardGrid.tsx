@@ -3,6 +3,14 @@ import { cn } from "@/lib/utils";
 import { CardFace } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 
+const ELEMENT_SYMBOLS: Record<string, string> = {
+  blood: "🩸",
+  holy: "✦",
+  arcane: "✧",
+  shadow: "◆",
+  nature: "✿",
+};
+
 export function BoardGrid({
   board,
   myIndex,
@@ -13,6 +21,8 @@ export function BoardGrid({
   capturedCells,
   cardDefs,
   lastMoveCellIndex,
+  boardElements,
+  selectedCardElement,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -23,6 +33,8 @@ export function BoardGrid({
   capturedCells?: Set<number>;
   cardDefs?: Map<string, CardDefinition>;
   lastMoveCellIndex?: number | null;
+  boardElements?: string[] | null;
+  selectedCardElement?: string | null;
 }) {
   return (
     <div className="w-full max-w-[22rem] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] mx-auto">
@@ -31,8 +43,14 @@ export function BoardGrid({
           const isPlaced = placedCells?.has(i) ?? false;
           const isCaptured = capturedCells?.has(i) ?? false;
           const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
+          const elementLabel = boardElements?.[i];
+          const isElementMatch =
+            selectedCardElement != null &&
+            elementLabel != null &&
+            elementLabel === selectedCardElement;
+
           const cellClass = cn(
-            "aspect-square w-full border rounded flex items-center justify-center text-xs text-center",
+            "aspect-square w-full border rounded flex items-center justify-center text-xs text-center relative",
             cell === null
               ? "bg-muted text-muted-foreground"
               : cell.owner === myIndex
@@ -40,8 +58,19 @@ export function BoardGrid({
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
             isPlaced && "animate-card-placed",
             isCaptured && "animate-card-captured",
+            isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
             isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
           );
+
+          const elementBadge = elementLabel ? (
+            <span
+              key="element-badge"
+              className="absolute top-0 left-0 text-[8px] leading-none p-px opacity-70 select-none pointer-events-none"
+              aria-label={`element ${elementLabel}`}
+            >
+              {ELEMENT_SYMBOLS[elementLabel] ?? elementLabel}
+            </span>
+          ) : null;
 
           if (canPlace && cell === null) {
             return (
@@ -54,7 +83,9 @@ export function BoardGrid({
                   "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 )}
                 data-last-move={isLastMove ? "true" : undefined}
-              />
+              >
+                {elementBadge}
+              </button>
             );
           }
 
@@ -73,6 +104,7 @@ export function BoardGrid({
                 aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
                 title={cardTitle(cell.card_key, def)}
               >
+                {elementBadge}
                 <CardFace cardKey={cell.card_key} def={def} />
               </button>
             );
@@ -86,6 +118,7 @@ export function BoardGrid({
               data-last-move={isLastMove ? "true" : undefined}
               title={cell ? cardTitle(cell.card_key, cardDefs?.get(cell.card_key)) : undefined}
             >
+              {elementBadge}
               {cell ? (
                 <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
               ) : (

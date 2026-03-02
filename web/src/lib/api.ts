@@ -13,6 +13,7 @@ export interface CardDefinition {
   version: string;
   tier: number;
   sides: CardSides;
+  element?: string;
 }
 
 export interface PlayerState {
@@ -42,6 +43,7 @@ export interface LastMoveInfo {
   mists_roll: number;   // 1–6 die result
   mists_effect: string; // "fog" | "omen" | "none"
   plus_triggered?: boolean;
+  elemental_triggered?: boolean;
 }
 
 export interface GameState {
@@ -55,6 +57,7 @@ export interface GameState {
   round_number: number;
   result: GameResult | null;
   last_move?: LastMoveInfo | null;
+  board_elements: string[] | null;
 }
 
 async function authHeaders(): Promise<HeadersInit> {

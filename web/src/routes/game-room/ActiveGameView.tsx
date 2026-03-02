@@ -38,6 +38,8 @@ export function ActiveGameView({
   archetypePending,
   archetypeError,
   onSelectArchetype,
+  boardElements,
+  selectedCardElement,
 }: {
   game: GameState;
   myIndex: number;
@@ -70,6 +72,8 @@ export function ActiveGameView({
   archetypePending: boolean;
   archetypeError: string | null;
   onSelectArchetype: (archetype: Archetype) => void | Promise<void>;
+  boardElements?: string[] | null;
+  selectedCardElement?: string | null;
 }) {
   const canPlace =
     !!myPlayer?.archetype &&
@@ -157,6 +161,22 @@ export function ActiveGameView({
             </div>
           )}
 
+          {/* Elemental! callout */}
+          {game.last_move != null && game.last_move.elemental_triggered === true && (
+            <div
+              className="text-sm font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
+              aria-live="polite"
+              aria-label="elemental feedback"
+            >
+              {(() => {
+                const elemKey = boardElements?.[game.last_move!.cell_index];
+                return elemKey
+                  ? elemKey.charAt(0).toUpperCase() + elemKey.slice(1) + " Elemental!"
+                  : "Elemental!";
+              })()}
+            </div>
+          )}
+
           {/* Board */}
           <BoardGrid
             board={game.board}
@@ -168,6 +188,8 @@ export function ActiveGameView({
             capturedCells={capturedCells}
             cardDefs={cardDefs}
             lastMoveCellIndex={game.last_move?.cell_index ?? null}
+            boardElements={boardElements}
+            selectedCardElement={selectedCardElement}
           />
 
           {/* Move error */}

@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { CardFace } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 
-const ELEMENT_SYMBOLS: Record<string, string> = {
+export const ELEMENT_SYMBOLS: Record<string, string> = {
   blood: "🩸",
   holy: "✦",
   arcane: "✧",

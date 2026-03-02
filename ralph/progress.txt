@@ -35,6 +35,15 @@ Started: 2026-03-01
 - Learnings: `plus_triggered` as optional (`?`) in the TS interface handles backward compat naturally; `=== true` check ensures undefined/absent field shows no callout
 ---
 
+## 2026-03-02 - US-GM-005
+- Added `element: ElementType` (Literal["blood","holy","arcane","shadow","nature"]) to `CardDefinition` in `app/models/cards.py`; validation is Pydantic-native (missing/invalid element = load error)
+- Assigned element to all 65 cards in `cards.jsonl` using `ralph/card_elements.json` as sole source; created migration `supabase/migrations/004_add_element_to_cards.sql`; updated `card_to_row` in `scripts/seed_cards.py` and updated CARDS_SPEC.md
+- Updated 36 test fixtures (all `_make_card`/`make_card`/`_card` helpers across existing test files) to include `element="shadow"`; wrote 18 new tests in `tests/test_gm005_elemental_data.py`
+- Tests run: `uv run pytest` — 521 passed
+- Files changed: `app/models/cards.py`, `cards.jsonl`, `scripts/seed_cards.py`, `supabase/migrations/004_add_element_to_cards.sql`, `tests/test_gm005_elemental_data.py`, `tests/test_seed_cards.py`, `CARDS_SPEC.md`, + 34 test fixture files
+- Learnings: `element` as a required Pydantic `Literal` field is the cleanest validation approach — the model itself rejects bad values, no loader-level check needed beyond what Pydantic provides. All module-level CardDefinition constructions in tests will fail collection if element is missing — easier to catch than runtime-only failures.
+---
+
 ## 2026-03-01 - US-GM-002
 - Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
 - Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`

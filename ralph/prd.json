@@ -85,7 +85,7 @@
         "`uv run pytest` passes with no regressions"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "cards.jsonl is JSON Lines — add 'element' key to each object using ralph/card_elements.json exclusively. The DB cards table needs a new migration (004) to add the element column — the seed script upserts element as a flat column AND inside the definition JSONB. test_seed_cards.py fixture strings and column assertion must be updated or tests will fail as soon as CardDefinition requires element."
     },
     {

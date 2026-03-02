@@ -206,6 +206,15 @@ def apply_intent(
             mists_modifier = 0  # Devout treats Fog as no effect
         mists_roll = roll
 
+    # --- Elemental bonus ---
+    # +1 to all initial comparisons when placed card's element matches the cell's element.
+    # Treated as missing (0) if board_elements is absent (old snapshot backward compat).
+    # Does not apply to BFS combo chain or Plus sum calculations.
+    elemental_bonus = 0
+    if state.board_elements is not None:
+        if state.board_elements[intent.cell_index] == placed_card.element:
+            elemental_bonus = 1
+
     # --- Board update ---
     new_board: list[BoardCell | None] = list(state.board)
     new_board[intent.cell_index] = BoardCell(card_key=intent.card_key, owner=placed_owner)
@@ -216,7 +225,7 @@ def apply_intent(
         placed_card,
         placed_owner,
         card_lookup,
-        mists_modifier=mists_modifier,
+        mists_modifier=mists_modifier + elemental_bonus,
         presence_direction=presence_direction_boost,
     )
 
@@ -234,6 +243,7 @@ def apply_intent(
             mists_roll=mists_roll,
             mists_effect=_mists_effect_label(mists_roll, mists_modifier),
             plus_triggered=plus_triggered,
+            elemental_triggered=elemental_bonus > 0,
         )
 
     if state.players:

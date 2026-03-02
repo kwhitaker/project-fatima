@@ -61,6 +61,10 @@ def join_game(
         starting = Random(state.seed).randint(0, 1)
         extra_updates["starting_player_index"] = starting
         extra_updates["current_player_index"] = starting
+        # Generate board elements deterministically from seed (one per cell)
+        extra_updates["board_elements"] = Random(state.seed).choices(
+            ["blood", "holy", "arcane", "shadow", "nature"], k=9
+        )
     else:
         new_status = state.status
 

@@ -130,19 +130,151 @@
     },
     {
       "id": "US-GM-008",
-      "title": "Game rules documentation refresh",
-      "description": "As a developer or player reading the repo, I want all four new mechanics documented accurately so the rules are unambiguous and the codebase is self-explanatory.",
+      "title": "Game rules documentation + Rules dialog refresh",
+      "description": "As a developer or player reading the repo (or the in-game Rules dialog), I want all four new mechanics documented accurately so the rules are unambiguous and the game is self-explanatory.",
       "acceptanceCriteria": [
         "Update `CLAUDE.md` Key Domain Concepts section: Mists now shows Fog (−2) and Omen (+2); add a 'Plus rule' entry with the sum-matching definition; add an 'Elemental' entry with the 5 elements, match=+1 rule, and note that Plus/combo ignore it",
         "Update `CARDS_SPEC.md`: add weak-side rule (min side ≤ 3 required); add element field documentation with valid values and thematic mapping; update any budget/validation table that is now stale",
         "If a standalone `GAME_RULES_OVERVIEW.md` exists, update it; if not, create a concise one in the repo root covering the full rule set (board, capture, Plus, Mists, Elemental, archetypes, Sudden Death) — 1-2 pages maximum",
+        "Update the in-game rules dialog in `web/src/routes/game-room/GameRulesDialog.tsx` to include concise player-facing sections for: Plus rule (sum-matching capture) and Elemental (cell elements + match = +1 to placed card's comparisons; note Plus/combos ignore it)",
         "Update `AGENTS.md` if any commands changed (they likely have not, but verify)",
         "All four mechanics are described with enough precision that a new developer could implement them from the docs alone",
-        "No code changes required for this story; docs only"
+        "This story is primarily docs + UI copy; no backend/gameplay logic changes required"
       ],
       "priority": 8,
-      "passes": true,
+      "passes": false,
       "notes": "Do this last so the docs accurately reflect the final implemented behavior. Cross-check the implemented code against what the docs say — fix any discrepancies found."
+    },
+    {
+      "id": "US-GM-009",
+      "title": "Card elements shown in hand drawer + preview",
+      "description": "As a player, I want to see a card's element in the hand drawer and in the card preview so I can plan Elemental plays without memorizing elements.",
+      "acceptanceCriteria": [
+        "In `web/src/routes/game-room/HandDrawer.tsx`, display the card's element on each card tile (small icon/label consistent with the board's element symbols)",
+        "In `web/src/routes/game-room/CardInspectPreview.tsx`, display the card's element alongside the card name and side values",
+        "Graceful fallback: if a card definition is missing `element`, show 'Element: —' (or omit the element row) without crashing",
+        "Add/update frontend tests (extend `web/src/__tests__/ux014.test.tsx`) to assert the preview dialog shows the element for a card with `element` present",
+        "`bun run test --run` passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": "This is UI copy-only; gameplay already uses elements. Reuse the existing element symbols mapping used by the board so the UI language is consistent."
+    },
+    {
+      "id": "US-GM-010",
+      "title": "Board cell hover tooltip shows cell element",
+      "description": "As a player, I want hovering a board cell to show that cell's element so I can learn the board faster and confirm Elemental opportunities.",
+      "acceptanceCriteria": [
+        "In `web/src/routes/game-room/BoardGrid.tsx`, every board cell includes a hover tooltip/title that indicates the cell's element (e.g. 'Element: Blood')",
+        "Occupied cells must still surface the card info tooltip; include both card info and cell element in the tooltip text",
+        "Empty cells must show the element tooltip even when they are not clickable",
+        "Add/update frontend tests (extend `web/src/__tests__/gm007.test.tsx`) to assert a cell renders with the expected element tooltip/title when `boardElements` is provided",
+        "`bun run test --run` passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": "Prefer a simple `title` attribute for now (no new tooltip dependency)."
+    },
+    {
+      "id": "US-GM-011",
+      "title": "Games list shows open games and sorts newest-first",
+      "description": "As a player, I want the Games list to show open (joinable) games without needing an invite link, and to be sorted from most recent to oldest so it is easy to find the game I just created.",
+      "acceptanceCriteria": [
+        "Backend: update `GET /games` to return both: (a) the caller's games AND (b) open joinable games (WAITING with exactly 1 player) that the caller is not already in",
+        "Backend: order the combined list so open joinable games appear before completed games, and overall sort is most recent -> oldest by creation time",
+        "Backend: do not leak private games; only include joinable WAITING lobbies with one player for the 'open games' portion",
+        "Frontend: update `web/src/routes/Games.tsx` to render the open games in the list (they should appear before completed games), and ensure the list is newest-first",
+        "Frontend: open games show the host email (or 'Waiting...' fallback) and a clear status badge",
+        "Add/update tests: backend tests cover open-games inclusion/exclusion + ordering; frontend tests cover ordering and open-game rendering",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": "We intentionally avoid auto-joining from the list: clicking navigates to the game room; joining still requires an explicit action. If creation timestamps are not currently available in the API, add what is needed to sort deterministically by creation time."
+    },
+    {
+      "id": "US-GM-012",
+      "title": "Use anchors for route navigation",
+      "description": "As a user (and for accessibility), I want navigation-only UI controls to be anchors/links so they behave like standard navigation (open in new tab, copy link, etc.).",
+      "acceptanceCriteria": [
+        "In `web/src/routes/Games.tsx`, the game list rows use a routable link (`<a>`/`<Link>`) instead of a `<button>` calling `navigate()`",
+        "In `web/src/routes/GameRoom.tsx`, 'Back to Games' uses a link instead of a `<button>` calling `navigate()`",
+        "Styling and focus-visible rings are preserved (use `Button` `asChild` if needed)",
+        "Update frontend tests that currently expect `role=button` for those navigation rows/controls",
+        "`bun run test --run` passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": "Only convert elements whose sole purpose is route navigation; keep real actions as `<button>`."
+    },
+    {
+      "id": "US-GM-013",
+      "title": "Limit users to one non-complete game at a time",
+      "description": "As a player, I want the app to prevent me from having multiple in-progress games at once so I don't accidentally start many lobbies or juggle concurrent matches.",
+      "acceptanceCriteria": [
+        "Backend: block creating a new game if the caller already has any non-complete game (status=WAITING or ACTIVE); return 409 with a clear message",
+        "Backend: block joining an open game if the caller already has any non-complete game; return 409 with a clear message",
+        "Backend: error message includes the existing game id when available so the UI can guide the user back",
+        "Frontend: surface the error when creating from `web/src/routes/Games.tsx` and when joining from the waiting screen; copy should explain they must finish/forfeit the existing game",
+        "Add/update backend tests covering create/join blocking behavior",
+        "Add/update frontend tests covering the error display",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": "Definition of 'active' for this constraint is 'non-complete': both WAITING and ACTIVE count; COMPLETE does not."
+    },
+    {
+      "id": "US-GM-014",
+      "title": "Game room layout redesign (board + hand always visible)",
+      "description": "As a player, I want the board and my hand visible at the same time so I can play without the UI covering the play area or forcing extra open/close steps.",
+      "acceptanceCriteria": [
+        "In the active game UI, the board and the player's hand are both visible simultaneously (no fixed overlay hand drawer blocking the board)",
+        "Replace the fixed-bottom `HandDrawer` pattern with an in-flow hand panel (e.g. `HandPanel`) rendered alongside the board in `web/src/routes/game-room/ActiveGameView.tsx`",
+        "Implement a desktop/tablet layout that provides a secondary sidebar region for non-critical info/actions (e.g. rules/leave/archetype details/last-move feed)",
+        "Mobile layout remains playable: board stays visible; hand remains accessible (horizontal hand strip or compact panel); secondary sidebar content becomes a bottom drawer or collapsible panel",
+        "Remove `drawerOpen` + `useMeasuredHeight` padding workaround from `web/src/routes/GameRoom.tsx` as part of the new layout",
+        "Update/add frontend tests asserting the board and hand render at the same time in active games and the old drawer toggle affordance is removed",
+        "`bun run test --run` passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Primary goal is interaction flow and visibility. Keep the redesign scoped to the game room views; avoid broad design-system changes."
+    },
+    {
+      "id": "US-GM-015",
+      "title": "Guided action flow (select card -> optional power -> place)",
+      "description": "As a player, I want a clear, guided flow during my turn so I never have to guess what to do next or close UI panels just to complete a move.",
+      "acceptanceCriteria": [
+        "Add a compact, always-visible 'action panel' near the hand (or integrated into the hand panel) that shows the current step (e.g. 'Select a card', 'Choose a cell')",
+        "When a card is selected, show a selected-card summary with a clear 'Cancel' control that deselects the card",
+        "Move the archetype power controls into the action panel so the player can toggle power and (if required) choose the direction without switching contexts",
+        "If an archetype power requires a direction (skulker/presence), the UI clearly indicates direction selection is required and disables placement affordances until selected",
+        "When it is not the player's turn, the action panel indicates 'Opponent's turn' and hand interactions are disabled",
+        "Add/update frontend tests to cover the step text and required-direction gating behavior",
+        "`bun run test --run` passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "Keep the reducer/gameplay unchanged; this is a UX/clarity pass that reuses existing state (`selectedCard`, `usePower`, `powerSide`, `movePending`, `current_player_index`)."
+    },
+    {
+      "id": "US-GM-016",
+      "title": "Secondary sidebar (desktop) + bottom drawer (mobile)",
+      "description": "As a player, I want secondary info/actions (rules, leave/forfeit, archetypes, last move) visible but clearly secondary so they don't compete with the board and hand.",
+      "acceptanceCriteria": [
+        "In active games, render a visible secondary region that contains: Rules entrypoint, Leave/forfeit entrypoint, archetype info (both players), and a small recent-events area (last move + special callouts)",
+        "Desktop/tablet: secondary region is a right sidebar that stays visible and scrolls independently from the board/hand region",
+        "Mobile: secondary region collapses into a bottom drawer with a visible 'peek' handle/tab; expanding it is explicit and does not change gameplay state",
+        "The primary play region (board + hand/action panel) remains visible and usable without opening the secondary drawer",
+        "Add/update frontend tests covering the presence of the sidebar content and mobile drawer open/close",
+        "`bun run test --run` passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "This is about hierarchy and layout. Keep the copy tight; avoid adding new routes. Prefer using existing components (`ForfeitDialog`, `GameRulesDialog`, `ArchetypePowerAside`) within the new sidebar/drawer."
     }
   ]
 }

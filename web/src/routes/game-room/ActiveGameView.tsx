@@ -146,6 +146,17 @@ export function ActiveGameView({
             </div>
           )}
 
+          {/* Plus! callout */}
+          {game.last_move?.plus_triggered === true && (
+            <div
+              className="text-sm font-semibold p-2 rounded border bg-cyan-50 border-cyan-200 text-cyan-800 dark:bg-cyan-950/50 dark:border-cyan-800 dark:text-cyan-300"
+              aria-live="polite"
+              aria-label="plus feedback"
+            >
+              Plus!
+            </div>
+          )}
+
           {/* Board */}
           <BoardGrid
             board={game.board}

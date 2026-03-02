@@ -41,6 +41,7 @@ export interface LastMoveInfo {
   cell_index: number;   // 0-8
   mists_roll: number;   // 1–6 die result
   mists_effect: string; // "fog" | "omen" | "none"
+  plus_triggered?: boolean;
 }
 
 export interface GameState {

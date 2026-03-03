@@ -326,7 +326,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 19,
-      "passes": false,
+      "passes": true,
       "notes": "Show in CompleteGameView.tsx when the current player won. The bat swarm can be a set of motion.divs with randomized flight paths (translateX/Y keyframes). Use stepped timing functions for the pixel aesthetic. The card glow sequence should happen before or alongside the overlay. Keep it fun but not so long that it delays starting a new game."
     },
     {

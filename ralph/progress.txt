@@ -205,3 +205,15 @@ Started: 2026-03-03
 - Files changed: BoardGrid.tsx, uxp020.test.tsx (new)
 - Learnings: Template literal in Motion animate prop works for dynamic brightness values. useRef tracks emitted event keys to avoid re-dispatching on re-renders. setTimeout aligns custom events with animation delays.
 ---
+
+## 2026-03-03 15:35 - US-UXP-021
+- Created VictoryOverlay component: fixed full-screen overlay with dark backdrop, VICTORY text in Press Start 2P with gold color + text-shadow, bat swarm (🦇 emoji particles), blood-red/gold confetti squares
+- All animations use custom steppedEase() function (simulates CSS steps(N)) for pixel/NES aesthetic — bats use steps(8), confetti steps(6), VICTORY text steps(4)
+- VICTORY text scale-in uses discrete keyframes [0, 0.5, 1.3, 1] for punch-in overshoot
+- Added victory card glow: BoardGrid accepts `victoryCells` prop, applies `animate-victory-glow` CSS class with staggered animationDelay (0.2s per cell)
+- CompleteGameView computes victoryCells (owned cells by winner) and passes to BoardGrid
+- Auto-dismiss: 3s timeout or click-to-dismiss, with 400ms exit animation delay
+- Tests: 360 frontend passed, 556 backend passed; 15 new uxp021 assertions
+- Files changed: VictoryOverlay.tsx (new), CompleteGameView.tsx, BoardGrid.tsx, index.css, uxp021.test.tsx (new)
+- Learnings: Motion doesn't support CSS steps() directly — custom easing function `(t) => Math.floor(t * steps) / steps` simulates it perfectly. Splitting glow into CSS animation (vs motion.div) avoids conflicts with existing motion props on board cells.
+---

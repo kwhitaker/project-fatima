@@ -47,7 +47,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "SVG emoji favicons work in all modern browsers. The vampire emoji is a quick win that looks good at small sizes. Keep the rename scoped to user-facing text only — package.json name, Python module names, etc. stay as-is."
     },
     {

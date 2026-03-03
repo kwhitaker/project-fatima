@@ -29,3 +29,12 @@ Started: 2026-03-03
 - Learnings: CSS-variable-only change; all shadcn/ui components pick up theme automatically
 ---
 
+## 2026-03-03 13:05 - US-UXP-003
+- Added vampire emoji SVG favicon at web/public/favicon.svg
+- Updated web/index.html: added favicon link, changed title from "Project Fatima" to "Yugi-Strahd"
+- Searched frontend codebase for "Project Fatima" / "Fatima" in user-visible text — none found (only internal __FATIMA_ENV__ which is not user-facing)
+- Tests: 207 frontend passed
+- Files changed: web/public/favicon.svg (new), web/index.html
+- Learnings: No user-visible "Project Fatima" references existed in .tsx files; rename was title-only
+---
+

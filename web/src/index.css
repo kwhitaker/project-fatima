@@ -22,6 +22,7 @@
     --input: 240 10% 75%;
     --ring: 0 70% 40%;
     --radius: 0px;
+    animation: tier-spin 4s linear infinite;
   }
 
   .dark {
@@ -92,4 +93,36 @@
 
 .animate-card-flip {
   animation: card-flip 0.3s steps(3);
+}
+
+/* Tier card rarity effects */
+@property --tier-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: true;
+}
+
+@keyframes tier-spin {
+  to { --tier-angle: 360deg; }
+}
+
+.card-tier-2 {
+  border-image: conic-gradient(from var(--tier-angle), #b8860b, #8b0000, #daa520, #8b0000, #b8860b) 1;
+  box-shadow: 0 0 6px rgba(218, 165, 32, 0.4);
+}
+
+.card-tier-3 {
+  position: relative;
+  border-image: conic-gradient(from calc(var(--tier-angle) * 2), #6b21a8, #991b1b, #b8860b, #0d9488, #6b21a8) 1;
+  box-shadow: 0 0 8px rgba(107, 33, 168, 0.5);
+}
+
+.card-tier-3::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(from calc(var(--tier-angle) * 2), rgba(107,33,168,0.12), rgba(153,27,27,0.08), rgba(184,134,11,0.12), rgba(13,148,136,0.08), rgba(107,33,168,0.12));
+  mix-blend-mode: color-dodge;
+  pointer-events: none;
+  z-index: 1;
 }

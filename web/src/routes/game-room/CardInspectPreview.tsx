@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import type { CardDefinition } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
+import { tierClass } from "@/routes/game-room/CardFace";
 
 export function CardInspectPreview({
   cardKey,
@@ -22,7 +24,7 @@ export function CardInspectPreview({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+      <div className={cn("bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700", tierClass(def?.tier))}>
         <h2 className="text-lg font-bold mb-3">{name}</h2>
         <div className="text-sm text-muted-foreground mb-3">
           {def?.element

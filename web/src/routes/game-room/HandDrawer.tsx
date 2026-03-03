@@ -5,6 +5,7 @@ import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
+import { tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 
@@ -147,7 +148,8 @@ export function HandDrawer({
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             selectedCard === cardKey
                               ? "border-primary bg-primary/10 cursor-pointer"
-                              : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
+                              : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer",
+                            tierClass(def?.tier)
                           )}
                           aria-pressed={selectedCard === cardKey}
                         >

@@ -1,6 +1,6 @@
 import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { CardFace } from "@/routes/game-room/CardFace";
+import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
@@ -53,6 +53,8 @@ export function BoardGrid({
             elementLabel != null &&
             elementLabel === selectedCardElement;
 
+          const def = cell ? cardDefs?.get(cell.card_key) : undefined;
+
           const cellClass = cn(
             "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative",
             cell === null
@@ -63,7 +65,8 @@ export function BoardGrid({
             isPlaced && "animate-card-placed",
             isCaptured && "animate-card-captured animate-card-flip",
             isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
-            isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
+            isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300",
+            cell && tierClass(def?.tier)
           );
 
           const elementTitle = elementLabel
@@ -99,7 +102,6 @@ export function BoardGrid({
           }
 
           if (cell !== null && onCellInspect) {
-            const def = cardDefs?.get(cell.card_key);
             return (
               <button
                 key={i}
@@ -110,7 +112,7 @@ export function BoardGrid({
                 data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
                 data-last-move={isLastMove ? "true" : undefined}
                 onClick={() => onCellInspect(cell.card_key)}
-                aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
+                aria-label={`inspect ${def?.name ?? cell.card_key}`}
                 title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
               >
                 {elementBadge}
@@ -128,14 +130,14 @@ export function BoardGrid({
               title={
                 cell
                   ? elementTitle
-                    ? `${cardTitle(cell.card_key, cardDefs?.get(cell.card_key))} — ${elementTitle}`
-                    : cardTitle(cell.card_key, cardDefs?.get(cell.card_key))
+                    ? `${cardTitle(cell.card_key, def)} — ${elementTitle}`
+                    : cardTitle(cell.card_key, def)
                   : elementTitle
               }
             >
               {elementBadge}
               {cell ? (
-                <CardFace cardKey={cell.card_key} def={cardDefs?.get(cell.card_key)} />
+                <CardFace cardKey={cell.card_key} def={def} />
               ) : (
                 ""
               )}

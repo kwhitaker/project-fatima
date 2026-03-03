@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { CardDefinition, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 export function ActionPanel({
   isMyTurn,
@@ -54,14 +55,21 @@ export function ActionPanel({
       aria-label="action panel"
     >
       {/* Turn label */}
-      <p
-        className={cn(
-          "text-sm font-heading font-semibold leading-relaxed",
-          !isMyTurn && "text-muted-foreground"
-        )}
-      >
-        {isMyTurn ? "Your turn" : "Opponent's turn"}
-      </p>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={isMyTurn ? "my-turn" : "opp-turn"}
+          className={cn(
+            "text-sm font-heading font-semibold leading-relaxed",
+            !isMyTurn && "text-muted-foreground"
+          )}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        >
+          {isMyTurn ? "Your turn" : "Opponent's turn"}
+        </motion.p>
+      </AnimatePresence>
 
       {/* Step indicator (my turn only) */}
       {stepText !== null && (

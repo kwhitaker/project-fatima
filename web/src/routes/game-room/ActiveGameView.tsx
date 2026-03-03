@@ -91,38 +91,52 @@ export function ActiveGameView({
   const secondaryContent = (
     <div className="space-y-4" aria-label="secondary info">
       {/* Last move callout */}
-      {game.last_move != null && (
-        <div
-          className="text-sm p-2 rounded border bg-muted border-border text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground"
-          aria-label="last move callout"
-          aria-live="polite"
-        >
-          {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
-          <span className="font-medium">
-            {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
-          </span>
-        </div>
-      )}
+      <AnimatePresence>
+        {game.last_move != null && (
+          <motion.div
+            key={`lastmove-${game.last_move.cell_index}-${game.last_move.card_key}`}
+            className="text-sm p-2 rounded border bg-muted border-border text-muted-foreground dark:bg-muted/40 dark:text-muted-foreground"
+            aria-label="last move callout"
+            aria-live="polite"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          >
+            {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
+            <span className="font-medium">
+              {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Mists feedback */}
-      {game.last_move != null && (
-        <div
-          className={cn(
-            "p-2 rounded border text-sm",
-            game.last_move.mists_effect === "fog" &&
-              "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300",
-            game.last_move.mists_effect === "omen" &&
-              "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
-            game.last_move.mists_effect === "none" &&
-              "bg-muted border-border text-muted-foreground"
-          )}
-          aria-label="mists feedback"
-        >
-          <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
-          {game.last_move.mists_effect === "fog" && " — Fog: −2 to comparisons"}
-          {game.last_move.mists_effect === "omen" && " — Omen: +2 to comparisons"}
-        </div>
-      )}
+      <AnimatePresence>
+        {game.last_move != null && (
+          <motion.div
+            key={`mists-${game.last_move.cell_index}-${game.last_move.mists_roll}`}
+            className={cn(
+              "p-2 rounded border text-sm",
+              game.last_move.mists_effect === "fog" &&
+                "bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950/50 dark:border-blue-800 dark:text-blue-300",
+              game.last_move.mists_effect === "omen" &&
+                "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
+              game.last_move.mists_effect === "none" &&
+                "bg-muted border-border text-muted-foreground"
+            )}
+            aria-label="mists feedback"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+          >
+            <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
+            {game.last_move.mists_effect === "fog" && " — Fog: −2 to comparisons"}
+            {game.last_move.mists_effect === "omen" && " — Omen: +2 to comparisons"}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Capture feedback */}
       <AnimatePresence>
@@ -366,11 +380,20 @@ export function ActiveGameView({
               {sidebarOpen ? "Hide" : "Show"}
             </span>
           </button>
-          {sidebarOpen && (
-            <div className="mt-2 p-3 rounded border border-border bg-muted/20">
-              {secondaryContent}
-            </div>
-          )}
+          <AnimatePresence initial={false}>
+            {sidebarOpen && (
+              <motion.div
+                key="mobile-drawer"
+                className="mt-2 p-3 rounded border border-border bg-muted/20 overflow-hidden"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+              >
+                {secondaryContent}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

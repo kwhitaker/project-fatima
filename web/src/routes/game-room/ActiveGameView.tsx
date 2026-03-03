@@ -8,6 +8,7 @@ import { ArchetypeModal } from "@/routes/game-room/ArchetypeModal";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
+import { ActionPanel } from "@/routes/game-room/ActionPanel";
 
 export function ActiveGameView({
   game,
@@ -231,11 +232,8 @@ export function ActiveGameView({
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         {/* ─── Primary play area: board + hand ─── */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* Turn & score bar */}
-          <div className="flex items-center justify-between">
-            <p className="text-lg font-semibold">
-              {isMyTurn ? "Your turn" : "Opponent's turn"}
-            </p>
+          {/* Score bar */}
+          <div className="flex items-center justify-end">
             <p className="text-sm text-muted-foreground">
               You: {myScore} | Opp: {opponentScore}
             </p>
@@ -259,39 +257,19 @@ export function ActiveGameView({
           {/* Move error */}
           {moveError && <p className="text-destructive text-sm">{moveError}</p>}
 
-          {/* Power toggle (near hand, only when relevant) */}
-          {myPlayer?.archetype &&
-            !myPlayer.archetype_used &&
-            isMyTurn && (
-              <div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input
-                    type="checkbox"
-                    aria-label="Use Power"
-                    checked={usePower}
-                    onChange={(e) => onUsePowerChange(e.target.checked)}
-                    disabled={movePending}
-                  />
-                  Use Power
-                </label>
-                {usePower &&
-                  (myPlayer.archetype === "skulker" ||
-                    myPlayer.archetype === "presence") && (
-                    <div className="flex gap-2 mt-2">
-                      {(["n", "e", "s", "w"] as const).map((side) => (
-                        <Button
-                          key={side}
-                          variant={powerSide === side ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => onPowerSideToggle(side)}
-                        >
-                          {side}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-              </div>
-            )}
+          {/* Action panel: step indicator, selected card, power controls */}
+          <ActionPanel
+            isMyTurn={isMyTurn}
+            selectedCard={selectedCard}
+            selectedCardDef={selectedCard ? cardDefs.get(selectedCard) : undefined}
+            onDeselectCard={() => onSelectCard(null)}
+            movePending={movePending}
+            myPlayer={myPlayer}
+            usePower={usePower}
+            onUsePowerChange={onUsePowerChange}
+            powerSide={powerSide}
+            onPowerSideToggle={onPowerSideToggle}
+          />
 
           {/* Hand panel (always visible, in-flow) */}
           <HandPanel

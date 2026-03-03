@@ -26,16 +26,7 @@ export function HandPanel({
 
   return (
     <div aria-label="hand panel">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium">Your hand</p>
-        {isMyTurn && !movePending && (
-          <p className="text-xs text-muted-foreground">
-            {selectedCard
-              ? "Card selected — tap an empty cell"
-              : "Select a card to play"}
-          </p>
-        )}
-      </div>
+      <p className="text-sm font-medium mb-2">Your hand</p>
       <div className="flex gap-2 flex-wrap">
         {myPlayer?.hand.map((cardKey) => {
           const def = cardDefs.get(cardKey);

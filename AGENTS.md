@@ -9,87 +9,25 @@ This file is for coding agents working in this repo.
 - When writing comments, prefer concision over grammatical correctness.
 - When you present a plan and still need more info to proceed safely, end with 2-5 leading questions.
 
-## Repo Status (what exists today)
+## Quick Reference
 
-- FastAPI skeleton in `app/main.py` with health endpoint.
-- `pyproject.toml` with uv/hatchling build; dev extras: pytest, httpx, ruff, pyright.
-- Key docs/data: `TECH_DECISIONS.md`, `MVP_PLAN_OVERVIEW.md`, `GAME_RULES_OVERVIEW.md`, `CARDS_SPEC.md`, `cards.jsonl`.
-- Agent loop tooling exists in `ralph/` (see `ralph/README.md` and `ralph/CLAUDE.md`).
-- No Cursor rules found in `.cursor/rules/` or `.cursorrules`.
-- No Copilot instructions found in `.github/copilot-instructions.md`.
+Setup, dev commands, and test commands are in the root [README.md](README.md). Below are agent-specific notes only.
 
-If you add any of the above, update this doc with the canonical commands.
-
-## Tooling: mise
-We intend to use `mise` for tool/runtime version management.
-- Install: https://mise.jdx.dev/installing-mise.html
-- After cloning (once `.mise.toml` / tools are defined): `mise install`
-- Activate in shell: follow mise docs for your shell (`mise activate` is commonly used).
-- Tip: prefer `mise x -- <cmd>` when you need a specific tool version.
-
-## Web frontend (React/Vite/TS)
-
-Source lives in `web/`. Uses bun as package manager.
-
+### Useful pytest flags
 ```bash
-# Install
-cd web && bun install
-
-# Dev server (proxies /api/* → FastAPI at localhost:8000)
-cd web && bun dev
-
-# Build
-cd web && bun run build
-
-# Unit tests (vitest)
-cd web && bun run test
-
-# Watch mode
-cd web && bun run test:watch
-
-# E2E smoke tests (Playwright; starts Vite dev server automatically)
-# One-time browser install: cd web && bunx playwright install chromium
-cd web && bun run test:e2e
-```
-
-## Ralph (autonomous loop)
-This repo includes a Claude Code loop runner under `ralph/`.
-- Run: `./ralph/ralph.sh 10`
-- Prereqs: `jq`, and `claude` (Claude Code) installed/authenticated.
-- Each iteration should: do ONE story, run checks from this file, commit, update `ralph/prd.json`, append to `ralph/progress.txt`.
-- Prior API MVP backlog is archived in `ralph/prd.json.api-mvp`.
-
-## Build / Lint / Test Commands
-
-### Install / bootstrap
-```bash
-uv sync --extra dev
-```
-
-### Run the app (FastAPI/Uvicorn)
-```bash
-uv run uvicorn app.main:app --reload
-```
-
-### Lint / format
-```bash
-uv run ruff check .
-uv run ruff format .
-uv run ruff check . --fix   # autofix
-```
-
-### Typecheck
-```bash
-uv run pyright
-```
-
-### Tests (pytest)
-```bash
-uv run pytest                              # all tests
-uv run pytest tests/test_something.py     # single file
-uv run pytest tests/test_something.py::test_happy_path  # single test
 uv run pytest -x                          # stop on first failure
 uv run pytest -k "capture and not slow"   # by name substring
+```
+
+### Ruff autofix
+```bash
+uv run ruff check . --fix
+```
+
+### Frontend E2E (Playwright)
+```bash
+# One-time browser install: cd web && bunx playwright install chromium
+cd web && bun run test:e2e
 ```
 
 ## Code Style Guidelines (Python)

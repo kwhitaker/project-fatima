@@ -10,48 +10,7 @@ Covers:
 - Archetype usage does not break last_move population
 """
 
-import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
-
-from app.auth import get_caller_id
-from app.dependencies import get_card_store, get_game_store
-from app.main import app
-from app.models.cards import CardDefinition, CardSides
-from app.store.memory import MemoryCardStore, MemoryGameStore
-
-
-def _make_card(idx: int) -> CardDefinition:
-    return CardDefinition(
-        card_key=f"ux011_{idx:03d}",
-        character_key=f"ch011_{idx:03d}",
-        name=f"UX011 Card {idx}",
-        version="v1",
-        tier=1,
-        rarity=15,
-        is_named=False,
-        sides=CardSides(n=4, e=4, s=4, w=4),
-        set="test",
-        element="shadow",
-    )
-
-
-_TEST_CARDS = [_make_card(i) for i in range(20)]
-
-
-def _mock_caller_id(request: Request) -> str:
-    return request.headers.get("X-User-Id", "test-user")
-
-
-@pytest.fixture()
-def client() -> TestClient:  # type: ignore[misc]
-    game_store = MemoryGameStore()
-    card_store = MemoryCardStore(cards=_TEST_CARDS)
-    app.dependency_overrides[get_game_store] = lambda: game_store
-    app.dependency_overrides[get_card_store] = lambda: card_store
-    app.dependency_overrides[get_caller_id] = _mock_caller_id
-    yield TestClient(app)  # type: ignore[misc]
-    app.dependency_overrides.clear()
 
 
 def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]

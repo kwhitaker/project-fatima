@@ -9,7 +9,6 @@ Covers:
 """
 
 import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
 
 from app.auth import get_caller_id
@@ -17,12 +16,15 @@ from app.dependencies import get_card_store, get_game_store
 from app.main import app
 from app.models.cards import CardDefinition, CardSides
 from app.store.memory import MemoryCardStore, MemoryGameStore
+from tests.conftest import _mock_caller_id
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 
 
+# Local _make_card: uses asymmetric sides (4/5/3/2) and specific card_key
+# prefix ("tc_") because tests assert exact side values and keys.
 def _make_card(idx: int) -> CardDefinition:
     return CardDefinition(
         card_key=f"tc_{idx:03d}",
@@ -36,10 +38,6 @@ def _make_card(idx: int) -> CardDefinition:
         set="test",
         element="shadow",
     )
-
-
-def _mock_caller_id(request: Request) -> str:
-    return request.headers.get("X-User-Id", "test-user")
 
 
 def _get(client: TestClient, path: str, user: str = "test-user"):  # type: ignore[no-untyped-def]

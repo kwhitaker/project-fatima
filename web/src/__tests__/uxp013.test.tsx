@@ -6,21 +6,11 @@
  * - cardEmoji helper returns correct emoji by character_key
  * - cardEmoji returns undefined for unknown keys
  * - CardDefinition includes character_key
- * - CardFace, HandPanel, HandDrawer, CardInspectPreview reference cardEmoji
+ * - CardFace, HandPanel, CardInspectPreview reference cardEmoji
  */
 import { describe, it, expect } from "vitest";
-import fs from "node:fs";
-import path from "node:path";
-
 import cardEmojis from "@/lib/card-emojis.json";
 import { cardEmoji } from "@/routes/game-room/CardFace";
-
-const apiPath = path.resolve(__dirname, "../lib/api-types.generated.ts");
-const cardFacePath = path.resolve(__dirname, "../routes/game-room/CardFace.tsx");
-const boardGridPath = path.resolve(__dirname, "../routes/game-room/BoardGrid.tsx");
-const handPanelPath = path.resolve(__dirname, "../routes/game-room/HandPanel.tsx");
-const handDrawerPath = path.resolve(__dirname, "../routes/game-room/HandDrawer.tsx");
-const cardInspectPath = path.resolve(__dirname, "../routes/game-room/CardInspectPreview.tsx");
 
 describe("US-UXP-013: Emoji card faces from character mapping", () => {
   describe("card-emojis.json mapping", () => {
@@ -59,37 +49,4 @@ describe("US-UXP-013: Emoji card faces from character mapping", () => {
     });
   });
 
-  describe("CardDefinition includes character_key", () => {
-    it("api.ts CardDefinition has character_key field", () => {
-      const src = fs.readFileSync(apiPath, "utf-8");
-      expect(src).toMatch(/character_key:\s*string/);
-    });
-  });
-
-  describe("Component wiring", () => {
-    it("CardFace imports card-emojis.json and uses cardEmoji", () => {
-      const src = fs.readFileSync(cardFacePath, "utf-8");
-      expect(src).toContain("card-emojis.json");
-      expect(src).toContain("cardEmoji");
-      expect(src).toContain("character_key");
-    });
-
-    it("HandPanel imports and uses cardEmoji", () => {
-      const src = fs.readFileSync(handPanelPath, "utf-8");
-      expect(src).toContain("cardEmoji");
-      expect(src).toContain("character_key");
-    });
-
-    it("HandDrawer imports and uses cardEmoji", () => {
-      const src = fs.readFileSync(handDrawerPath, "utf-8");
-      expect(src).toContain("cardEmoji");
-      expect(src).toContain("character_key");
-    });
-
-    it("CardInspectPreview imports and uses cardEmoji", () => {
-      const src = fs.readFileSync(cardInspectPath, "utf-8");
-      expect(src).toContain("cardEmoji");
-      expect(src).toContain("character_key");
-    });
-  });
 });

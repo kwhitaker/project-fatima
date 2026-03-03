@@ -10,54 +10,16 @@ Covers:
 from unittest.mock import MagicMock
 
 import pytest
-from fastapi import Request
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from app.auth import get_caller_id
-from app.dependencies import get_card_store, get_game_store
-from app.main import app
-from app.models.cards import CardDefinition, CardSides
 from app.models.game import GameState
 from app.store import ConflictError, DuplicateEventError
-from app.store.memory import MemoryCardStore, MemoryGameStore
+from app.store.memory import MemoryGameStore
 from app.store.supabase_store import SupabaseGameStore
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _make_card(idx: int) -> CardDefinition:
-    return CardDefinition(
-        card_key=f"idem_card_{idx:03d}",
-        character_key=f"idem_char_{idx:03d}",
-        name=f"Idem Card {idx}",
-        version="v1",
-        tier=1,
-        rarity=15,
-        is_named=False,
-        sides=CardSides(n=4, e=4, s=4, w=4),
-        set="test",
-        element="shadow",
-    )
-
-
-_TEST_CARDS = [_make_card(i) for i in range(20)]
-
-
-def _mock_caller_id(request: Request) -> str:
-    return request.headers.get("X-User-Id", "test-user")
-
-
-@pytest.fixture()
-def api_client() -> TestClient:  # type: ignore[misc]
-    game_store = MemoryGameStore()
-    card_store = MemoryCardStore(cards=_TEST_CARDS)
-    app.dependency_overrides[get_game_store] = lambda: game_store
-    app.dependency_overrides[get_card_store] = lambda: card_store
-    app.dependency_overrides[get_caller_id] = _mock_caller_id
-    yield TestClient(app)  # type: ignore[misc]
-    app.dependency_overrides.clear()
 
 
 def _make_state(game_id: str = "g1", version: int = 0) -> GameState:
@@ -173,11 +135,11 @@ class TestApiIdempotency:
         first_hand = data["players"][first_player_index]["hand"]
         return game_id, first_hand, data["state_version"], first_player_index
 
-    def test_idempotency_key_is_accepted(self, api_client: TestClient) -> None:
-        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+    def test_idempotency_key_is_accepted(self, client: TestClient) -> None:
+        game_id, hand, sv, first_player_index = self._setup_active_game(client)
         first_user = "alice" if first_player_index == 0 else "bob"
         resp = _as(
-            api_client,
+            client,
             first_user,
             "post",
             f"/games/{game_id}/moves",
@@ -190,8 +152,8 @@ class TestApiIdempotency:
         )
         assert resp.status_code == 200
 
-    def test_duplicate_idempotency_key_returns_200(self, api_client: TestClient) -> None:
-        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+    def test_duplicate_idempotency_key_returns_200(self, client: TestClient) -> None:
+        game_id, hand, sv, first_player_index = self._setup_active_game(client)
         first_user = "alice" if first_player_index == 0 else "bob"
         move_payload = {
             "card_key": hand[0],
@@ -199,20 +161,20 @@ class TestApiIdempotency:
             "state_version": sv,
             "idempotency_key": "move-unique-001",
         }
-        resp1 = _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
+        resp1 = _as(client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
         assert resp1.status_code == 200
         state_after_first = resp1.json()
 
         # Retry with same idempotency key (stale state_version is now passed,
         # but same key means it's a duplicate)
-        resp2 = _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
+        resp2 = _as(client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
         assert resp2.status_code == 200
         # The state returned should match what was returned after the first call
         assert resp2.json()["state_version"] == state_after_first["state_version"]
 
-    def test_duplicate_key_does_not_create_extra_event(self, api_client: TestClient) -> None:
+    def test_duplicate_key_does_not_create_extra_event(self, client: TestClient) -> None:
         """Two moves with the same idempotency key produce exactly one event."""
-        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+        game_id, hand, sv, first_player_index = self._setup_active_game(client)
         first_user = "alice" if first_player_index == 0 else "bob"
         move_payload = {
             "card_key": hand[0],
@@ -220,18 +182,18 @@ class TestApiIdempotency:
             "state_version": sv,
             "idempotency_key": "move-dedup-test",
         }
-        _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
-        _as(api_client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
+        _as(client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
+        _as(client, first_user, "post", f"/games/{game_id}/moves", json=move_payload)
 
-        data = _as(api_client, first_user, "get", f"/games/{game_id}").json()
+        data = _as(client, first_user, "get", f"/games/{game_id}").json()
         # State advanced exactly once (base + join×1 + move×1)
         assert data["board"][4] is not None  # the cell was placed
 
-    def test_no_idempotency_key_still_works(self, api_client: TestClient) -> None:
-        game_id, hand, sv, first_player_index = self._setup_active_game(api_client)
+    def test_no_idempotency_key_still_works(self, client: TestClient) -> None:
+        game_id, hand, sv, first_player_index = self._setup_active_game(client)
         first_user = "alice" if first_player_index == 0 else "bob"
         resp = _as(
-            api_client,
+            client,
             first_user,
             "post",
             f"/games/{game_id}/moves",

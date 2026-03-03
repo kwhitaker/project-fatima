@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { Archetype, CardDefinition, GameState, PlayerState } from "@/lib/api";
+import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { ArchetypeModal } from "@/routes/game-room/ArchetypeModal";
@@ -10,6 +10,7 @@ import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
 import { ActionPanel } from "@/routes/game-room/ActionPanel";
 import { MuteToggle } from "@/routes/game-room/MuteToggle";
+import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { motion, AnimatePresence } from "motion/react";
 import { playPlus, playElemental, playTurnStart } from "@/lib/sounds";
 
@@ -21,31 +22,11 @@ export function ActiveGameView({
   myScore,
   opponentScore,
   cardDefs,
-  selectedCard,
-  onSelectCard,
-  movePending,
-  moveError,
-  usePower,
-  onUsePowerChange,
-  powerSide,
-  onPowerSideToggle,
   placedCells,
   capturedCells,
   onPlaceCard,
-  onPreviewCard,
-  leaving,
-  onOpenLeaveConfirm,
-  showLeaveConfirm,
-  onCloseLeaveConfirm,
-  onConfirmLeave,
-  archetypePending,
-  archetypeError,
-  onSelectArchetype,
   boardElements,
-  selectedCardElement,
-  onShowRules,
-  intimidatePendingCell,
-  onCancelIntimidatePending,
+  moveError,
 }: {
   game: GameState;
   myIndex: number;
@@ -54,32 +35,34 @@ export function ActiveGameView({
   myScore: number;
   opponentScore: number;
   cardDefs: Map<string, CardDefinition>;
-  selectedCard: string | null;
-  onSelectCard: (cardKey: string | null) => void;
-  movePending: boolean;
-  moveError: string | null;
-  usePower: boolean;
-  onUsePowerChange: (next: boolean) => void;
-  powerSide: string | null;
-  onPowerSideToggle: (side: "n" | "e" | "s" | "w") => void;
   placedCells: Set<number>;
   capturedCells: Set<number>;
   onPlaceCard: (cellIndex: number) => void | Promise<void>;
-  onPreviewCard: (cardKey: string, def?: CardDefinition) => void;
-  leaving: boolean;
-  onOpenLeaveConfirm: () => void;
-  showLeaveConfirm: boolean;
-  onCloseLeaveConfirm: () => void;
-  onConfirmLeave: () => void;
-  archetypePending: boolean;
-  archetypeError: string | null;
-  onSelectArchetype: (archetype: Archetype) => void | Promise<void>;
   boardElements?: string[] | null;
-  selectedCardElement?: string | null;
-  onShowRules: () => void;
-  intimidatePendingCell: number | null;
-  onCancelIntimidatePending: () => void;
+  moveError: string | null;
 }) {
+  const {
+    selectedCard,
+    onSelectCard,
+    selectedCardElement,
+    movePending,
+    usePower,
+    onUsePowerChange,
+    powerSide,
+    onPowerSideToggle,
+    intimidatePendingCell,
+    onCancelIntimidatePending,
+    archetypePending,
+    archetypeError,
+    onSelectArchetype,
+    onPreviewCard,
+    leaving,
+    onOpenLeaveConfirm,
+    showLeaveConfirm,
+    onCloseLeaveConfirm,
+    onConfirmLeave,
+    onShowRules,
+  } = useGameRoom();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const canPlace =
@@ -347,7 +330,7 @@ export function ActiveGameView({
           {/* Board: centered, takes remaining vertical space */}
           <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
             <BoardGrid
-              board={game.board}
+              board={game.board ?? []}
               myIndex={myIndex}
               canPlace={canPlace}
               onCellClick={(i) => void onPlaceCard(i)}
@@ -358,7 +341,7 @@ export function ActiveGameView({
               lastMoveCellIndex={game.last_move?.cell_index ?? null}
               boardElements={boardElements}
               selectedCardElement={selectedCardElement}
-              mistsEffect={placedCells.size > 0 ? game.last_move?.mists_effect : null}
+              mistsEffect={placedCells.size > 0 ? (game.last_move?.mists_effect as "none" | "fog" | "omen" | null) : null}
               intimidatePendingCell={intimidatePendingCell}
             />
           </div>
@@ -371,17 +354,8 @@ export function ActiveGameView({
             <div className="w-full sm:w-52 shrink-0">
               <ActionPanel
                 isMyTurn={isMyTurn}
-                selectedCard={selectedCard}
                 selectedCardDef={selectedCard ? cardDefs.get(selectedCard) : undefined}
-                onDeselectCard={() => onSelectCard(null)}
-                movePending={movePending}
                 myPlayer={myPlayer}
-                usePower={usePower}
-                onUsePowerChange={onUsePowerChange}
-                powerSide={powerSide}
-                onPowerSideToggle={onPowerSideToggle}
-                intimidatePendingCell={intimidatePendingCell}
-                onCancelIntimidatePending={onCancelIntimidatePending}
               />
             </div>
             <div className="w-full sm:flex-1 sm:min-w-0">
@@ -390,10 +364,6 @@ export function ActiveGameView({
                 myIndex={myIndex}
                 myPlayer={myPlayer}
                 cardDefs={cardDefs}
-                selectedCard={selectedCard}
-                onSelectCard={onSelectCard}
-                movePending={movePending}
-                onPreviewCard={onPreviewCard}
               />
             </div>
           </div>
@@ -440,9 +410,6 @@ export function ActiveGameView({
 
       <ArchetypeModal
         open={!!myPlayer && !myPlayer.archetype}
-        pending={archetypePending}
-        error={archetypeError}
-        onSelect={onSelectArchetype}
       />
     </>
   );

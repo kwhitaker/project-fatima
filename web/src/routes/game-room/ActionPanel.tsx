@@ -1,35 +1,29 @@
 import { Button } from "@/components/ui/button";
 import type { CardDefinition, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { motion, AnimatePresence } from "motion/react";
 
 export function ActionPanel({
   isMyTurn,
-  selectedCard,
   selectedCardDef,
-  onDeselectCard,
-  movePending,
   myPlayer,
-  usePower,
-  onUsePowerChange,
-  powerSide,
-  onPowerSideToggle,
-  intimidatePendingCell,
-  onCancelIntimidatePending,
 }: {
   isMyTurn: boolean;
-  selectedCard: string | null;
   selectedCardDef?: CardDefinition;
-  onDeselectCard: () => void;
-  movePending: boolean;
   myPlayer?: PlayerState;
-  usePower: boolean;
-  onUsePowerChange: (next: boolean) => void;
-  powerSide: string | null;
-  onPowerSideToggle: (side: "n" | "e" | "s" | "w") => void;
-  intimidatePendingCell: number | null;
-  onCancelIntimidatePending: () => void;
 }) {
+  const {
+    selectedCard,
+    onSelectCard,
+    movePending,
+    usePower,
+    onUsePowerChange,
+    powerSide,
+    onPowerSideToggle,
+    intimidatePendingCell,
+    onCancelIntimidatePending,
+  } = useGameRoom();
   const hasArchetype = !!myPlayer?.archetype;
   const powerAvailable =
     hasArchetype && !myPlayer!.archetype_used && isMyTurn;
@@ -94,7 +88,7 @@ export function ActionPanel({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={onDeselectCard}
+            onClick={() => onSelectCard(null)}
             disabled={movePending}
           >
             Cancel

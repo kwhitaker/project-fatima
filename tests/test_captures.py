@@ -1,36 +1,10 @@
 """Tests for US-003: placement + capture resolution."""
 
-from app.models.cards import CardDefinition, CardSides
-from app.models.game import BoardCell, GameState, GameStatus
+from app.models.cards import CardDefinition
+from app.models.game import BoardCell
 from app.rules.captures import resolve_captures
 from app.rules.reducer import PlacementIntent, apply_intent
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def make_card(key: str, n: int, e: int, s: int, w: int) -> CardDefinition:
-    return CardDefinition(
-        card_key=key,
-        character_key=key,
-        name=key,
-        version="1.0",
-        tier=1,
-        rarity=50,
-        is_named=False,
-        sides=CardSides(n=n, e=e, s=s, w=w),
-        set="test",
-        element="shadow",
-    )
-
-
-def make_state(board: list[BoardCell | None] | None = None) -> GameState:
-    return GameState(
-        game_id="test-game",
-        status=GameStatus.ACTIVE,
-        board=board if board is not None else [None] * 9,
-    )
+from tests.conftest import make_card, make_state
 
 
 def rc(
@@ -252,7 +226,7 @@ class TestApplyIntent:
         """apply_intent places the card on the correct cell."""
         card = make_card("card_a", n=5, e=5, s=5, w=5)
         lookup = {"card_a": card}
-        state = make_state()
+        state = make_state(p0_hand=["card_a"])
 
         intent = PlacementIntent(player_index=0, card_key="card_a", cell_index=4)
         next_state = apply_intent(state, intent, card_lookup=lookup)
@@ -269,7 +243,7 @@ class TestApplyIntent:
 
         board: list[BoardCell | None] = [None] * 9
         board[0] = BoardCell(card_key="enemy", owner=1)
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["strong"])
 
         intent = PlacementIntent(player_index=0, card_key="strong", cell_index=1)
         next_state = apply_intent(state, intent, card_lookup=lookup)
@@ -281,7 +255,7 @@ class TestApplyIntent:
         """apply_intent bumps state_version by 1."""
         card = make_card("card_a", n=5, e=5, s=5, w=5)
         lookup = {"card_a": card}
-        state = make_state()
+        state = make_state(p0_hand=["card_a"])
         assert state.state_version == 0
 
         intent = PlacementIntent(player_index=0, card_key="card_a", cell_index=0)
@@ -293,7 +267,7 @@ class TestApplyIntent:
         """apply_intent does not mutate the original state."""
         card = make_card("card_a", n=5, e=5, s=5, w=5)
         lookup = {"card_a": card}
-        state = make_state()
+        state = make_state(p0_hand=["card_a"])
 
         intent = PlacementIntent(player_index=0, card_key="card_a", cell_index=4)
         apply_intent(state, intent, card_lookup=lookup)

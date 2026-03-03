@@ -8,10 +8,12 @@ argument (seeded Random instance) — never global random.*
 
 from dataclasses import dataclass, field
 from random import Random
+from typing import NamedTuple
 
 from app.models.cards import CardDefinition
 from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo
 from app.rules.archetypes import apply_skulker_boost, rotate_card_once
+from app.rules.board import get_adjacent_indices
 from app.rules.captures import resolve_captures
 from app.rules.errors import (
     ArchetypeAlreadyUsedError,
@@ -118,6 +120,121 @@ def begin_sudden_death_round(state: GameState) -> GameState:
     )
 
 
+class _ArchetypeResult(NamedTuple):
+    card: CardDefinition
+    activated: bool
+    caster_reroll: bool
+    devout_negate_fog: bool
+    intimidate_target: int | None
+
+
+_NO_ARCHETYPE = _ArchetypeResult(
+    card=None,  # type: ignore[arg-type]  # placeholder, replaced by caller
+    activated=False,
+    caster_reroll=False,
+    devout_negate_fog=False,
+    intimidate_target=None,
+)
+
+
+def _apply_archetype(
+    state: GameState,
+    intent: PlacementIntent,
+    card: CardDefinition,
+) -> _ArchetypeResult:
+    """Validate and apply the archetype power for this placement.
+
+    Returns the (possibly modified) card and side-effect flags.
+    Raises domain errors for invalid archetype usage.
+    """
+    if not intent.use_archetype or not state.players:
+        return _NO_ARCHETYPE._replace(card=card)
+
+    player = state.players[intent.player_index]
+    if player.archetype_used:
+        raise ArchetypeAlreadyUsedError(
+            f"Player {intent.player_index} has already used their archetype power"
+        )
+
+    if player.archetype == Archetype.MARTIAL:
+        return _ArchetypeResult(
+            card=rotate_card_once(card),
+            activated=True,
+            caster_reroll=False,
+            devout_negate_fog=False,
+            intimidate_target=None,
+        )
+
+    if player.archetype == Archetype.SKULKER:
+        if intent.skulker_boost_side not in {"n", "e", "s", "w"}:
+            raise ArchetypePowerArgumentError(
+                f"Skulker boost requires skulker_boost_side in {{n,e,s,w}}, "
+                f"got {intent.skulker_boost_side!r}"
+            )
+        return _ArchetypeResult(
+            card=apply_skulker_boost(card, intent.skulker_boost_side),
+            activated=True,
+            caster_reroll=False,
+            devout_negate_fog=False,
+            intimidate_target=None,
+        )
+
+    if player.archetype == Archetype.CASTER:
+        return _ArchetypeResult(
+            card=card,
+            activated=True,
+            caster_reroll=True,
+            devout_negate_fog=False,
+            intimidate_target=None,
+        )
+
+    if player.archetype == Archetype.DEVOUT:
+        return _ArchetypeResult(
+            card=card,
+            activated=True,
+            caster_reroll=False,
+            devout_negate_fog=True,
+            intimidate_target=None,
+        )
+
+    if player.archetype == Archetype.INTIMIDATE:
+        if intent.intimidate_target_cell is None or not (
+            0 <= intent.intimidate_target_cell <= 8
+        ):
+            raise ArchetypePowerArgumentError(
+                f"Intimidate requires intimidate_target_cell in 0-8, "
+                f"got {intent.intimidate_target_cell!r}"
+            )
+        target_cell = intent.intimidate_target_cell
+        adjacent_indices = get_adjacent_indices(intent.cell_index)
+        if target_cell not in adjacent_indices:
+            raise ArchetypePowerArgumentError(
+                f"Intimidate target cell {target_cell} is not adjacent "
+                f"to placement cell {intent.cell_index}"
+            )
+        target_board_cell = state.board[target_cell]
+        if target_board_cell is None:
+            raise ArchetypePowerArgumentError(
+                f"Intimidate target cell {target_cell} is empty"
+            )
+        if target_board_cell.owner == intent.player_index:
+            raise ArchetypePowerArgumentError(
+                f"Intimidate target cell {target_cell} contains your own card"
+            )
+        return _ArchetypeResult(
+            card=card,
+            activated=True,
+            caster_reroll=False,
+            devout_negate_fog=False,
+            intimidate_target=target_cell,
+        )
+
+    raise ArchetypeNotAvailableError(
+        f"Player {intent.player_index} has archetype {player.archetype!r}, "
+        "which has no active placement power implemented"
+    )
+
+
 def apply_intent(
     state: GameState,
     intent: PlacementIntent,
@@ -150,71 +267,13 @@ def apply_intent(
         raise OccupiedCellError(f"Cell {intent.cell_index} is already occupied")
 
     # --- Archetype power dispatch ---
-    placed_card = card_lookup[intent.card_key]
+    arch = _apply_archetype(state, intent, card_lookup[intent.card_key])
+    placed_card = arch.card
     placed_owner = intent.player_index
-    archetype_activated = False
-    caster_reroll = False
-    devout_negate_fog = False
-    intimidate_target: int | None = None
-
-    if intent.use_archetype and state.players:
-        player = state.players[intent.player_index]
-        if player.archetype_used:
-            raise ArchetypeAlreadyUsedError(
-                f"Player {intent.player_index} has already used their archetype power"
-            )
-        if player.archetype == Archetype.MARTIAL:
-            placed_card = rotate_card_once(placed_card)
-            archetype_activated = True
-        elif player.archetype == Archetype.SKULKER:
-            if intent.skulker_boost_side not in {"n", "e", "s", "w"}:
-                raise ArchetypePowerArgumentError(
-                    f"Skulker boost requires skulker_boost_side in {{n,e,s,w}}, "
-                    f"got {intent.skulker_boost_side!r}"
-                )
-            placed_card = apply_skulker_boost(placed_card, intent.skulker_boost_side)
-            archetype_activated = True
-        elif player.archetype == Archetype.CASTER:
-            caster_reroll = True
-            archetype_activated = True
-        elif player.archetype == Archetype.DEVOUT:
-            devout_negate_fog = True
-            archetype_activated = True
-        elif player.archetype == Archetype.INTIMIDATE:
-            if intent.intimidate_target_cell is None or not (
-                0 <= intent.intimidate_target_cell <= 8
-            ):
-                raise ArchetypePowerArgumentError(
-                    f"Intimidate requires intimidate_target_cell in 0-8, "
-                    f"got {intent.intimidate_target_cell!r}"
-                )
-            target_cell = intent.intimidate_target_cell
-            # Validate target is adjacent to placement cell
-            from app.rules.captures import _ADJACENCY
-
-            adjacent_indices = {nb[0] for nb in _ADJACENCY[intent.cell_index]}
-            if target_cell not in adjacent_indices:
-                raise ArchetypePowerArgumentError(
-                    f"Intimidate target cell {target_cell} is not adjacent "
-                    f"to placement cell {intent.cell_index}"
-                )
-            # Validate target cell has an opponent card
-            target_board_cell = state.board[target_cell]
-            if target_board_cell is None:
-                raise ArchetypePowerArgumentError(
-                    f"Intimidate target cell {target_cell} is empty"
-                )
-            if target_board_cell.owner == intent.player_index:
-                raise ArchetypePowerArgumentError(
-                    f"Intimidate target cell {target_cell} contains your own card"
-                )
-            intimidate_target = target_cell
-            archetype_activated = True
-        else:
-            raise ArchetypeNotAvailableError(
-                f"Player {intent.player_index} has archetype {player.archetype!r}, "
-                "which has no active placement power implemented"
-            )
+    archetype_activated = arch.activated
+    caster_reroll = arch.caster_reroll
+    devout_negate_fog = arch.devout_negate_fog
+    intimidate_target = arch.intimidate_target
 
     # --- Mists roll ---
     mists_roll: int | None = None

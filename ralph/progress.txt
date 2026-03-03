@@ -275,3 +275,74 @@ Started: 2026-03-03
 - Files changed: sounds.ts (new), MuteToggle.tsx (new), BoardGrid.tsx, ActiveGameView.tsx, CompleteGameView.tsx, GameRoom.tsx, uxp015.test.tsx (new)
 - Learnings: Web Audio `new AudioContext` matches regex `/new Audio/` — use `/new Audio\(/` to check for HTMLAudioElement. All play* functions no-op gracefully when AudioContext is not yet initialized (before first user gesture).
 ---
+
+## 2026-03-03 16:30 - US-CH-001
+- Extracted shared backend test fixtures into tests/conftest.py: _make_card, _TEST_CARDS, make_card, make_state, mock_rng, _mock_caller_id, game_store fixture, client fixture
+- Removed duplicated helpers from 20 test files (863 lines deleted, 203 added)
+- Archetype test files use functools.partial to set default archetype on make_state
+- Files with genuinely different signatures kept local variants: test_ux008 (asymmetric sides), test_ux002 (email override), test_idempotency (different make_state shape)
+- Fixed import paths (tests/__init__.py requires `from tests.conftest import`), added p0_hand to make_state calls in test_captures/test_mists
+- Tests: 562 backend passed
+- Files changed: tests/conftest.py (new), 19 test files updated
+- Learnings: tests/__init__.py makes conftest a package module — must use `from tests.conftest import` not `from conftest import`. make_state with players[] means hand validation runs — tests that bypassed it before now need p0_hand.
+---
+
+## 2026-03-03 16:35 - US-CH-003
+- Removed 6 duplicate error-path tests from test_api.py (404 GET/JOIN, 403 archetype/move, 422 wrong turn, 409 stale version)
+- All 6 scenarios already covered more thoroughly in test_error_responses.py (also asserts `detail` key)
+- test_api.py now has only happy-path + 2 unique error cases (cannot_join_twice, archetype_already_selected)
+- Tests: 556 backend passed (6 fewer test functions, same coverage)
+- Files changed: tests/test_api.py
+- Learnings: test_error_responses.py is strictly better for error scenarios — it uses _assert_error() which checks both status code and detail key presence.
+---
+
+## 2026-03-03 16:40 - US-CH-004
+- Extracted archetype dispatch block (~60 lines) from apply_intent into _apply_archetype function
+- Created _ArchetypeResult NamedTuple with card, activated, caster_reroll, devout_negate_fog, intimidate_target fields
+- Moved _ADJACENCY import from deferred (inside function) to top-level import
+- apply_intent now reads as: validate → archetype → mists → elemental → board update → captures → end checks
+- Tests/validation: 556 backend tests passed, ruff/pyright unchanged (pre-existing errors only)
+- Files changed: app/rules/reducer.py
+- Learnings: NamedTuple is cleaner than dataclass for small immutable result types. Moving the deferred import to top-level is safe since captures.py has no circular dependency on reducer.py.
+---
+
+## 2026-03-03 16:45 - US-CH-005
+- Created `app/rules/board.py` with `ADJACENCY` dict and `get_adjacent_indices()` helper
+- Updated `captures.py`: removed local `_ADJACENCY` definition, imports `ADJACENCY` from `board.py`
+- Updated `reducer.py`: imports `get_adjacent_indices` from `board.py`, uses it in `_apply_archetype` instead of `_ADJACENCY` set comprehension
+- Tests: 567 backend passed (11 new in test_board.py), ruff clean
+- Files changed: app/rules/board.py (new), app/rules/captures.py, app/rules/reducer.py, tests/test_board.py (new)
+- Learnings: Symmetry test (if A→B exists then B→A with opposite sides) is a strong invariant check for adjacency data — caught nothing here but would catch future typos.
+---
+
+## 2026-03-03 19:52 - US-CH-006
+- Created ModalShell component (web/src/components/ui/ModalShell.tsx) with AnimatePresence, backdrop, content container, Escape key handler
+- Refactored all 4 modal components (ArchetypeModal, ForfeitDialog, CardInspectPreview, GameRulesDialog) to use ModalShell — net -46 lines
+- Updated uxp012 and uxp017 tests to assert on ModalShell usage
+- Tests: 408 frontend passed, 567 backend passed
+- Files changed: ModalShell.tsx (new), ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, GameRoom.tsx, uxp012.test.tsx, uxp017.test.tsx
+- Learnings: ModalShell with aria-labelledby/aria-label/data-testid pass-through props keeps accessibility attributes on the dialog role element
+---
+
+## 2026-03-03 20:05 - US-CH-007
+- Created GameRoomContext.tsx with useGameRoom() hook and GameRoomProvider; context holds 20 values (selection, power, archetype, leave, rules callbacks)
+- ActiveGameView props reduced from 32 to 12 (game, myIndex, myPlayer, opponentPlayer, myScore, opponentScore, cardDefs, placedCells, capturedCells, onPlaceCard, boardElements, moveError)
+- ActionPanel props reduced from 12 to 3 (isMyTurn, selectedCardDef, myPlayer); consumes 9 values from context
+- HandPanel props reduced from 8 to 4 (game, myIndex, myPlayer, cardDefs); consumes 4 from context
+- ArchetypeModal props reduced from 4 to 1 (open); consumes pending/error/onSelect from context
+- BoardGrid unchanged (used outside GameRoomContext in CompleteGameView/DevPlayground)
+- Added GameRoomWrapper + DEFAULT_GAME_ROOM_CTX to helpers.ts for test context wrapping
+- Tests: 408 frontend passed, 567 backend passed
+- Files changed: GameRoomContext.tsx (new), GameRoom.tsx, ActiveGameView.tsx, ActionPanel.tsx, HandPanel.tsx, ArchetypeModal.tsx, helpers.ts
+- Learnings: helpers.ts is .ts not .tsx — use createElement() instead of JSX for wrapper components. BoardGrid stays prop-based since it's rendered in multiple contexts without a provider.
+---
+
+## 2026-03-03 20:15 - US-CH-008
+- Audited all 19 uxp*.test.tsx files using fs.readFileSync on .tsx source files
+- Deleted 7 entire test files (uxp010, uxp011, uxp012, uxp018, uxp020, uxp022, uxp025) — all tests were pure source-string assertions
+- Trimmed source-string tests from 12 more files (uxp004, uxp006, uxp007, uxp008, uxp009, uxp013, uxp014, uxp015, uxp017, uxp019, uxp021, uxp023), keeping only config file tests (CSS, JSON, package.json) and banned-pattern scans
+- Net: -1255 lines of brittle source-string tests; remaining tests read config files or are behavioral
+- Tests: 246 frontend passed (32 test files), 567 backend passed
+- Files changed: 19 uxp*.test.tsx files (7 deleted, 12 trimmed)
+- Learnings: Source-string tests break on every refactor and don't test user-visible behavior. Config file tests (CSS keyframes, package.json deps) are acceptable since they verify build/deploy contracts. Banned-pattern scans (zinc classes) are linting-style checks worth keeping.
+---

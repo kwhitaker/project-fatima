@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AnimatePresence } from "motion/react";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
 import { CompleteGameView } from "@/routes/game-room/CompleteGameView";
 import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
 import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
+import { GameRoomProvider } from "@/routes/game-room/GameRoomContext";
 
 import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
 import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
@@ -38,6 +39,8 @@ export default function GameRoom() {
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
+  const lastPreviewCard = useRef<{ cardKey: string; def?: CardDefinition }>({ cardKey: "" });
+  if (previewCard) lastPreviewCard.current = previewCard;
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
 
@@ -199,11 +202,12 @@ export default function GameRoom() {
   const opponentPlayer = myIndex >= 0 ? game.players[opponentIndex] : undefined;
 
   // Score: count board cells owned by each player
+  const board = game.board ?? [];
   const myScore = myIndex >= 0
-    ? game.board.filter((c) => c !== null && c.owner === myIndex).length
+    ? board.filter((c) => c !== null && c.owner === myIndex).length
     : 0;
   const opponentScore = myIndex >= 0
-    ? game.board.filter((c) => c !== null && c.owner === opponentIndex).length
+    ? board.filter((c) => c !== null && c.owner === opponentIndex).length
     : 0;
 
   const titleText =
@@ -258,49 +262,54 @@ export default function GameRoom() {
       </div>
 
       {game.status === "active" ? (
-        <ActiveGameView
-          game={game}
-          myIndex={myIndex}
-          myPlayer={myPlayer}
-          opponentPlayer={opponentPlayer}
-          myScore={myScore}
-          opponentScore={opponentScore}
-          cardDefs={cardDefs}
-          selectedCard={selectedCard}
-          onSelectCard={setSelectedCard}
-          movePending={movePending}
-          moveError={moveError}
-          usePower={usePower}
-          onUsePowerChange={(next) => {
-            setUsePower(next);
-            setPowerSide(null);
-            setIntimidatePendingCell(null);
+        <GameRoomProvider
+          value={{
+            selectedCard,
+            onSelectCard: setSelectedCard,
+            selectedCardElement,
+            movePending,
+            usePower,
+            onUsePowerChange: (next) => {
+              setUsePower(next);
+              setPowerSide(null);
+              setIntimidatePendingCell(null);
+            },
+            powerSide,
+            onPowerSideToggle: (side) => {
+              setPowerSide(powerSide === side ? null : side);
+            },
+            intimidatePendingCell,
+            onCancelIntimidatePending: () => setIntimidatePendingCell(null),
+            archetypePending,
+            archetypeError,
+            onSelectArchetype: (arch) => void handleSelectArchetype(arch),
+            onPreviewCard: (cardKey, def) => setPreviewCard({ cardKey, def }),
+            leaving,
+            onOpenLeaveConfirm: () => setShowLeaveConfirm(true),
+            showLeaveConfirm,
+            onCloseLeaveConfirm: () => setShowLeaveConfirm(false),
+            onConfirmLeave: () => {
+              setShowLeaveConfirm(false);
+              void handleLeave();
+            },
+            onShowRules: () => setShowRules(true),
           }}
-          powerSide={powerSide}
-          onPowerSideToggle={(side) => {
-            setPowerSide(powerSide === side ? null : side);
-          }}
-          placedCells={placedCells}
-          capturedCells={capturedCells}
-          onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
-          onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
-          leaving={leaving}
-          onOpenLeaveConfirm={() => setShowLeaveConfirm(true)}
-          showLeaveConfirm={showLeaveConfirm}
-          onCloseLeaveConfirm={() => setShowLeaveConfirm(false)}
-          onConfirmLeave={() => {
-            setShowLeaveConfirm(false);
-            void handleLeave();
-          }}
-          archetypePending={archetypePending}
-          archetypeError={archetypeError}
-          onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
-          boardElements={game.board_elements ?? null}
-          selectedCardElement={selectedCardElement}
-          onShowRules={() => setShowRules(true)}
-          intimidatePendingCell={intimidatePendingCell}
-          onCancelIntimidatePending={() => setIntimidatePendingCell(null)}
-        />
+        >
+          <ActiveGameView
+            game={game}
+            myIndex={myIndex}
+            myPlayer={myPlayer}
+            opponentPlayer={opponentPlayer}
+            myScore={myScore}
+            opponentScore={opponentScore}
+            cardDefs={cardDefs}
+            placedCells={placedCells}
+            capturedCells={capturedCells}
+            onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
+            boardElements={game.board_elements ?? null}
+            moveError={moveError}
+          />
+        </GameRoomProvider>
       ) : game.status === "waiting" ? (
         <WaitingGameView
           game={game}
@@ -323,15 +332,12 @@ export default function GameRoom() {
       )}
 
       {/* Card inspect preview dialog */}
-      <AnimatePresence>
-        {previewCard !== null && (
-          <CardInspectPreview
-            cardKey={previewCard.cardKey}
-            def={previewCard.def}
-            onClose={() => setPreviewCard(null)}
-          />
-        )}
-      </AnimatePresence>
+      <CardInspectPreview
+        open={previewCard !== null}
+        cardKey={lastPreviewCard.current.cardKey}
+        def={lastPreviewCard.current.def}
+        onClose={() => setPreviewCard(null)}
+      />
 
       <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>

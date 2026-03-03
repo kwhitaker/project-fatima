@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { vi, beforeEach, describe, it, expect } from "vitest";
 import App from "../App";
 import type { BoardCell, GameState, PlayerState } from "@/lib/api";
+import { MOCK_SESSION, EMPTY_BOARD, makeGame, makePlayer } from "./helpers";
 
 // --- Supabase mock -----------------------------------------------------------
 // vi.mock is hoisted to the top, so use vi.hoisted() for the shared fns.
@@ -92,11 +93,6 @@ vi.mock("@/lib/api", () => ({
   getCardDefinitions: mockGetCardDefinitions,
 }));
 
-const MOCK_SESSION = {
-  user: { id: "user-123", email: "test@example.com" },
-  access_token: "fake-token",
-};
-
 function setupAuth(authenticated: boolean) {
   const session = authenticated ? MOCK_SESSION : null;
   mockGetSession.mockResolvedValue({ data: { session } });
@@ -111,23 +107,6 @@ function renderAt(path: string) {
       <App />
     </MemoryRouter>
   );
-}
-
-const EMPTY_BOARD: (BoardCell | null)[] = Array(9).fill(null);
-
-function makeGame(overrides: Partial<GameState> = {}): GameState {
-  return {
-    game_id: "abc-123",
-    status: "waiting",
-    players: [],
-    board: EMPTY_BOARD,
-    current_player_index: 0,
-    starting_player_index: 0,
-    state_version: 0,
-    round_number: 1,
-    result: null,
-    ...overrides,
-  };
 }
 
 const DEFAULT_GAME = makeGame();
@@ -553,10 +532,6 @@ describe("games page", () => {
 });
 
 // --- Game room lobby (US-UI-005) ---------------------------------------------
-
-function makePlayer(id: string): PlayerState {
-  return { player_id: id, archetype: null, hand: [], archetype_used: false };
-}
 
 describe("game room lobby", () => {
   const waitingGame = makeGame({

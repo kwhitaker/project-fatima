@@ -13,16 +13,20 @@ import { DefeatOverlay } from "@/routes/game-room/DefeatOverlay";
 // Mock card definitions
 // ---------------------------------------------------------------------------
 
+function mockCard(card_key: string, character_key: string, name: string, tier: number, sides: { n: number; e: number; s: number; w: number }, element: CardDefinition["element"]): CardDefinition {
+  return { card_key, character_key, name, version: "1.0", tier, rarity: 50, is_named: true, sides, set: "core", tags: [], element };
+}
+
 const MOCK_CARDS: CardDefinition[] = [
-  { card_key: "c-wolf", character_key: "werewolf-alpha", name: "Werewolf Alpha", version: "1.0", tier: 3, sides: { n: 8, e: 6, s: 3, w: 7 }, element: "nature" },
-  { card_key: "c-strahd", character_key: "strahd", name: "Count Strahd", version: "1.0", tier: 3, sides: { n: 9, e: 8, s: 7, w: 3 }, element: "blood" },
-  { card_key: "c-zombie", character_key: "zombie-guard", name: "Zombie Guard", version: "1.0", tier: 1, sides: { n: 2, e: 3, s: 5, w: 4 }, element: "shadow" },
-  { card_key: "c-cleric", character_key: "cleric-dawn", name: "Cleric of Dawn", version: "1.0", tier: 2, sides: { n: 6, e: 3, s: 4, w: 7 }, element: "holy" },
-  { card_key: "c-raven", character_key: "wereraven", name: "Wereraven", version: "1.0", tier: 1, sides: { n: 4, e: 5, s: 3, w: 2 }, element: "nature" },
-  { card_key: "c-mage", character_key: "amber-mage", name: "Amber Mage", version: "1.0", tier: 2, sides: { n: 5, e: 7, s: 3, w: 6 }, element: "arcane" },
-  { card_key: "c-bat", character_key: "vampire-spawn", name: "Vampire Spawn", version: "1.0", tier: 1, sides: { n: 3, e: 4, s: 6, w: 2 }, element: "blood" },
-  { card_key: "c-ghost", character_key: "ghost-knight", name: "Ghost Knight", version: "1.0", tier: 2, sides: { n: 7, e: 3, s: 5, w: 6 }, element: "shadow" },
-  { card_key: "c-druid", character_key: "forest-druid", name: "Forest Druid", version: "1.0", tier: 1, sides: { n: 3, e: 5, s: 4, w: 3 }, element: "nature" },
+  mockCard("c-wolf", "werewolf-alpha", "Werewolf Alpha", 3, { n: 8, e: 6, s: 3, w: 7 }, "nature"),
+  mockCard("c-strahd", "strahd", "Count Strahd", 3, { n: 9, e: 8, s: 7, w: 3 }, "blood"),
+  mockCard("c-zombie", "zombie-guard", "Zombie Guard", 1, { n: 2, e: 3, s: 5, w: 4 }, "shadow"),
+  mockCard("c-cleric", "cleric-dawn", "Cleric of Dawn", 2, { n: 6, e: 3, s: 4, w: 7 }, "holy"),
+  mockCard("c-raven", "wereraven", "Wereraven", 1, { n: 4, e: 5, s: 3, w: 2 }, "nature"),
+  mockCard("c-mage", "amber-mage", "Amber Mage", 2, { n: 5, e: 7, s: 3, w: 6 }, "arcane"),
+  mockCard("c-bat", "vampire-spawn", "Vampire Spawn", 1, { n: 3, e: 4, s: 6, w: 2 }, "blood"),
+  mockCard("c-ghost", "ghost-knight", "Ghost Knight", 2, { n: 7, e: 3, s: 5, w: 6 }, "shadow"),
+  mockCard("c-druid", "forest-druid", "Forest Druid", 1, { n: 3, e: 5, s: 4, w: 3 }, "nature"),
 ];
 
 const CARD_DEFS = new Map<string, CardDefinition>(
@@ -64,6 +68,8 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
     starting_player_index: 0,
     state_version: 1,
     round_number: 1,
+    sudden_death_rounds_used: 0,
+    seed: 42,
     result: null,
     board_elements: BOARD_ELEMENTS,
     ...overrides,
@@ -136,7 +142,7 @@ export default function DevPlayground() {
             board[4] = { card_key: "c-strahd", owner: 0 };
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 3, mists_effect: "none" });
+            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 3, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
             break;
           }
           case 1: {
@@ -147,7 +153,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([5]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 4, mists_effect: "none" });
+            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 4, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
             break;
           }
           case 2: {
@@ -161,7 +167,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([1, 3, 5, 7]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 5, mists_effect: "none" });
+            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 5, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
             break;
           }
           case 3: {
@@ -173,7 +179,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([1, 5]));
-            setLastMove({ player_index: 0, card_key: "c-cleric", cell_index: 4, mists_roll: 3, mists_effect: "none", plus_triggered: true });
+            setLastMove({ player_index: 0, card_key: "c-cleric", cell_index: 4, mists_roll: 3, mists_effect: "none", plus_triggered: true, elemental_triggered: false });
             break;
           }
           case 4: {
@@ -184,7 +190,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board, board_elements: BOARD_ELEMENTS }));
             setPlacedCells(new Set([0]));
             setCapturedCells(new Set([1]));
-            setLastMove({ player_index: 0, card_key: "c-bat", cell_index: 0, mists_roll: 4, mists_effect: "none", elemental_triggered: true });
+            setLastMove({ player_index: 0, card_key: "c-bat", cell_index: 0, mists_roll: 4, mists_effect: "none", plus_triggered: false, elemental_triggered: true });
             break;
           }
           case 5: {
@@ -206,7 +212,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setMistsEffect("fog");
-            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 1, mists_effect: "fog" });
+            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 1, mists_effect: "fog", plus_triggered: false, elemental_triggered: false });
             break;
           }
           case 7: {
@@ -216,7 +222,7 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setMistsEffect("omen");
-            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 6, mists_effect: "omen" });
+            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 6, mists_effect: "omen", plus_triggered: false, elemental_triggered: false });
             break;
           }
           case 8: {
@@ -225,7 +231,7 @@ export default function DevPlayground() {
             setGame(makeGame({
               status: "complete",
               board,
-              result: { winner: 0, is_draw: false, completion_reason: "board_full" },
+              result: { winner: 0, is_draw: false, completion_reason: "board_full", early_finish: false },
             }));
             setVictoryCells([0, 2, 4, 6, 8]);
             setShowVictory(true);
@@ -237,7 +243,7 @@ export default function DevPlayground() {
             setGame(makeGame({
               status: "complete",
               board,
-              result: { winner: 1, is_draw: false, completion_reason: "board_full" },
+              result: { winner: 1, is_draw: false, completion_reason: "board_full", early_finish: false },
             }));
             setShowDefeat(true);
             break;
@@ -321,7 +327,7 @@ export default function DevPlayground() {
         <div className="flex justify-center">
           <div className="w-full max-w-md">
             <BoardGrid
-              board={game.board}
+              board={game.board ?? []}
               myIndex={0}
               cardDefs={CARD_DEFS}
               placedCells={placedCells}

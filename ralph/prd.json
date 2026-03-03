@@ -1,487 +1,154 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/ux-polish-1",
-  "description": "UX polish pass 1: consolidate repo docs into a proper README, adopt a Castlevania-inspired 8-bit aesthetic (NES color palette, pixel fonts, sharp corners, stepped animations), add a vampire emoji favicon, and rename the app to 'Yugi-Strahd'.",
+  "branchName": "ralph/code-health-1",
+  "description": "Code health pass 1: extract shared test fixtures, deduplicate backend test scenarios, refactor reducer internals, reduce frontend prop drilling, extract shared modal shell, and convert source-string tests to behavioral tests.",
   "userStories": [
     {
-      "id": "US-UXP-001",
-      "title": "Consolidate docs into a proper README",
-      "description": "As a developer cloning the repo, I want a single README.md at the repo root that explains what the project is, how to set up and run both backend and frontend in dev mode, and where to find deeper docs — so I can get started without hunting through multiple files.",
+      "id": "US-CH-001",
+      "title": "Extract shared backend test fixtures into conftest.py",
+      "description": "As a developer, I want common test helpers (_make_card, _mock_caller_id, client fixture, make_state, mock_rng) to live in tests/conftest.py instead of being copy-pasted across 12+ test files — so adding a new test file doesn't require duplicating 40 lines of boilerplate.",
       "acceptanceCriteria": [
-        "Create a root `README.md` covering: project summary (one-paragraph 'what is this'), prerequisites (Python 3.12+, uv, bun, Supabase project), backend setup (`uv sync --extra dev`, env vars from `.env.example`, `uv run uvicorn app.main:app --reload`), frontend setup (`cd web && bun install`, `bun run dev`), running tests (backend: `uv run pytest`, frontend: `bun run test --run`), and lint/typecheck (`uv run ruff check .`, `uv run ruff format .`, `uv run pyright`)",
-        "Include a 'Further reading' section linking to `GAME_RULES_OVERVIEW.md`, `CARDS_SPEC.md`, `TECH_DECISIONS.md`, `MVP_PLAN_OVERVIEW.md`, and `docs/` for architecture details",
-        "Remove redundant setup/command info from `AGENTS.md` that is now covered by the README — keep `AGENTS.md` focused on agent-specific workflow notes and code style guidelines only",
-        "Do not delete any existing .md files; just add the README and trim duplication from AGENTS.md",
-        "`uv run pytest` passes",
-        "`bun run test --run` passes"
+        "Create `tests/conftest.py` with the following shared fixtures/helpers:",
+        "`_make_card(idx: int)` — returns a CardDefinition with `card_key=f'card_{idx}'`, tier=1, rarity=15, sides all 4 (w=3), element='shadow'. This is the 'standard' test card used by 11+ files",
+        "`_mock_caller_id(request)` — extracts X-User-Id header, defaults to 'test-user'",
+        "`client` pytest fixture — creates a TestClient with MemoryGameStore, MemoryCardStore (seeded with `_TEST_CARDS` from 10 `_make_card` calls), and dependency overrides for `get_caller_id` and both stores. Returns the TestClient",
+        "`make_state(overrides)` — returns a GameState with sensible defaults (2 players, empty board, version 0). Accepts keyword overrides for any field. The archetype test files (test_caster, test_devout, etc.) should call `make_state(p0_archetype=Archetype.CASTER)` instead of defining their own variant",
+        "`mock_rng(*rolls)` — returns a MagicMock with `randint.side_effect = list(rolls)`",
+        "Remove the duplicated definitions from all test files that now import from conftest: test_api.py, test_auth_api.py, test_error_responses.py, test_gm011_open_games.py, test_gm013_one_active_game.py, test_idempotency.py, test_leave_game.py, test_ux002.py, test_ux003.py, test_ux004.py, test_ux008.py, test_ux011.py, test_caster.py, test_devout.py, test_intimidate.py, test_skulker.py, test_martial.py, test_captures.py, test_mists.py, test_turn_flow.py",
+        "Files with genuinely different `_make_card` signatures (test_cards_balance.py, test_gm001_weak_side.py, test_seed_cards.py) may keep their local variants if the signatures differ materially — but add a comment explaining why",
+        "Conftest fixtures must use `@pytest.fixture` properly — `client` is session-or-function scoped, helpers like `_make_card` are plain functions (not fixtures)",
+        "`uv run pytest` passes with all existing tests unchanged in behavior"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "The README should be concise (not a wall of text). Use the commands from CLAUDE.md/AGENTS.md as the source of truth. Keep AGENTS.md as the AI-agent-specific guide but remove the duplicated 'how to run' sections that now live in README."
+      "notes": "This is the highest-impact cleanup. The `_make_card` + `_mock_caller_id` + `client` trio is copy-pasted across 12 files. The `make_state` factory has 5 archetype-specific copies that differ only in the default archetype value. The `mock_rng` helper is identical in 3 files. Pytest auto-discovers conftest.py — no explicit imports needed for fixtures. Plain helper functions (not fixtures) DO need explicit imports. Keep test_store.py and test_supabase_store.py untouched if their make_state variants have materially different shapes."
     },
     {
-      "id": "US-UXP-002",
-      "title": "NES Castlevania color palette for shadcn/ui theme",
-      "description": "As a player, I want the app to feel like a gothic NES game so the visual identity matches the Curse of Strahd setting. The default neutral shadcn/ui theme should be replaced with a Castlevania-inspired palette.",
+      "id": "US-CH-002",
+      "title": "Extract shared frontend test fixtures into helpers.ts",
+      "description": "As a developer, I want common frontend test setup (Supabase mock, API mock, MOCK_SESSION, setupAuth, makeGame, mockChannel) to live in web/src/__tests__/helpers.ts instead of being copy-pasted across 20 test files — so test files are focused on assertions, not boilerplate.",
       "acceptanceCriteria": [
-        "Update `web/src/index.css` CSS custom properties (both `:root` and `.dark` blocks) to a Castlevania NES-inspired palette. Target colors: deep indigo/near-black backgrounds (like Castlevania castle interiors), blood-red primary for buttons/interactive elements, muted stone-gray for secondary/cards, sickly green or gold for accents, bone-white for foreground text",
-        "Dark mode `.dark` block values (this is the default and primary mode): background ~`240 20% 6%` (deep blue-black), foreground ~`40 20% 90%` (warm parchment), primary ~`0 70% 45%` (blood red), secondary ~`240 10% 15%` (dark stone), accent ~`45 60% 45%` (dull gold), muted ~`240 10% 18%` (charcoal), border ~`240 15% 22%` (slightly lighter charcoal). These are guidelines — adjust for contrast/readability but stay in this neighborhood",
-        "Light mode `:root` block should be a readable inverse — not critical since dark is default, but should not be broken if toggled",
-        "Destructive variant (`--destructive`) should remain visually distinct from the new red primary — use a brighter/more orange-red or keep the existing hue but ensure it reads differently from primary",
-        "All existing shadcn/ui components (`Button`, `Dialog`, etc.) pick up the new theme via CSS variables with no component-level changes needed",
-        "`bun run test --run` passes"
+        "Create `web/src/__tests__/helpers.ts` with the following shared exports:",
+        "`MOCK_SESSION` — the standard `{ user: { id: 'user-123', email: 'test@example.com' }, access_token: 'tok' }` object",
+        "`MOCK_CARD_DEFS` — an empty Map (or a small populated one if tests need it) for `mockGetCardDefinitions`",
+        "`makeGame(overrides?: Partial<GameState>)` — returns a default GameState with game_id, status='active', 2 players, empty board, board_elements, state_version, round_number, result, created_at. Accepts partial overrides",
+        "`makePlayer(overrides?: Partial<PlayerState>)` — returns a default PlayerState. Useful for constructing custom player arrays",
+        "A `setupSupabaseMock()` function or documented pattern for the `vi.hoisted` + `vi.mock('@/lib/supabase')` block that test files can reuse. Note: due to vitest hoisting constraints, the `vi.mock` call itself must remain in each test file, but the mock factory and the hoisted variables can be shared",
+        "A `setupApiMock()` function or documented pattern for `vi.mock('@/lib/api')` — same hoisting constraint applies",
+        "Refactor at minimum these files to use the shared helpers: routes.test.tsx, gm011.test.tsx, gm013.test.tsx, gm014.test.tsx, gm015.test.tsx, gm016.test.tsx",
+        "For files that only need a subset (e.g. ux* files with simpler mocks), refactoring is optional but importing MOCK_SESSION and makeGame from helpers.ts is encouraged where they apply",
+        "`bun run test --run` passes with all existing tests unchanged in behavior"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "CSS-variable-only change. HSL values in shadcn use space-separated format without 'hsl()' wrapper (e.g. '0 70% 45%' not 'hsl(0, 70%, 45%)'). Reference NES Castlevania palette: purples (#1c0040, #3c0080), reds (#a00000, #c02020), stone (#606070, #808890), gold (#c0a000). The key test is: can you tell what's a button vs what's a label? Primary buttons should pop against the dark background."
+      "notes": "The vi.mock hoisting constraint is the main complexity here. `vi.mock` calls are hoisted to the top of the file by vitest's transform — the factory function must not reference variables from the module scope UNLESS they are created via `vi.hoisted()`. The practical pattern: helpers.ts exports data (MOCK_SESSION, makeGame) and can export factory functions, but each test file still needs its own `vi.mock(...)` call and its own `vi.hoisted()` block for mock function references. The win is deduplicating the data/factories, not the mock wiring. Don't try to be too clever with mock abstractions — keep it simple. The gm01x and routes test files have the most duplication and should be the priority."
     },
     {
-      "id": "US-UXP-003",
-      "title": "Favicon and app rename to Yugi-Strahd",
-      "description": "As a player, I want the browser tab to show a vampire emoji favicon and the title 'Yugi-Strahd' so the app has its own identity instead of a generic project codename.",
+      "id": "US-CH-003",
+      "title": "Deduplicate backend test scenarios across test_api / test_auth_api / test_error_responses",
+      "description": "As a developer, I want each error scenario (404, 403, 409, 422) tested exactly once — not duplicated across test_api.py, test_auth_api.py, and test_error_responses.py — so I can modify error behavior without updating 3 files.",
       "acceptanceCriteria": [
-        "Add a favicon using the vampire emoji (🧛). Generate an SVG favicon: `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧛</text></svg>` — save as `web/public/favicon.svg` and reference it in `web/index.html` via `<link rel='icon' type='image/svg+xml' href='/favicon.svg' />`",
-        "Update `<title>` in `web/index.html` from 'Project Fatima' to 'Yugi-Strahd'",
-        "Search the frontend codebase for any other occurrences of 'Project Fatima' in user-visible text (headings, labels, aria-labels) and replace with 'Yugi-Strahd'",
-        "Do NOT rename the Python package, repo, or internal code references — only user-facing UI text and HTML metadata",
-        "`bun run test --run` passes"
+        "Identify all duplicate test scenarios between test_api.py, test_auth_api.py, and test_error_responses.py. Known duplicates: GET /games/{id} 404, POST /games/{id}/join 404, archetype non-participant 403, move non-participant 403, wrong turn 422, stale state_version 409",
+        "Keep each scenario in exactly ONE file. Recommended split: test_error_responses.py owns all error-code-specific scenarios (it's organized by status code). Remove the duplicate from test_api.py",
+        "test_api.py should keep only happy-path and basic flow tests",
+        "test_auth_api.py should keep only auth-specific tests (missing token, invalid token, etc.) — not game-logic errors that happen to return 403/404",
+        "Do not delete any test FILE — just remove duplicate test functions and update any shared setup that becomes unused",
+        "No test coverage should be lost — every scenario that was tested before must still be tested after, just in one place",
+        "`uv run pytest` passes"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "SVG emoji favicons work in all modern browsers. The vampire emoji is a quick win that looks good at small sizes. Keep the rename scoped to user-facing text only — package.json name, Python module names, etc. stay as-is."
+      "notes": "The 6 known duplicates are all cases where test_api.py tests an error path that test_error_responses.py also tests more systematically. The fix is simple: delete the duplicate test functions from test_api.py. Check that test_error_responses.py covers each scenario with equivalent or better assertions before deleting. If test_api.py has a better assertion for a particular case, move that assertion to test_error_responses.py instead of deleting it."
     },
     {
-      "id": "US-UXP-004",
-      "title": "Retro pixel fonts (Press Start 2P + VT323)",
-      "description": "As a player, I want the UI to use pixel/retro fonts so it immediately reads as an 8-bit game rather than a modern web app.",
+      "id": "US-CH-004",
+      "title": "Extract archetype dispatch from apply_intent reducer",
+      "description": "As a developer, I want the archetype dispatch logic extracted from the 189-line apply_intent function into a dedicated function — so the reducer reads as a clear sequence of phases (validate → archetype → place → capture → score) without a 58-line if/elif block inline.",
       "acceptanceCriteria": [
-        "Import 'Press Start 2P' and 'VT323' from Google Fonts in `web/index.html` (use `<link>` preconnect + stylesheet pattern for performance)",
-        "Define CSS custom properties or Tailwind `fontFamily` extensions for the two fonts: a 'heading' font (Press Start 2P) and a 'body' font (VT323)",
-        "Apply Press Start 2P to: page headings, dialog titles, the app name/logo area, game status text (score, 'Your turn', 'Plus!', 'Elemental!' callouts), and button text",
-        "Apply VT323 to: body text, card stats/names, hand panel labels, form inputs, and secondary UI text (tooltips, descriptions, rules dialog body)",
-        "Press Start 2P is very small at standard sizes — ensure heading usage has adequate `font-size` (minimum 14px for buttons, 18-24px for headings) and `leading`/`line-height` adjustments so text is legible",
-        "VT323 should be sized at ~18-20px minimum for body text to remain readable at its pixel density",
-        "Fallback fonts: include `monospace` as fallback for both to prevent layout shift if Google Fonts fails to load",
-        "Verify the fonts render correctly on the login page, games list, game room (board + hand + action panel + sidebar), and rules dialog",
-        "`bun run test --run` passes"
+        "Extract the archetype dispatch block (lines ~160-217 in reducer.py) into a new function: `_apply_archetype(state, intent, card) -> tuple[card, ArchetypeResult]` or similar signature that returns the modified card and any archetype side effects (caster_reroll, devout_negate_fog, intimidate target info)",
+        "The extracted function should contain all archetype validation and application: MARTIAL rotation, SKULKER boost, CASTER reroll flag, DEVOUT negate flag, INTIMIDATE target validation + debuff info",
+        "Keep the function in the same file (reducer.py) — this is an internal refactor, not a new module",
+        "The `apply_intent` function should call the extracted function and destructure the result, replacing the inline if/elif block with a single function call + result handling",
+        "Define a small dataclass or NamedTuple for the archetype result to avoid returning a loose tuple",
+        "Do NOT change any game behavior — this is a pure refactor. All existing tests must pass without modification",
+        "`uv run pytest` passes"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Press Start 2P is the single highest-impact change for 8-bit feel. But it's notoriously hard to read at small sizes — err on the side of too large rather than too small. VT323 is more readable at smaller sizes and works well for data-dense areas like card stats. Both are free on Google Fonts. Do NOT apply Press Start 2P to long-form text (rules dialog body, descriptions) — only headings and short labels."
+      "notes": "The INTIMIDATE branch is the longest (30 lines) because it validates adjacency, checks opponent ownership, etc. The others are 2-6 lines each. The extraction should make apply_intent read like a pipeline: validate turn → apply archetype → place card → resolve captures → check game over → return state. The archetype result type might look like: `ArchetypeResult(card: CardDefinition, caster_reroll: bool, devout_negate_fog: bool, intimidate_debuff: tuple[int, str] | None)`. Keep it simple — don't over-engineer the result type."
     },
     {
-      "id": "US-UXP-005",
-      "title": "Sharp corners and thick borders (kill rounded modern look)",
-      "description": "As a player, I want all UI elements to have sharp 90-degree corners and chunky borders so the interface feels like an NES-era game UI, not a modern SaaS app.",
+      "id": "US-CH-005",
+      "title": "Extract adjacency helper into shared board module",
+      "description": "As a developer, I want the board adjacency lookup to live in a shared module (app/rules/board.py) instead of being a private dict in captures.py that reducer.py imports via an underscore-prefixed internal reference — so both modules use a clean public API.",
       "acceptanceCriteria": [
-        "Set `--radius: 0px` in `web/src/index.css` (both `:root` and `.dark`) to eliminate all border-radius from shadcn/ui components globally",
-        "Search all `.tsx` files in `web/src/` for hardcoded `rounded-*` Tailwind classes (e.g. `rounded-lg`, `rounded-md`, `rounded-full`, `rounded-xl`). Replace with `rounded-none` or remove them, EXCEPT: do NOT remove `rounded-full` on avatar/profile images if any exist",
-        "Add a `border-2 border-border` (or `border-[3px]`) to cards in `BoardGrid.tsx` and `HandPanel.tsx` to give them a chunky pixel-art frame feel — thicker than the default 1px hairline",
-        "Buttons (`web/src/components/ui/button.tsx`): ensure the button variants use `rounded-none` and that the default/primary variant has a visible `border-2` so buttons look like NES menu selections",
-        "Dialog/modal frames: ensure dialogs have sharp corners and a visible border (the `--radius: 0px` variable should handle this, but verify `GameRulesDialog`, `ForfeitDialog`, `ArchetypeModal`, `CardInspectPreview`)",
-        "Board grid cells in `BoardGrid.tsx`: ensure cells have sharp corners and visible 2-3px borders",
-        "`bun run test --run` passes"
+        "Create `app/rules/board.py` with: the `ADJACENCY` dict (mapping cell index → list of (neighbor_index, attacking_side, defending_side) tuples) and a `get_adjacent_indices(cell_index: int) -> set[int]` helper function",
+        "Update `app/rules/captures.py` to import `ADJACENCY` from `app.rules.board` instead of defining `_ADJACENCY` locally",
+        "Update `app/rules/reducer.py` to import `get_adjacent_indices` (or `ADJACENCY`) from `app.rules.board` instead of the current `from app.rules.captures import _ADJACENCY` internal import at line ~193",
+        "Remove the deferred import inside `apply_intent` — top-level imports only",
+        "Add `test_board.py` (or add tests to an existing file) verifying: `get_adjacent_indices(4)` returns {1,3,5,7} (center cell), corner cells return 2 neighbors, edge cells return 3 neighbors",
+        "`uv run pytest` passes"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "The `--radius` CSS variable controls all shadcn/ui component border-radius globally, so setting it to 0 handles Button, Dialog, Card, etc. automatically. The manual work is finding hardcoded Tailwind `rounded-*` classes in app code (not in shadcn component files). The chunky border addition is the extra step that makes it feel retro rather than just 'sharp modern'. Files with `rounded` classes: ActionPanel, ActiveGameView, BoardGrid, CardInspectPreview, GameRulesDialog, HandDrawer, HandPanel, GameRoom, Games, ArchetypeModal, ArchetypePowerAside, ForfeitDialog, CompleteGameView, Login, ResetPassword, button.tsx."
+      "notes": "The adjacency data is a static mapping of the 3x3 grid. It's currently defined as `_ADJACENCY` in captures.py and imported (breaking the private convention) by reducer.py. Moving it to a shared board.py is a clean separation. The `get_adjacent_indices` helper is a one-liner (`{nb[0] for nb in ADJACENCY[cell_index]}`) but saves the caller from knowing the tuple structure. Keep board.py minimal — just the adjacency data and helper."
     },
     {
-      "id": "US-UXP-006",
-      "title": "8-bit stepped animations for card placement and capture",
-      "description": "As a player, I want card placement and capture animations to feel choppy and frame-by-frame like NES sprite animations, not smooth modern CSS transitions.",
+      "id": "US-CH-006",
+      "title": "Extract ModalShell shared dialog wrapper component",
+      "description": "As a developer, I want a shared <ModalShell> component that handles the backdrop overlay, content container, enter/exit animations, and Escape key handling — so the 4 modal components don't each duplicate 15+ lines of identical wrapper markup.",
       "acceptanceCriteria": [
-        "In `web/src/index.css`, update the `.animate-card-placed` animation to use `animation-timing-function: steps(4)` instead of `ease-out` — this makes the scale-in feel like a 4-frame sprite pop",
-        "Update `.animate-card-captured` animation to use `animation-timing-function: steps(3)` instead of `ease-in-out` — the brightness flash becomes a 3-frame blink",
-        "Add a new `@keyframes card-flip` animation for ownership changes (when a card is captured and changes color): a quick 3-step horizontal scale squash-and-stretch (scaleX: 1 → 0.1 → 1) with `steps(3)`, duration ~0.3s. Add corresponding `.animate-card-flip` class",
-        "If the callout text animations ('Plus!', 'Elemental!', capture count) use any transitions or animations, convert those to stepped timing as well for consistency",
-        "Ensure animations are still perceptible and not too fast — the stepped timing can make short animations feel instant if there are too few frames. Test that card-placed (0.4s, 4 steps), card-captured (0.55s, 3 steps), and card-flip (0.3s, 3 steps) are all visually readable",
+        "Create `web/src/components/ui/ModalShell.tsx` with props: `open: boolean`, `onClose: () => void`, `maxWidth?: string` (default 'max-w-sm'), `className?: string` (for content container), `children: ReactNode`",
+        "ModalShell renders: (1) AnimatePresence wrapping the conditional, (2) full-screen backdrop with `bg-black/70`, fade in/out animation, (3) content container with `bg-card border-2 border-border p-6 shadow-xl`, scale+fade animation, (4) Escape key handler calling onClose",
+        "Refactor these 4 components to use ModalShell: GameRulesDialog.tsx (maxWidth='max-w-2xl'), ForfeitDialog.tsx (maxWidth='max-w-sm'), ArchetypeModal.tsx (maxWidth='max-w-lg'), CardInspectPreview.tsx (maxWidth='max-w-xs')",
+        "Each refactored component should only contain its unique content — title, body, buttons — not the wrapper/animation boilerplate",
+        "CardInspectPreview has a dynamic `tierClass` on the container — support this via the `className` prop on ModalShell",
+        "GameRulesDialog has a scrollable inner container — this stays inside the dialog content, not in ModalShell",
+        "Preserve all existing behavior: close on Escape, backdrop click behavior, animation timing",
         "`bun run test --run` passes"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "The `steps(N)` timing function divides the animation into N discrete frames with no interpolation between them — this is exactly how NES sprite animations work. The existing keyframes in index.css are the only animations; updating their timing function is the primary change. The new card-flip class is additive — BoardGrid.tsx would need to apply it to captured cards, but that wiring can be done in this story if straightforward."
+      "notes": "All 4 modals share identical two-layer motion.div structure (backdrop + content). The only differences are maxWidth and optional extra classes. ModalShell wraps AnimatePresence internally so callers just pass `open` and don't manage AnimatePresence themselves. The Escape handler should be on the backdrop div (or use useEffect with keydown listener). One subtlety: ArchetypeModal currently does NOT have an Escape handler — adding one via ModalShell is fine (it's a UX improvement, not a behavior change). CardInspectPreview currently doesn't wrap itself in AnimatePresence (the caller does) — ModalShell internalizes this."
     },
     {
-      "id": "US-UXP-007",
-      "title": "Tier-based card rarity visuals (shiny T2, holographic T3)",
-      "description": "As a player, I want to immediately distinguish card tiers at a glance — tier 2 cards should have a metallic shiny border and tier 3 cards should get a full holographic treatment — so rare cards feel special and collectible.",
+      "id": "US-CH-007",
+      "title": "Reduce ActiveGameView prop count via useGameRoom context",
+      "description": "As a developer, I want game room state and callbacks to flow through a React context (useGameRoom) instead of being drilled through 28 props on ActiveGameView — so adding a new piece of game state doesn't require threading a prop through 3 component layers.",
       "acceptanceCriteria": [
-        "Add CSS classes `.card-tier-2` and `.card-tier-3` in `web/src/index.css` with all styling scoped to these classes",
-        "Tier 2 (shiny): animated `conic-gradient` border using a gold/blood-red metallic palette (fits gothic theme). Use a pseudo-element or wrapper technique — a rotating conic-gradient behind the card clipped to the border area. Animation should be subtle and loop smoothly (~3-4s cycle)",
-        "Tier 3 (holographic): the border gets a brighter, faster-cycling prismatic gradient (dark rainbow — purples, deep reds, golds, teals — not a bright candy rainbow). Additionally, the card face gets a semi-transparent prismatic overlay (`::after` pseudo-element with `mix-blend-mode: overlay` or `color-dodge`, ~10-15% opacity) that shifts with a slow animation, simulating the light-angle shift on real holo cards",
-        "Pass `tier` as a prop to `CardFace.tsx` and apply the appropriate `.card-tier-*` class to the card wrapper element. Tier 1 (or undefined) gets no extra class",
-        "Update `BoardGrid.tsx` to pass `tier` from the card definition to `CardFace` for placed board cards",
-        "Update `HandPanel.tsx` and `HandDrawer.tsx` to pass `tier` to their card rendering (whether using `CardFace` directly or rendering inline)",
-        "Tier effects should not interfere with existing owner-color backgrounds (blue for yours, red for opponent) on the board — the shiny/holo border wraps around the colored card, it does not replace the background",
-        "Tier effects should not interfere with existing animation classes (`.animate-card-placed`, `.animate-card-captured`) — both can be active simultaneously",
-        "The holographic overlay on tier 3 must not obscure card text (side values, name) — keep overlay opacity low enough that all text remains legible",
-        "`bun run test --run` passes"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "This is a CSS-heavy story. The tier data is already available via `CardDefinition.tier` in the frontend. Key implementation detail: the animated border technique typically uses a slightly-larger background element with the gradient, and the card sits on top masking the interior — search for 'CSS animated border gradient' or 'CSS holo card effect' for reference. Keep the color palette gothic (golds, blood-reds, deep purples, teals) rather than bright/saturated rainbow. For the holo overlay, `mix-blend-mode: overlay` at low opacity gives the prismatic sheen without killing readability. Performance note: `conic-gradient` animations can be GPU-intensive if there are many cards visible — use `will-change: transform` and keep the animation on the pseudo-element only."
-    },
-    {
-      "id": "US-UXP-008",
-      "title": "Install Motion library + animated card placement",
-      "description": "As a player, I want card placement on the board to feel punchy and alive — cards should pop into existence with a spring animation — so the game has satisfying tactile feedback instead of static rendering.",
-      "acceptanceCriteria": [
-        "Install `motion` as a production dependency in `web/package.json` via `bun add motion`",
-        "Replace the CSS `@keyframes card-placed` / `.animate-card-placed` in `web/src/index.css` with a Motion-powered spring animation in `BoardGrid.tsx`. The card should scale from 0 → 1 with a spring (stiffness ~300, damping ~20) and fade in from opacity 0 → 1",
-        "Remove the `animate-card-placed` CSS class and its keyframes from `index.css` since Motion now handles this",
-        "Wrap each board cell's card content in a `motion.div` with `initial`, `animate`, and appropriate spring transition. Only apply the entrance animation to newly placed cards (cells in the `placedCells` set), not to all cards on initial page load",
-        "Empty board cells that are clickable (valid placement targets) should have a subtle hover scale animation via `whileHover={{ scale: 1.05 }}` to invite interaction",
-        "Hand cards in `HandPanel.tsx` and `HandDrawer.tsx` should stagger-animate in when the component first mounts (game loads): use `motion.div` with `variants` and a staggerChildren delay (~0.05s) so cards fan in from left to right",
-        "Verify the spring animation feels good — not too bouncy (no visible oscillation), not too stiff (should have a slight overshoot). Target: card pops in ~0.3s with one subtle overshoot",
-        "`bun run test --run` passes"
-      ],
-      "priority": 9,
-      "passes": true,
-      "notes": "This is the foundational Motion story — get the library in, prove the pattern works, establish how motion.div wraps existing components. The key import is `import { motion } from 'motion/react'`. Spring physics: `type: 'spring', stiffness: 300, damping: 20` is a good starting point for a snappy pop. For the hand stagger, use variants with `transition: { staggerChildren: 0.05 }` on the parent and `initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }` on each child. Keep the existing `animate-card-captured` CSS animation for now — it gets replaced in the next story."
-    },
-    {
-      "id": "US-UXP-009",
-      "title": "Animated capture chains with sequential timing",
-      "description": "As a player, I want to see captures resolve one by one in a combo chain — each captured card flips and changes color in sequence with a brief delay — so big combos feel dramatic and exciting instead of everything changing at once.",
-      "acceptanceCriteria": [
-        "Replace the CSS `@keyframes card-captured` / `.animate-card-captured` with Motion-powered capture animations in `BoardGrid.tsx`. Remove the CSS animation from `index.css`",
-        "When multiple cards are captured in one move (combo chain), animate them sequentially with a staggered delay (~0.25-0.35s between each). The first capture should start after the card-placed animation completes (~0.3s delay)",
-        "Each capture animation should be a two-phase flip: (1) scaleX squashes to 0 (card appears to turn sideways, ~0.15s), (2) owner background color changes, then scaleX expands back to 1 (~0.15s). This creates a card-flip ownership transfer effect",
-        "The capturing card (the one just placed) should pulse briefly (`scale: [1, 1.08, 1]` over ~0.2s) when its captures begin resolving, drawing attention to the source",
-        "After all captures resolve, the score display should animate the number change (count up/down with a brief spring)",
-        "Plus-triggered combos: if `last_move.plus_triggered` is true, the 'Plus!' callout should punch in (scale from 1.5 → 1 with spring) before the capture sequence begins",
-        "Elemental-triggered: same punch-in treatment for the 'Elemental!' callout",
-        "The entire capture sequence (placement → callouts → sequential captures → score update) should be orchestrated so events don't overlap confusingly. Use Motion's `animate` sequencing or `useAnimate` hook if needed",
-        "`bun run test --run` passes"
-      ],
-      "priority": 10,
-      "passes": true,
-      "notes": "This is the highest-impact juice story. The key challenge is orchestrating the sequence: place → (optional Plus!/Elemental! callout) → capture 1 flip → capture 2 flip → ... → score update. The `capturedCells` set provides which cells were captured, but the current data model doesn't specify capture order. If capture order isn't available from the backend, animate them in index order (top-left to bottom-right) — still reads as sequential. For the flip effect, animate `scaleX` not `rotateY` — it's simpler and fits the 2D aesthetic. Consider using `useAnimate` from motion for the imperative sequencing, or `AnimatePresence` with `mode='popLayout'`."
-    },
-    {
-      "id": "US-UXP-010",
-      "title": "Hand card selection and deselection motion",
-      "description": "As a player, I want selecting a card from my hand to feel like physically picking it up — it should lift, glow, and visually separate from the other cards — so I always know exactly which card I'm about to play.",
-      "acceptanceCriteria": [
-        "In `HandPanel.tsx` and `HandDrawer.tsx`, wrap each hand card in a `motion.button` (or `motion.div` wrapping the button) to enable layout animations",
-        "Selected card animates to a lifted state: `scale: 1.1`, `y: -8` (lifts up), and a `boxShadow` glow matching the primary color (e.g. `0 0 12px hsl(var(--primary) / 0.5)`). Use spring transition for the lift",
-        "Deselecting a card (clicking it again or selecting a different one) animates it back to rest: `scale: 1`, `y: 0`, shadow removed. Should settle with a slight spring, not snap instantly",
-        "Non-selected cards while another card IS selected should subtly dim: `opacity: 0.7` with a quick tween (~0.15s) to draw focus to the selection",
-        "When a card is played (removed from hand), use `AnimatePresence` to animate it out — shrink to 0 scale and fade out (~0.2s) so it doesn't just vanish. Remaining cards should smooth-slide to fill the gap via `layout` animation",
-        "Card hover (no selection yet): `whileHover={{ scale: 1.05, y: -4 }}` with spring transition for a lightweight preview lift",
-        "`bun run test --run` passes"
-      ],
-      "priority": 11,
-      "passes": true,
-      "notes": "The `layout` prop on motion.div is key for the smooth gap-closing when a card leaves the hand — it automatically animates position changes. `AnimatePresence` requires a stable `key` on each child — use `card_key` which is already unique. The dim effect on non-selected cards is subtle but important for directing attention. Keep the existing preview/inspect button (ⓘ) functional — it should still work on the motion-wrapped card."
-    },
-    {
-      "id": "US-UXP-011",
-      "title": "Sidebar callout and feedback entrance animations",
-      "description": "As a player, I want game feedback (Mists, Plus!, Elemental!, capture count) to announce itself with motion — sliding or fading in — so I notice important events without having to scan the sidebar.",
-      "acceptanceCriteria": [
-        "In `ActiveGameView.tsx`, wrap each sidebar feedback element (last move callout, Mists feedback, capture feedback, Plus! callout, Elemental! callout) in a `motion.div` with an entrance animation: `initial={{ opacity: 0, x: 20 }}, animate={{ opacity: 1, x: 0 }}` with a spring transition",
-        "Use `AnimatePresence` around conditional callouts (Plus!, Elemental!, capture feedback) so they animate OUT when they disappear (fade + slide right, ~0.2s)",
-        "The capture count callout ('Combo! x3 captured') should have an extra punch: scale from 1.2 → 1 on entrance for emphasis",
-        "Score display (the 'You: X | Opp: Y' bar) should animate number changes. Wrap each score number in a `motion.span` with `key={score}` inside `AnimatePresence` — outgoing number slides up and fades, incoming number slides up from below and fades in",
-        "Turn indicator: when `isMyTurn` changes, animate the turn-related UI (action panel header or a 'Your turn' / 'Waiting' label) with a brief pulse or color flash to draw attention",
-        "Mobile secondary drawer: the drawer content should animate its height open/closed smoothly via `motion.div` with `animate={{ height: 'auto' }}` / `animate={{ height: 0 }}` instead of the current instant show/hide",
-        "`bun run test --run` passes"
-      ],
-      "priority": 12,
-      "passes": true,
-      "notes": "The sidebar is where all game feedback lives, so animating these elements makes the game feel responsive. The key pattern is `AnimatePresence` + conditional rendering — motion handles mount/unmount animations. For the score counter, the `mode='popLayout'` prop on AnimatePresence prevents layout jumps during the swap. The mobile drawer height animation replaces the current `sidebarOpen && (...)` conditional — instead, always render the content but animate its container height between 0 and auto."
-    },
-    {
-      "id": "US-UXP-012",
-      "title": "Page transitions and modal entrance/exit animations",
-      "description": "As a player, I want navigating between pages (login → games list → game room) and opening/closing modals to feel smooth and intentional — not jarring instant swaps — so the app feels polished and cohesive.",
-      "acceptanceCriteria": [
-        "Add route transition animations: wrap the main route outlet (in `App.tsx` or layout component) with `AnimatePresence` and apply a fade transition (`opacity: 0 → 1` on enter, `1 → 0` on exit, duration ~0.15-0.2s) to each page component. Keep it subtle — this is a game, not a slideshow",
-        "Archetype selection modal (`ArchetypeModal.tsx`): animate entrance with `scale: [0.9, 1]` + `opacity: [0, 1]` and the backdrop fading in. Exit should reverse. Use Motion's `AnimatePresence` wrapping the modal conditional",
-        "Forfeit dialog (`ForfeitDialog.tsx`): same modal animation pattern as archetype modal",
-        "Card inspect preview (`CardInspectPreview.tsx`): animate the preview card scaling in from the card's approximate position if feasible, otherwise use the same scale+fade pattern as other modals",
-        "Game rules dialog (`GameRulesDialog.tsx`): same modal animation pattern",
-        "Games list (`Games.tsx`): game list items should stagger in on page load — each game card fades and slides up with ~0.03-0.05s stagger delay. Use variants with `staggerChildren`",
-        "Login page (`Login.tsx`): the form should fade in on mount with a slight upward slide",
-        "Keep all transition durations short (0.15-0.25s) — snappy, not sluggish",
-        "`bun run test --run` passes"
-      ],
-      "priority": 13,
-      "passes": true,
-      "notes": "Page transitions with react-router-dom v7 + AnimatePresence can be tricky. The simplest approach: wrap each page's root element in a `motion.div` with enter/exit animations, and use `AnimatePresence mode='wait'` at the router outlet level. Don't try to animate between routes with shared layout — just a simple crossfade is enough. For modals, if they already use Radix Dialog (via shadcn), the open/close state is already managed — wrap the dialog content in motion.div and use `AnimatePresence` keyed on the `open` prop. Keep transitions fast — anything over 0.3s will feel sluggish in a game context."
-    },
-    {
-      "id": "US-UXP-013",
-      "title": "Emoji card faces from character mapping",
-      "description": "As a player, I want each card to display a prominent emoji icon on its face so I can identify characters at a glance on the board without reading the name text — making the board scannable during fast gameplay.",
-      "acceptanceCriteria": [
-        "Load the emoji mapping from `ralph/card_emojis.json` (keyed by `character_key`) and make it available to the frontend. Either bundle it as a static import or serve it via the existing card definitions API — choose whichever is simpler. The mapping must be the single source of truth (no duplicating emoji strings in component code)",
-        "In `CardFace.tsx`, display the emoji prominently in the center of the card face, above the card name. The emoji should be the largest visual element on the card — sized relative to the card container (e.g. `text-2xl sm:text-3xl` or similar) so it scales properly across board cells, hand panel cards, and hand drawer cards",
-        "Multi-emoji strings (e.g. `🌕🐺` for werewolf, `🛡️⚔️` for Brazen Bell) must render as-is in a single line. If a multi-emoji string overflows the card width at small sizes, reduce font size for that card rather than wrapping",
-        "The emoji should not interfere with the N/E/S/W side value display — side values remain at the card edges, emoji sits in the center area",
-        "The card name text below the emoji can be reduced in size slightly if needed to make room, but must remain legible",
-        "Cards on the board (`BoardGrid.tsx`) and cards in the hand (`HandPanel.tsx`, `HandDrawer.tsx`) should all show the emoji. The `CardInspectPreview.tsx` modal should show it larger",
-        "If a character_key has no mapping in the JSON (defensive case), fall back to showing no emoji (just the current name-only layout) rather than crashing",
-        "The emoji rendering must not break the tier-based styling from US-UXP-007 (shiny/holo borders) or the owner-color backgrounds on the board — emoji sits inside those layers",
+        "Create `web/src/routes/game-room/GameRoomContext.tsx` with a React context and `useGameRoom()` hook that provides game room state and callbacks",
+        "The context should hold at minimum the pass-through props that ActiveGameView never uses directly: `usePower`, `onUsePowerChange`, `powerSide`, `onPowerSideToggle`, `archetypePending`, `archetypeError`, `onSelectArchetype`, `onPreviewCard`, `selectedCardElement`, `onCancelIntimidatePending`, `intimidatePendingCell`",
+        "The context provider should be placed in GameRoom.tsx (the parent that currently passes all props to ActiveGameView)",
+        "ActiveGameView should consume the context via useGameRoom() for the pass-through values instead of receiving them as props",
+        "Child components (ActionPanel, BoardGrid, HandPanel, ArchetypeModal) should consume directly from context instead of receiving props tunneled through ActiveGameView",
+        "Props that ActiveGameView uses directly (game, myIndex, myPlayer, myScore, etc.) may remain as props OR move to context — use judgment on what keeps the component readable",
+        "ActiveGameView's prop interface should shrink from 28 to ~15 or fewer",
+        "No behavior changes — all existing functionality must work identically",
         "`bun run test --run` passes"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "The authoritative emoji mapping is `ralph/card_emojis.json`, keyed by `character_key` (not `card_key`). Cards share character_key across tiers (e.g. all 3 Strahd tiers → `character_key: strahd_von_zarovich` → 🧛). The CardDefinition type doesn't currently include `character_key` — it may need to be added to the API response or the mapping could use `card_key` with a prefix-strip helper. Check what fields the `/api/cards` endpoint returns. Multi-emoji strings range from 1 glyph (most cards) to 2 glyphs (werewolf, party members, Izek, Decibelus). The longest are 2 emoji wide — test that these fit at the smallest card size (hand panel ~w-20). Emoji render at native OS size so `font-size` controls their scale directly."
+      "notes": "The 12-13 pure pass-through props are the clear candidates for context. The remaining ~15 props that ActiveGameView uses directly could stay as props (they document the component's actual interface) or move to context — either is fine as long as the result is cleaner. Don't move everything into context just because you can — if a prop is used by only ActiveGameView and one child, a prop might still be clearer. The test files that render ActiveGameView or GameRoom will need updated setup — they'll need a context provider wrapper. Consider adding a `renderWithGameContext` helper to helpers.ts."
     },
     {
-      "id": "US-UXP-016",
-      "title": "Presence → Intimidate archetype overhaul",
-      "description": "As a player, I want the Presence archetype replaced with Intimidate — after placing a card, choose one adjacent opponent card whose facing side is replaced with its lowest side value for this comparison only (once per game) — so there's a meaningful tactical debuff archetype distinct from Skulker's self-buff.",
+      "id": "US-CH-008",
+      "title": "Convert source-string tests to behavioral tests",
+      "description": "As a developer, I want the UXP test files to test rendered behavior (what users see in the DOM) instead of reading .tsx source files with fs.readFileSync and asserting on string content — so tests don't break on every CSS class rename or code reformatting.",
       "acceptanceCriteria": [
-        "In `app/rules/archetypes.py`: remove `apply_presence_boost`, add Intimidate logic that substitutes the target neighbor's facing side with `min(n,e,s,w)` for this comparison only",
-        "In `app/models/game.py`: replace `presence_boost_direction` on `PlacementIntent` with `intimidate_target_cell` (int, 0-8) indicating which adjacent opponent card to debuff",
-        "In `app/rules/captures.py`: in `resolve_captures`, when Intimidate is active on a neighbor, substitute that neighbor's facing side with its lowest printed side value for the comparison",
-        "In `app/rules/reducer.py`: wire up the new intent field, validate target cell is adjacent to placement cell and contains an opponent-owned card",
-        "Rename `tests/test_presence.py` → `tests/test_intimidate.py` and rewrite tests to cover: valid intimidate (debuffs facing side), invalid target (not adjacent, empty cell, own card), interaction with Mists and Elemental modifiers",
-        "Frontend: update `archetypesCopy.ts` description, change `ActionPanel.tsx` + `HandDrawer.tsx` from N/E/S/W direction picker to adjacent-cell picker for Intimidate",
-        "`uv run pytest` passes",
+        "Audit all 19 uxp*.test.tsx files that use `fs.readFileSync` on `.tsx` source files",
+        "For each test that reads a .tsx source file and asserts on its content, determine if it can be converted to a behavioral test (render the component, assert on DOM output). Categories:",
+        "  (a) Tests asserting on CSS classes (e.g. 'contains hover:border-accent') — convert to rendering and checking `getComputedStyle` or checking the element's `className` via `toHaveClass`. If the class is a Tailwind utility that only matters visually, consider whether the test adds value at all",
+        "  (b) Tests asserting on import statements (e.g. 'imports cardEmoji') — these are implementation tests and should be deleted. The behavior they guard is already covered by the rendered output tests",
+        "  (c) Tests asserting on structural patterns (e.g. 'uses AnimatePresence') — delete if the animation behavior is tested elsewhere, or convert to a render test that checks the animated behavior",
+        "  (d) Tests that scan ALL .tsx files for banned patterns (e.g. 'no zinc classes in any file') — these are linting-style checks. Convert to a ruff/eslint rule if possible, or keep as-is since they scan config-like content. These are acceptable",
+        "It is acceptable to DELETE source-string tests that have no meaningful behavioral equivalent — not every implementation detail needs a test",
+        "Do NOT create new tests that just replicate the source-string check in a different way. If the behavior isn't worth testing via render, delete the test",
+        "Tests that read static config files (package.json, index.html, index.css) are OK and should NOT be converted",
         "`bun run test --run` passes"
       ],
-      "priority": 14,
+      "priority": 8,
       "passes": true,
-      "notes": "Skulker buffs YOUR card (+2 to one side). Intimidate debuffs THEIR card (forces weakest side). Different decision space: Skulker is predictable (you know your stats), Intimidate is tactical (you need to know the opponent's card stats and pick the best target). The debuff is ephemeral — only affects this one comparison, does not permanently modify the card. If no valid adjacent opponent card exists, Intimidate cannot be used on that placement."
-    },
-    {
-      "id": "US-UXP-017",
-      "title": "Castlevania theme audit — buttons & interactive elements",
-      "description": "As a player, I want buttons and interactive elements to actually use the Castlevania color palette prominently — blood-red primaries, gold accents, visible borders in dark mode — so the gothic theme is surfaced in the UI, not just defined in CSS variables.",
-      "acceptanceCriteria": [
-        "Promote key action buttons from `outline` → `default` variant where they represent primary/important actions (archetype selection, direction buttons in power picker)",
-        "Make `outline` variant more visible in dark mode: lighter border color and subtle bg tint so it reads against the dark background",
-        "Make `ghost` buttons more visible: subtle text color using accent (gold) instead of default foreground",
-        "Add hover states with accent color (gold) glow/border for interactive elements",
-        "Audit non-button interactive elements: board cells (hover state), hand cards (border/glow), game list items (hover), inputs/selects — ensure they use the palette",
-        "Ensure blood-red and dull-gold colors are visible and prominent in the dark UI",
-        "`bun run test --run` passes"
-      ],
-      "priority": 15,
-      "passes": true,
-      "notes": "44% of buttons use `outline` variant (transparent bg, barely-visible border in dark mode). Only 25% use `default` (the red one). The Castlevania palette is defined in CSS variables but not surfaced in interactive elements. This is a CSS + TSX audit story — touch button.tsx variants and component-level className overrides."
-    },
-    {
-      "id": "US-UXP-018",
-      "title": "Login page branding (title + vampire emoji)",
-      "description": "As a player, I want the login page to show the Yugi-Strahd brand — a large vampire emoji as visual centerpiece, the title in Press Start 2P font, and an optional tagline — so the first screen I see establishes the game's identity.",
-      "acceptanceCriteria": [
-        "Add large vampire emoji (🧛) as visual centerpiece above the login form",
-        "Add 'Yugi-Strahd' title in Press Start 2P font below the emoji",
-        "Optional tagline in VT323: 'A Curse of Strahd Card Game'",
-        "Maintain existing form functionality (sign in / sign up / forgot password modes)",
-        "`bun run test --run` passes"
-      ],
-      "priority": 16,
-      "passes": true,
-      "notes": "Simple frontend-only branding change to Login.tsx. The fonts (Press Start 2P, VT323) are already loaded from US-UXP-004. Keep the form functional — this is additive visual branding above the existing form."
-    },
-    {
-      "id": "US-UXP-019",
-      "title": "Card placement animation punch-up",
-      "description": "As a player, I want card placement to feel impactful — a brief slam overshoot, radial impact ripple, micro-shake, and Mists visual feedback — so placing a card feels like a decisive move, not a quiet pop.",
-      "acceptanceCriteria": [
-        "Add a 'slam' effect: card scales slightly past 1 (to ~1.08) then settles back with a spring overshoot",
-        "Add a radial 'impact' ripple emanating from the placed card (CSS pseudo-element or motion.div, fading outward)",
-        "Brief board-grid micro-shake on placement (translateX oscillation, 2-3 frames, subtle)",
-        "Mists feedback visual: on Fog roll, card briefly tints blue; on Omen, card briefly glows gold — before the comparison resolves",
-        "`bun run test --run` passes"
-      ],
-      "priority": 17,
-      "passes": true,
-      "notes": "Builds on the existing Motion-powered placement animation from US-UXP-008. The slam is a spring overshoot (scale to 1.08 then settle to 1). The ripple can be a CSS pseudo-element with scale+opacity animation. The micro-shake is a quick translateX oscillation on the board grid container. Mists tints are brief color overlays keyed to the last_move.mists_roll value."
-    },
-    {
-      "id": "US-UXP-020",
-      "title": "Capture & combo animation punch-up",
-      "description": "As a player, I want capture and combo animations to escalate in intensity — bigger flashes, combo counter overlays, chain lines, and ownership color wipes — so multi-captures feel dramatically different from single captures.",
-      "acceptanceCriteria": [
-        "Each successive combo capture should escalate: slightly bigger brightness flash, optional particle burst, increasing intensity",
-        "Add a brief 'ownership transfer' color wipe during the scaleX=0 midpoint (card bg transitions from opponent color to your color)",
-        "Combo counter overlay: floating '+2', '+3' numbers that pop up and fade on successive captures",
-        "Chain line: brief flash of a connecting line/pulse between the capturing card and captured card",
-        "Emit custom events at each capture step as sound hook points (for US-UXP-015 later)",
-        "`bun run test --run` passes"
-      ],
-      "priority": 18,
-      "passes": true,
-      "notes": "Builds on US-UXP-009's sequential capture chain. The escalation should be subtle but noticeable — brightness flash scales up by ~10% per step in the chain. The combo counter is a floating motion.div with AnimatePresence. Chain lines can be SVG or absolutely-positioned divs connecting cell centers. The custom events (dispatchEvent) will be consumed by US-UXP-015's sound module later."
-    },
-    {
-      "id": "US-UXP-021",
-      "title": "Victory animation",
-      "description": "As a player, I want a dramatic full-screen victory animation — gothic 8-bit themed with bat swarms, blood-red and gold confetti, and 'VICTORY' in pixel font — so winning feels like a triumphant moment.",
-      "acceptanceCriteria": [
-        "Full-screen overlay with gothic/8-bit victory theme",
-        "'VICTORY' text in Press Start 2P, large, with stepped scale-in animation",
-        "Bat swarm particle effect (small bat emoji or pixel bat sprites flying across screen)",
-        "Blood-red and gold color burst/confetti (pixel-style, stepped animations — not smooth)",
-        "Cards you own on the board briefly glow/pulse in sequence",
-        "Auto-dismiss after ~3s or on click",
-        "`bun run test --run` passes"
-      ],
-      "priority": 19,
-      "passes": true,
-      "notes": "Show in CompleteGameView.tsx when the current player won. The bat swarm can be a set of motion.divs with randomized flight paths (translateX/Y keyframes). Use stepped timing functions for the pixel aesthetic. The card glow sequence should happen before or alongside the overlay. Keep it fun but not so long that it delays starting a new game."
-    },
-    {
-      "id": "US-UXP-022",
-      "title": "Defeat animation",
-      "description": "As a player, I want a solemn defeat screen — dark fog overlay, slow 'DEFEAT' fade-in, screen desaturation, and drifting mist particles — so losing feels atmospheric and gothic rather than just a status message.",
-      "acceptanceCriteria": [
-        "Full-screen dark overlay with fog/mist effect",
-        "'DEFEAT' text in Press Start 2P with a slow fade-in (solemn, not punchy)",
-        "Screen desaturates briefly (CSS filter: grayscale)",
-        "Pixel-art fog/mist particles drift across the screen",
-        "Subtle red vignette effect at screen edges",
-        "Auto-dismiss after ~3s or on click",
-        "`bun run test --run` passes"
-      ],
-      "priority": 20,
-      "passes": true,
-      "notes": "Show in CompleteGameView.tsx when the current player lost. Contrast with victory: defeat is slow and solemn, victory is fast and punchy. The desaturation can be applied to the game board behind the overlay via CSS filter. The fog particles are small semi-transparent divs drifting horizontally. The vignette is a radial-gradient overlay (transparent center → dark red edges)."
-    },
-    {
-      "id": "US-UXP-023",
-      "title": "Auto-complete statistically decided games",
-      "description": "As a player, I want the game to end early when the outcome is mathematically decided — if one player owns enough cards that the opponent cannot win even by capturing every remaining cell — so we don't have to play out inevitable games.",
-      "acceptanceCriteria": [
-        "In `app/rules/reducer.py`: after each placement + capture resolution, check if the game is decided. Condition: `player_cells >= 5 + remaining_empty_cells` (leader owns enough that opponent can't reach majority even with all remaining cells)",
-        "If decided, set status=COMPLETE with the winner, add `early_finish: true` flag in the result",
-        "In `app/models/game.py`: add `early_finish` bool to `GameResult` (default False)",
-        "Handle Sudden Death interaction: early finish check applies within SD rounds too",
-        "Frontend `CompleteGameView.tsx`: if `early_finish`, show appropriate message ('Inevitable victory' / 'The darkness claims this match')",
-        "Remaining empty cells should visually indicate they won't be played",
-        "`uv run pytest` passes",
-        "`bun run test --run` passes"
-      ],
-      "priority": 21,
-      "passes": true,
-      "notes": "The math: on a 3x3 board (9 cells), you need 5+ to win. If you own 6 cells and there are 2 empty cells left, the opponent can't reach 5 even if they get both remaining cells (they'd have at most 3). Formula: `my_cells >= 5 + empty_cells` means I've clinched. This should trigger immediately after capture resolution in the reducer, before advancing the turn."
-    },
-    {
-      "id": "US-UXP-024",
-      "title": "Unified dev command via mise",
-      "description": "As a developer, I want `mise run dev` to start both the FastAPI backend and Vite frontend concurrently — plus `mise run test`, `mise run lint`, `mise run format` — so I have a single command to spin up the full dev environment.",
-      "acceptanceCriteria": [
-        "Create `.mise.toml` with `[tools]` section specifying `bun = 'latest'`",
-        "Add `dev` task that runs `dev:api` and `dev:ui` concurrently",
-        "Add `dev:api` task: `uv run uvicorn app.main:app --reload`",
-        "Add `dev:ui` task: `bun run dev` with `dir = 'web'`",
-        "Add `test` task that runs backend pytest and frontend vitest",
-        "Add `lint` and `format` tasks using ruff",
-        "Verify `mise run dev` starts both servers",
-        "Document in README.md"
-      ],
-      "priority": 22,
-      "passes": true,
-      "notes": "mise is a polyglot dev tool manager (successor to rtx/asdf). The `.mise.toml` format supports concurrent task execution natively. If mise is not installed, the individual commands still work — this is additive DX, not a hard dependency. Keep the toml simple and well-commented."
-    },
-    {
-      "id": "US-UXP-025",
-      "title": "Dev interaction playground",
-      "description": "As a developer, I want a `/dev/playground` route (dev-only) that renders mock game states triggering every animation and visual effect — card placement, captures, combos, Plus, Elemental, Mists, victory, defeat — so I can rapidly iterate on visual effects without needing a real game.",
-      "acceptanceCriteria": [
-        "New route `/dev/playground` only rendered when `import.meta.env.DEV` is true",
-        "Renders buttons for each scenario: card placement animation, single capture, combo chain (3+ captures), Plus trigger, Elemental trigger, Mists effects (Fog + Omen), victory screen, defeat screen",
-        "Each button triggers the animation sequence with hardcoded mock game state data",
-        "Mock data should exercise edge cases: max combo chain, Plus + Elemental on same move, Fog on placement",
-        "Page is not accessible in production builds",
-        "`bun run test --run` passes"
-      ],
-      "priority": 23,
-      "passes": true,
-      "notes": "This is a development tool, not user-facing. Use `import.meta.env.DEV` guard so the route and its code are tree-shaken from production builds. The mock data can be inline constants — no need for a proper fixture system. Each scenario button should render the relevant game component (BoardGrid, CompleteGameView, etc.) with the mock state, then auto-reset after the animation completes. Useful for rapid iteration on US-UXP-019 through US-UXP-022."
-    },
-    {
-      "id": "US-UXP-014",
-      "title": "Auto-generate frontend TypeScript types from backend OpenAPI schema",
-      "description": "As a developer, I want frontend TypeScript types to be auto-generated from the FastAPI OpenAPI schema so that backend and frontend types stay in sync automatically without manual maintenance.",
-      "acceptanceCriteria": [
-        "Install `openapi-typescript` as a dev dependency: `bun add -D openapi-typescript`",
-        "Add a `typegen` script to `web/package.json` that fetches the OpenAPI schema from `http://localhost:8000/openapi.json` and outputs generated types to `web/src/lib/api-types.generated.ts`. Example: `\"typegen\": \"bunx openapi-typescript http://localhost:8000/openapi.json -o src/lib/api-types.generated.ts\"`",
-        "Run the script once to generate the initial types file and commit it. The generated file should have a header comment indicating it's auto-generated (openapi-typescript adds this by default)",
-        "Add `api-types.generated.ts` with a comment at the top: `// Auto-generated from backend OpenAPI schema. Do not edit manually. Regenerate with: bun run typegen`",
-        "Refactor `web/src/lib/api.ts` to import and re-export relevant types from the generated file instead of manually defining `GameState`, `PlayerState`, `CardDefinition`, `BoardCell`, `LastMove`, `Archetype`, and any other types that correspond to backend Pydantic models. Keep any frontend-only types (if any) defined locally in `api.ts`",
-        "Ensure all existing imports of these types throughout the frontend (`import type { GameState, ... } from '@/lib/api'`) continue to work without changes — the re-export from `api.ts` maintains the public API",
-        "Document the workflow in `AGENTS.md`: to regenerate types, start the backend (`uv run uvicorn app.main:app`) then run `cd web && bun run typegen`",
-        "`bun run test --run` passes",
-        "`uv run pyright` passes (no backend changes expected, but verify)"
-      ],
-      "priority": 24,
-      "passes": true,
-      "notes": "This is a DX story, not user-facing UX. FastAPI auto-generates an OpenAPI 3.1 schema at `/openapi.json` from Pydantic models. `openapi-typescript` reads this and outputs TS types. The generated types will use the OpenAPI naming (which matches Python snake_case since FastAPI preserves Pydantic field names). Key gotcha: the backend must be running when the typegen script executes (it fetches from localhost). An alternative is to first dump the schema to a JSON file (`python -c 'from app.main import app; import json; print(json.dumps(app.openapi()))' > openapi.json`) and then point openapi-typescript at the file — this avoids needing the server running. Either approach is fine. The re-export pattern keeps the migration non-breaking: `export type { GameState } from './api-types.generated'` in api.ts."
-    },
-    {
-      "id": "US-UXP-015",
-      "title": "Procedural game sound effects via Web Audio API",
-      "description": "As a player, I want the game to play short sound effects for key actions (card placement, captures, combos, Plus/Elemental triggers, turn changes) so the game feels alive and responsive — using procedurally generated sounds with no audio file dependencies.",
-      "acceptanceCriteria": [
-        "Create a `web/src/lib/sounds.ts` module that uses the Web Audio API (`AudioContext`, `OscillatorNode`, `GainNode`) to procedurally generate short sound effects. No external audio files or libraries — pure Web Audio",
-        "Implement at minimum these sounds: (1) `playPlace` — a short low-frequency thud/knock (~100-150Hz sine, 0.08s decay) for card placement, (2) `playCapture` — a quick rising tone (~300→500Hz, 0.12s) for each individual capture, (3) `playCombo` — a rapid ascending arpeggio (3-4 quick notes) for multi-captures, (4) `playPlus` — a bright two-tone chime for Plus trigger, (5) `playElemental` — a shimmery descending tone for Elemental trigger, (6) `playTurnStart` — a subtle soft click/tick when it becomes your turn, (7) `playVictory` — a short triumphant 4-note ascending fanfare, (8) `playDefeat` — a descending minor tone",
-        "All sounds should be short (under 0.3s for action sounds, under 1s for victory/defeat) and low-volume by default. They should evoke 8-bit/retro aesthetics (square/sawtooth waves, simple envelopes) to match the NES Castlevania theme",
-        "Use a single shared `AudioContext` instance (lazy-initialized on first user interaction to comply with browser autoplay policy). The module should export a `initAudio()` function that creates the context on first call, and each `play*` function should no-op gracefully if audio hasn't been initialized",
-        "Wire up the sounds to game events: card placement in `BoardGrid.tsx` or `GameRoom.tsx` (wherever the place action resolves), capture animations, Plus/Elemental callout renders in `ActiveGameView.tsx`, turn change detection, and game-over screen in `CompleteGameView.tsx`",
-        "Add a mute/unmute toggle button in the game UI (either in the sidebar/drawer secondary content area or as a small icon button near the score bar). Store the preference in `localStorage` so it persists. When muted, all `play*` functions should no-op",
-        "Sounds must not block or delay game actions — fire-and-forget, never awaited in the game flow",
-        "`bun run test --run` passes"
-      ],
-      "priority": 25,
-      "passes": true,
-      "notes": "Web Audio API is available in all modern browsers with zero dependencies. The key pattern: create an OscillatorNode with the desired waveform (square/sawtooth for 8-bit feel), connect through a GainNode for volume envelope, schedule start/stop times, and let the nodes garbage-collect. Browser autoplay policy requires AudioContext to be created inside a user gesture handler — the `initAudio()` call should happen on the first click/tap anywhere in the app (add a one-time event listener). Square wave oscillators naturally sound 8-bit. For the combo arpeggio, schedule multiple oscillators at staggered `startTime` offsets. Keep all gains low (~0.1-0.15) so sounds are atmospheric, not jarring. The mute toggle can be a simple speaker icon (🔊/🔇) — no need for a volume slider."
-    },
-    {
-      "id": "US-UXP-026",
-      "title": "Shrink navigation buttons and improve readability",
-      "description": "As a player, I want the Refresh and Back to Games buttons to be smaller and easier to read — the current Press Start 2P pixel font at button size is hard to parse for utility navigation that should fade into the background.",
-      "acceptanceCriteria": [
-        "Reduce the Back to Games and Refresh buttons in GameRoom.tsx to use a compact size — they should feel like utility controls, not primary actions",
-        "Switch these buttons to use font-body (VT323) instead of font-heading (Press Start 2P) so the text is actually legible at small sizes — Press Start 2P is great for headings but turns to mush at 12-14px",
-        "Consider using compact labels: \"← Back\" instead of \"← Back to Games\", keep \"Refresh\" or use a refresh icon (↻)",
-        "Buttons should still be easily clickable (min 32px hit target) but visually recede compared to the game board and action panel",
-        "`bun run test --run` passes"
-      ],
-      "priority": 26,
-      "passes": false,
-      "notes": "These are utility nav buttons — they should be small, readable, and out of the way. The pixel font (Press Start 2P) does not scale down well; VT323 is much more readable at small sizes. Ghost variant is fine, just make them compact."
-    },
-    {
-      "id": "US-UXP-027",
-      "title": "Reduce game header size",
-      "description": "As a player, I want the Playing against... header to be smaller so it does not compete with the game board for visual attention — the opponent name is useful context but does not need to dominate the top of the screen.",
-      "acceptanceCriteria": [
-        "Reduce the game header (h1 in GameRoom.tsx) from text-2xl to a smaller size (e.g. text-lg or text-base) — it should read as a contextual label, not a page title",
-        "Consider switching from h1 to a p or span since the game room does not really need a semantic H1 competing with the board",
-        "The header should still clearly show who you are playing against, just at a size that does not eat into game board space",
-        "On mobile, the header + nav buttons row should be as compact as possible to maximize board area",
-        "`bun run test --run` passes"
-      ],
-      "priority": 27,
-      "passes": false,
-      "notes": "The current text-2xl with Press Start 2P renders quite large. A text-base or text-sm with font-body (VT323) would be more appropriate — the player name is context, not a headline. Keep font-heading only for truly important headings like score or game-over."
-    },
-    {
-      "id": "US-UXP-028",
-      "title": "Prominent game event banners with sidebar persistence",
-      "description": "As a player, I want important game events (Mists rolls, captures, Plus/Elemental triggers) to appear as a prominent temporary banner overlaying the board area — so I never miss why something happened. After the banner dismisses, the event info should persist in the sidebar for reference.",
-      "acceptanceCriteria": [
-        "When a significant game event occurs (Fog/Omen mists roll, card capture, combo chain, Plus trigger, Elemental trigger), display a prominent banner/toast overlaying or adjacent to the board area — not buried in the sidebar",
-        "The banner should be large enough to be unmissable: bold text, high-contrast colors matching the event type (blue for Fog, purple for Omen, amber for capture, cyan for Plus, gold for Elemental), and an entrance animation that draws the eye (scale-in, slide-down, or flash)",
-        "Banners should auto-dismiss after 2-3 seconds (or on next player action) with an exit animation",
-        "After a banner dismisses, the same event information should remain visible in the sidebar/drawer secondary content area as it does today — the banner is the announcement, the sidebar is the log",
-        "Mists feedback is the highest priority — a Fog roll that costs you a capture should be impossible to miss. The banner should clearly say something like \"Fog! −2 to all comparisons\" in large text",
-        "Multiple events from a single move (e.g. Fog + capture, or Elemental + Plus + combo) should stack or sequence — do not let one banner hide another",
-        "The banner should not block board interaction — either position it above/below the board, or make it a floating overlay that does not intercept clicks (pointer-events-none after a brief moment)",
-        "`bun run test --run` passes"
-      ],
-      "priority": 28,
-      "passes": false,
-      "notes": "The core problem: game events currently only show in the sidebar, which on mobile is collapsed by default and on desktop is easy to ignore. Players get surprised by outcomes (\"why did I lose that capture?\") because they did not see the Fog roll. The fix is a two-tier system: (1) loud, temporary banner for the announcement, (2) quiet, persistent sidebar entry for the log. Think fighting-game-style announcements — big, bold, in-your-face, then gone. The sidebar content can stay exactly as it is today; we are just adding the banner layer on top. Motion AnimatePresence is perfect for the enter/exit animations. Consider a fixed-position container above the board grid for banner placement."
+      "notes": "This is the largest story by file count (19 files) but many of the individual test changes are deletions. The key judgment call: does this test guard behavior a user would notice, or does it guard an implementation detail? 'Button has hover:border-accent' is implementation — if we change the hover color, the test breaks but nothing is actually wrong. 'Card shows emoji for strahd_von_zarovich' is behavior — worth testing. Err on the side of deleting low-value tests rather than investing effort converting them. The goal is fewer, better tests — not the same number of tests in a different style. Work through the files in numeric order (uxp004, uxp006, uxp007, ...). This story may be split if it's too large for one iteration — if so, do the highest-value conversions first and mark the remainder for a follow-up."
     }
   ]
 }

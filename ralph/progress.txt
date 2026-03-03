@@ -81,3 +81,14 @@ Started: 2026-03-03
 - Learnings: `@property` + `:root` animation is a clean pattern for rotating gradients that avoids per-element animation shorthand conflicts. `border-image` with `conic-gradient` works well with `rounded-none` (border-image doesn't support border-radius, but that's desired here).
 ---
 
+## 2026-03-03 13:35 - US-UXP-008
+- Installed `motion` (v12.34.5) as production dependency via `bun add motion`
+- Replaced CSS `@keyframes card-placed` / `.animate-card-placed` with Motion spring animation (`motion.div` with `initial={{ scale: 0, opacity: 0 }}`, `animate={{ scale: 1, opacity: 1 }}`, spring stiffness 300, damping 20) in BoardGrid.tsx — only applied to cells in `placedCells` set
+- Added `motion.button` with `whileHover={{ scale: 1.05 }}` on empty clickable board cells for interactive feedback
+- Added stagger-animate-in for hand cards in both HandPanel.tsx and HandDrawer.tsx using `motion.div` variants with `staggerChildren: 0.05` and spring transitions (opacity 0→1, y 20→0)
+- Updated uxp006 tests to remove card-placed CSS assertions (now handled by Motion)
+- Tests: 248 frontend passed, 553 backend passed
+- Files changed: web/package.json, web/bun.lock, web/src/index.css, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, uxp006.test.tsx (updated), uxp008.test.tsx (new)
+- Learnings: `import { motion } from "motion/react"` is the correct import path for motion v12+. Spring animation with stiffness 300 / damping 20 gives a snappy pop with one subtle overshoot — good for card placement. Stagger parent needs `variants` with `staggerChildren` on the transition, children need `hidden`/`visible` variant keys.
+---
+

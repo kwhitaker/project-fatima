@@ -137,7 +137,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 9,
-      "passes": false,
+      "passes": true,
       "notes": "This is the foundational Motion story — get the library in, prove the pattern works, establish how motion.div wraps existing components. The key import is `import { motion } from 'motion/react'`. Spring physics: `type: 'spring', stiffness: 300, damping: 20` is a good starting point for a snappy pop. For the hand stagger, use variants with `transition: { staggerChildren: 0.05 }` on the parent and `initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }` on each child. Keep the existing `animate-card-captured` CSS animation for now — it gets replaced in the next story."
     },
     {

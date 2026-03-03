@@ -68,7 +68,13 @@ export default function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
       >
-        <h1 className="text-2xl font-bold">{titles[mode]}</h1>
+        <div className="text-center space-y-2">
+          <div className="text-6xl" aria-hidden="true">🧛</div>
+          <h1 className="font-heading text-xl">Yugi-Strahd</h1>
+          <p className="font-body text-sm text-muted-foreground">A Curse of Strahd Card Game</p>
+        </div>
+
+        <h2 className="text-lg font-bold">{titles[mode]}</h2>
 
         {status === "done" ? (
           <div className="space-y-4">

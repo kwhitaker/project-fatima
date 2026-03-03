@@ -119,7 +119,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "This is a CSS-heavy story. The tier data is already available via `CardDefinition.tier` in the frontend. Key implementation detail: the animated border technique typically uses a slightly-larger background element with the gradient, and the card sits on top masking the interior — search for 'CSS animated border gradient' or 'CSS holo card effect' for reference. Keep the color palette gothic (golds, blood-reds, deep purples, teals) rather than bright/saturated rainbow. For the holo overlay, `mix-blend-mode: overlay` at low opacity gives the prismatic sheen without killing readability. Performance note: `conic-gradient` animations can be GPU-intensive if there are many cards visible — use `will-change: transform` and keep the animation on the pseudo-element only."
     },
     {

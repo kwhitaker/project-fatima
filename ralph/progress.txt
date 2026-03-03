@@ -70,3 +70,14 @@ Started: 2026-03-03
 - Learnings: steps(N) CSS timing divides animation into discrete frames with no interpolation — perfect for NES aesthetic. Callouts in ActiveGameView had no animations to convert.
 ---
 
+## 2026-03-03 13:30 - US-UXP-007
+- Added `.card-tier-2` (shiny gold/red conic-gradient border) and `.card-tier-3` (holographic prismatic border + color-dodge overlay) CSS classes
+- Used `@property --tier-angle` with `:root` animation for gradient rotation — avoids animation conflicts with existing card-placed/card-captured animations on the same elements
+- Tier 3 rotates at 2x speed via `calc(var(--tier-angle) * 2)` for faster-cycling prismatic effect
+- Exported `tierClass()` helper from CardFace, applied in BoardGrid, HandPanel, HandDrawer, CardInspectPreview
+- Refactored BoardGrid to compute `def` once at top of loop body (was duplicated in 3 branches)
+- Tests: 240 frontend passed, 553 backend passed
+- Files changed: web/src/index.css, CardFace.tsx, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, CardInspectPreview.tsx, web/src/__tests__/uxp007.test.tsx (new)
+- Learnings: `@property` + `:root` animation is a clean pattern for rotating gradients that avoids per-element animation shorthand conflicts. `border-image` with `conic-gradient` works well with `rounded-none` (border-image doesn't support border-radius, but that's desired here).
+---
+

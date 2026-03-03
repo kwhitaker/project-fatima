@@ -326,6 +326,7 @@ export function ActiveGameView({
               lastMoveCellIndex={game.last_move?.cell_index ?? null}
               boardElements={boardElements}
               selectedCardElement={selectedCardElement}
+              mistsEffect={placedCells.size > 0 ? game.last_move?.mists_effect : null}
             />
           </div>
 

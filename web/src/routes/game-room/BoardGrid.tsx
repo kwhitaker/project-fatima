@@ -32,6 +32,7 @@ export function BoardGrid({
   lastMoveCellIndex,
   boardElements,
   selectedCardElement,
+  mistsEffect,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -44,6 +45,7 @@ export function BoardGrid({
   lastMoveCellIndex?: number | null;
   boardElements?: string[] | null;
   selectedCardElement?: string | null;
+  mistsEffect?: "fog" | "omen" | "none" | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -58,12 +60,29 @@ export function BoardGrid({
     return m;
   }, [capturedOrder]);
 
+  // Micro-shake: derive a key from placed cells so the shake replays on each new placement
+  const shakeKey = placedCells && placedCells.size > 0
+    ? Array.from(placedCells).sort().join(",")
+    : "none";
+
   return (
     <div
       className="mx-auto aspect-square"
       style={{ width: 'min(100%, 24rem, calc(100dvh - 20rem))' }}
     >
-      <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="game board">
+      <motion.div
+        key={shakeKey}
+        className="grid grid-cols-3 gap-2 sm:gap-3"
+        aria-label="game board"
+        animate={shakeKey !== "none"
+          ? { x: [0, -2, 2, -1, 1, 0] }
+          : { x: 0 }
+        }
+        transition={shakeKey !== "none"
+          ? { duration: 0.2, ease: "easeOut" }
+          : { duration: 0 }
+        }
+      >
         {board.map((cell, i) => {
           const isPlaced = placedCells?.has(i) ?? false;
           const isCaptured = capturedCells?.has(i) ?? false;
@@ -132,15 +151,22 @@ export function BoardGrid({
             );
           }
 
+          // Mists tint class for placed card
+          const mistsTintClass = isPlaced && mistsEffect === "fog"
+            ? "animate-mists-fog"
+            : isPlaced && mistsEffect === "omen"
+              ? "animate-mists-omen"
+              : undefined;
+
           // Card content with appropriate animation
           const cardContent = cell ? (
             isPlaced ? (
               <motion.div
-                className="w-full h-full flex items-center justify-center"
+                className={cn("w-full h-full flex items-center justify-center relative", mistsTintClass)}
                 initial={{ scale: 0, opacity: 0 }}
                 animate={shouldPulse
                   ? { scale: [0, 1, 1.08, 1], opacity: 1 }
-                  : { scale: 1, opacity: 1 }
+                  : { scale: [0, 1.08, 1], opacity: 1 }
                 }
                 transition={shouldPulse
                   ? {
@@ -152,10 +178,25 @@ export function BoardGrid({
                       },
                       opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
                     }
-                  : { type: "spring", stiffness: 300, damping: 20 }
+                  : {
+                      scale: {
+                        type: "tween",
+                        ease: "easeOut",
+                        times: [0, 0.7, 1],
+                        duration: 0.25,
+                      },
+                      opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
+                    }
                 }
               >
                 <CardFace cardKey={cell.card_key} def={def} />
+                {/* Impact ripple */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none border-2 border-foreground/50"
+                  initial={{ scale: 0.8, opacity: 0.8 }}
+                  animate={{ scale: 1.6, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                />
               </motion.div>
             ) : isCaptured ? (
               <motion.div
@@ -220,7 +261,7 @@ export function BoardGrid({
             </div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

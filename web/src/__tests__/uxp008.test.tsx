@@ -57,10 +57,8 @@ describe("US-UXP-008: Motion library + animated card placement", () => {
     expect(boardGrid).toContain("motion.div");
     expect(boardGrid).toContain("isPlaced");
     expect(boardGrid).toContain("initial={{ scale: 0, opacity: 0 }}");
-    expect(boardGrid).toContain("{ scale: 1, opacity: 1 }");
-    // Spring for non-pulse case, tween for pulse case
-    expect(boardGrid).toContain("stiffness: 300");
-    expect(boardGrid).toContain("damping: 20");
+    // Non-pulse uses slam overshoot [0, 1.08, 1], pulse uses [0, 1, 1.08, 1]
+    expect(boardGrid).toContain("1.08");
   });
 
   it("BoardGrid uses motion.button with whileHover for empty cells", () => {

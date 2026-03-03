@@ -217,3 +217,12 @@ Started: 2026-03-03
 - Files changed: VictoryOverlay.tsx (new), CompleteGameView.tsx, BoardGrid.tsx, index.css, uxp021.test.tsx (new)
 - Learnings: Motion doesn't support CSS steps() directly — custom easing function `(t) => Math.floor(t * steps) / steps` simulates it perfectly. Splitting glow into CSS animation (vs motion.div) avoids conflicts with existing motion props on board cells.
 ---
+
+## 2026-03-03 16:05 - US-UXP-022
+- Created DefeatOverlay.tsx: dark overlay (bg-black/80), slow DEFEAT fade-in (1.2s stepped), 18 drifting fog particles with blur, red vignette (radial-gradient), grayscale backdropFilter desaturation
+- Integrated into CompleteGameView: detects isLoser, shows DefeatOverlay with auto-dismiss (3s) or click-dismiss
+- Contrast with victory: defeat is slow/solemn (1.2s fade, no scale overshoot), fog drifts horizontally; victory is fast/punchy (0.5s scale pop, bats + confetti)
+- Tests: 376 frontend passed, 556 backend passed; 16 new uxp022 assertions
+- Files changed: DefeatOverlay.tsx (new), CompleteGameView.tsx, uxp022.test.tsx (new)
+- Learnings: backdropFilter: grayscale() provides real-time desaturation behind overlay without affecting overlay content itself. Blur on fog particles (filter: blur(8px)) creates convincing mist at low particle counts.
+---

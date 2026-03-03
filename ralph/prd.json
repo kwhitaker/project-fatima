@@ -343,7 +343,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 20,
-      "passes": false,
+      "passes": true,
       "notes": "Show in CompleteGameView.tsx when the current player lost. Contrast with victory: defeat is slow and solemn, victory is fast and punchy. The desaturation can be applied to the game board behind the overlay via CSS filter. The fog particles are small semi-transparent divs drifting horizontally. The vignette is a radial-gradient overlay (transparent center \u2192 dark red edges)."
     },
     {

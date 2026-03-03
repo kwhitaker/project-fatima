@@ -116,3 +116,12 @@ Started: 2026-03-01
 - Learnings: When adding open games to a list endpoint, existing tests that assert "caller only sees own games" need updating. Python stable sort (two passes) cleanly handles multi-key sorts where one key is descending — sort by secondary descending first, then by primary ascending. Frontend test game_ids must be ≤8 chars since `Games.tsx` uses `slice(0, 8)` for display.
 ---
 
+## 2026-03-03 10:53 - US-GM-012
+- Converted game list rows in `Games.tsx` from `<button onClick={navigate}>` to `<Link to={...}>` (react-router-dom); added `block` class for display
+- Converted "Back to Games" in `GameRoom.tsx` from `<Button onClick={navigate}>` to `<Button asChild><Link to="/games">` preserving ghost/sm styling
+- Updated 4 test files: `ux005` (role="button" → role="link" for Back to Games × 3), `ux015` (role="button" → role="link" for game row), `ux001`/`ux007` (selector `button.cursor-pointer` → `a.cursor-pointer`)
+- Tests run: `bun run test --run` — 182 passed; `uv run pytest` — 543 passed
+- Files changed: `web/src/routes/Games.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux001.test.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/ux007.test.tsx`, `web/src/__tests__/ux015.test.tsx`
+- Learnings: `Button asChild` + `<Link>` via radix-ui Slot delegates rendering to the child anchor while preserving Button's variant/size classes and focus-visible ring. For game rows, plain `<Link>` with custom classes is simpler than wrapping in Button since the original wasn't using the Button component.
+---
+

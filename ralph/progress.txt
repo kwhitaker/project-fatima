@@ -97,3 +97,12 @@ Started: 2026-03-01
 - Learnings: Integration test scenarios for fog/omen still work without adjusting card values since -2 still suppresses the same marginal captures and +2 still enables ties-to-capture. Only the direct modifier-value assertions needed changing.
 ---
 
+## 2026-03-03 08:38 - US-GM-010
+- Added `title` attribute to all three cell rendering branches in `BoardGrid.tsx`: empty cells show "Element: Blood" (capitalized); occupied cells show "Zombie (Tier 1) — Element: Blood" (card title + element); non-clickable empty cells also show element tooltip
+- Computed `elementTitle` once per cell from `boardElements[i]`, reused across button and div branches
+- Added 5 new tests in `gm007.test.tsx`: empty cell tooltip, occupied cell combined tooltip, non-clickable empty cell tooltip, no title when boardElements is null, clickable empty cell tooltip
+- Tests run: `bun run test --run` — 177 passed
+- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/__tests__/gm007.test.tsx`, `ralph/prd.json`
+- Learnings: The three cell branches (clickable empty, occupied with inspect, fallback div) each need their own `title` logic; computing `elementTitle` once at the top of the map callback avoids duplication. `getByTitle` works well for testing native tooltip `title` attributes.
+---
+

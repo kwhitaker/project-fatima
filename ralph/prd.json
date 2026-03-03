@@ -172,7 +172,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "Prefer a simple `title` attribute for now (no new tooltip dependency)."
     },
     {

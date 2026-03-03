@@ -225,6 +225,74 @@ describe("US-GM-007: BoardGrid — element match highlighting", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Direct BoardGrid tests: cell element tooltip (US-GM-010)
+// ---------------------------------------------------------------------------
+
+describe("US-GM-010: BoardGrid — cell element tooltip", () => {
+  it("empty cell has title with element when boardElements provided", () => {
+    render(
+      <BoardGrid board={EMPTY_BOARD} myIndex={0} boardElements={MIXED_ELEMENTS} />
+    );
+    // Cell 0 is "blood" → title should be "Element: Blood"
+    const cells = screen.getAllByTitle(/^Element:/);
+    expect(cells).toHaveLength(9);
+    expect(cells[0]).toHaveAttribute("title", "Element: Blood");
+    expect(cells[1]).toHaveAttribute("title", "Element: Holy");
+  });
+
+  it("occupied cell title includes both card info and element", () => {
+    const board: (BoardCell | null)[] = [
+      { card_key: "card-a", owner: 0 },
+      ...Array(8).fill(null),
+    ];
+    const elements = ["blood", ...Array(8).fill("holy")];
+    render(
+      <BoardGrid
+        board={board}
+        myIndex={0}
+        boardElements={elements}
+        onCellInspect={vi.fn()}
+        cardDefs={new Map([["card-a", { card_key: "card-a", name: "Zombie", tier: 1, sides: { n: 3, e: 2, s: 1, w: 4 }, element: "blood" } as any]])}
+      />
+    );
+
+    // Occupied cell 0 should have card title + element
+    const occupiedCell = screen.getByRole("button", { name: "inspect Zombie" });
+    expect(occupiedCell).toHaveAttribute("title", "Zombie (Tier 1) — Element: Blood");
+  });
+
+  it("empty non-clickable cell still shows element tooltip", () => {
+    render(
+      <BoardGrid board={EMPTY_BOARD} myIndex={0} boardElements={["arcane", ...Array(8).fill("shadow")]} />
+    );
+    // canPlace is false (default), no onCellClick → cells are divs, not buttons
+    const arcaneCell = screen.getByTitle("Element: Arcane");
+    expect(arcaneCell).toBeInTheDocument();
+  });
+
+  it("no title attribute when boardElements is null", () => {
+    render(
+      <BoardGrid board={EMPTY_BOARD} myIndex={0} boardElements={null} />
+    );
+    expect(screen.queryByTitle(/^Element:/)).not.toBeInTheDocument();
+  });
+
+  it("clickable empty cell shows element tooltip", () => {
+    render(
+      <BoardGrid
+        board={EMPTY_BOARD}
+        myIndex={0}
+        canPlace={true}
+        onCellClick={vi.fn()}
+        boardElements={["nature", ...Array(8).fill("blood")]}
+      />
+    );
+    const cell0 = screen.getByRole("button", { name: "cell 0" });
+    expect(cell0).toHaveAttribute("title", "Element: Nature");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // GameRoom tests: Elemental! callout
 // ---------------------------------------------------------------------------
 

@@ -62,6 +62,10 @@ export function BoardGrid({
             isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
           );
 
+          const elementTitle = elementLabel
+            ? `Element: ${elementLabel.charAt(0).toUpperCase() + elementLabel.slice(1)}`
+            : undefined;
+
           const elementBadge = elementLabel ? (
             <span
               key="element-badge"
@@ -83,6 +87,7 @@ export function BoardGrid({
                   "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 )}
                 data-last-move={isLastMove ? "true" : undefined}
+                title={elementTitle}
               >
                 {elementBadge}
               </button>
@@ -102,7 +107,7 @@ export function BoardGrid({
                 data-last-move={isLastMove ? "true" : undefined}
                 onClick={() => onCellInspect(cell.card_key)}
                 aria-label={`inspect ${cardDefs?.get(cell.card_key)?.name ?? cell.card_key}`}
-                title={cardTitle(cell.card_key, def)}
+                title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
               >
                 {elementBadge}
                 <CardFace cardKey={cell.card_key} def={def} />
@@ -116,7 +121,13 @@ export function BoardGrid({
               className={cellClass}
               data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
-              title={cell ? cardTitle(cell.card_key, cardDefs?.get(cell.card_key)) : undefined}
+              title={
+                cell
+                  ? elementTitle
+                    ? `${cardTitle(cell.card_key, cardDefs?.get(cell.card_key))} — ${elementTitle}`
+                    : cardTitle(cell.card_key, cardDefs?.get(cell.card_key))
+                  : elementTitle
+              }
             >
               {elementBadge}
               {cell ? (

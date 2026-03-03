@@ -4,76 +4,17 @@ Devout power: if the Mists roll is Fog (1), treat it as no modifier for this
 placement. If the roll is not Fog, Devout does nothing. Once per game per player.
 """
 
-from unittest.mock import MagicMock
+from functools import partial
 
 import pytest
 
-from app.models.cards import CardDefinition, CardSides
-from app.models.game import Archetype, BoardCell, GameState, GameStatus, PlayerState
+from app.models.game import Archetype, BoardCell
 from app.rules.errors import ArchetypeAlreadyUsedError
 from app.rules.reducer import PlacementIntent, apply_intent
+from tests.conftest import make_card, mock_rng
+from tests.conftest import make_state as _make_state
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def make_card(
-    key: str,
-    n: int = 5,
-    e: int = 5,
-    s: int = 5,
-    w: int = 5,
-) -> CardDefinition:
-    return CardDefinition(
-        card_key=key,
-        character_key=key,
-        name=key,
-        version="1.0",
-        tier=1,
-        rarity=50,
-        is_named=False,
-        sides=CardSides(n=n, e=e, s=s, w=w),
-        set="test",
-        element="shadow",
-    )
-
-
-def make_state(
-    board: list[BoardCell | None] | None = None,
-    p0_hand: list[str] | None = None,
-    p1_hand: list[str] | None = None,
-    p0_archetype: Archetype | None = Archetype.DEVOUT,
-    p0_archetype_used: bool = False,
-    p1_archetype: Archetype | None = None,
-    current_player_index: int = 0,
-) -> GameState:
-    players = [
-        PlayerState(
-            player_id="p0",
-            archetype=p0_archetype,
-            hand=p0_hand or [],
-            archetype_used=p0_archetype_used,
-        ),
-        PlayerState(
-            player_id="p1",
-            archetype=p1_archetype,
-            hand=p1_hand or [],
-        ),
-    ]
-    return GameState(
-        game_id="test-game",
-        status=GameStatus.ACTIVE,
-        players=players,
-        current_player_index=current_player_index,
-        board=board if board is not None else [None] * 9,
-    )
-
-
-def mock_rng(*rolls: int) -> MagicMock:
-    rng = MagicMock()
-    rng.randint.side_effect = list(rolls)
-    return rng
+make_state = partial(_make_state, p0_archetype=Archetype.DEVOUT)
 
 
 # ---------------------------------------------------------------------------

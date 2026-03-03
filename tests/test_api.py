@@ -5,51 +5,7 @@ The mock auth dependency reads the X-User-Id header so individual requests
 can impersonate different users.
 """
 
-import pytest
-from fastapi import Request
 from fastapi.testclient import TestClient
-
-from app.auth import get_caller_id
-from app.dependencies import get_card_store, get_game_store
-from app.main import app
-from app.models.cards import CardDefinition, CardSides
-from app.store.memory import MemoryCardStore, MemoryGameStore
-
-
-def _make_card(idx: int) -> CardDefinition:
-    """Minimal valid common/tier-1 card: sides sum=16 (budget), each ≤ 6 (cap)."""
-    return CardDefinition(
-        card_key=f"test_card_{idx:03d}",
-        character_key=f"char_{idx:03d}",
-        name=f"Test Card {idx}",
-        version="v1",
-        tier=1,
-        rarity=15,  # common bucket (1–49)
-        is_named=False,
-        sides=CardSides(n=4, e=4, s=4, w=4),
-        set="test",
-        element="shadow",
-    )
-
-
-# 20 unique cards → generate_matched_decks can fill two 10-card decks
-_TEST_CARDS = [_make_card(i) for i in range(20)]
-
-
-def _mock_caller_id(request: Request) -> str:
-    """Test auth: read user identity from X-User-Id header."""
-    return request.headers.get("X-User-Id", "test-user")
-
-
-@pytest.fixture()
-def client() -> TestClient:  # type: ignore[misc]
-    game_store = MemoryGameStore()
-    card_store = MemoryCardStore(cards=_TEST_CARDS)
-    app.dependency_overrides[get_game_store] = lambda: game_store
-    app.dependency_overrides[get_card_store] = lambda: card_store
-    app.dependency_overrides[get_caller_id] = _mock_caller_id
-    yield TestClient(app)  # type: ignore[misc]
-    app.dependency_overrides.clear()
 
 
 def _alice(client: TestClient, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]

@@ -9,37 +9,9 @@ Each placement rolls 1d6:
 from random import Random
 from unittest.mock import MagicMock
 
-from app.models.cards import CardDefinition, CardSides
-from app.models.game import BoardCell, GameState, GameStatus
+from app.models.game import BoardCell
 from app.rules.reducer import PlacementIntent, apply_intent, mists_modifier_from_roll
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def make_card(key: str, n: int, e: int, s: int, w: int) -> CardDefinition:
-    return CardDefinition(
-        card_key=key,
-        character_key=key,
-        name=key,
-        version="1.0",
-        tier=1,
-        rarity=50,
-        is_named=False,
-        sides=CardSides(n=n, e=e, s=s, w=w),
-        set="test",
-        element="shadow",
-    )
-
-
-def make_state(board: list[BoardCell | None] | None = None) -> GameState:
-    return GameState(
-        game_id="test-game",
-        status=GameStatus.ACTIVE,
-        board=board if board is not None else [None] * 9,
-    )
-
+from tests.conftest import make_card, make_state
 
 # ---------------------------------------------------------------------------
 # mists_modifier_from_roll: mapping from die result to comparison modifier
@@ -83,7 +55,7 @@ class TestApplyIntentWithMists:
         rng = MagicMock()
         rng.randint.return_value = 1  # Fog
 
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["near"])
         intent = PlacementIntent(player_index=0, card_key="near", cell_index=1)
         next_state = apply_intent(state, intent, {"enemy": enemy, "near": placed}, rng=rng)
 
@@ -101,7 +73,7 @@ class TestApplyIntentWithMists:
         rng = MagicMock()
         rng.randint.return_value = 6  # Omen
 
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["tie"])
         intent = PlacementIntent(player_index=0, card_key="tie", cell_index=1)
         next_state = apply_intent(state, intent, {"enemy": enemy, "tie": placed}, rng=rng)
 
@@ -119,7 +91,7 @@ class TestApplyIntentWithMists:
         rng = MagicMock()
         rng.randint.return_value = 3  # neutral
 
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["mid"])
         intent = PlacementIntent(player_index=0, card_key="mid", cell_index=1)
         next_state = apply_intent(state, intent, {"enemy": enemy, "mid": placed}, rng=rng)
 
@@ -138,7 +110,7 @@ class TestApplyIntentWithMists:
             rng = MagicMock()
             rng.randint.return_value = roll
 
-            state = make_state(board=board)
+            state = make_state(board=board, p0_hand=["tie"])
             intent = PlacementIntent(player_index=0, card_key="tie", cell_index=1)
             next_state = apply_intent(state, intent, lookup, rng=rng)
 
@@ -151,7 +123,7 @@ class TestApplyIntentWithMists:
         rng = MagicMock()
         rng.randint.return_value = 4
 
-        state = make_state()
+        state = make_state(p0_hand=["card"])
         intent = PlacementIntent(player_index=0, card_key="card", cell_index=0)
         apply_intent(state, intent, {"card": card}, rng=rng)
 
@@ -165,7 +137,7 @@ class TestApplyIntentWithMists:
 
         board: list[BoardCell | None] = [None] * 9
         board[0] = BoardCell(card_key="enemy", owner=1)
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["mid"])
         intent = PlacementIntent(player_index=0, card_key="mid", cell_index=1)
 
         result1 = apply_intent(state, intent, lookup, rng=Random(42))
@@ -181,7 +153,7 @@ class TestApplyIntentWithMists:
         board: list[BoardCell | None] = [None] * 9
         board[0] = BoardCell(card_key="enemy", owner=1)
 
-        state = make_state(board=board)
+        state = make_state(board=board, p0_hand=["near"])
         intent = PlacementIntent(player_index=0, card_key="near", cell_index=1)
         next_state = apply_intent(state, intent, {"enemy": enemy, "near": placed}, rng=None)
 

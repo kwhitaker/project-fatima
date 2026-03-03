@@ -9,49 +9,10 @@ The reducer must:
 
 import pytest
 
-from app.models.cards import CardDefinition, CardSides
-from app.models.game import BoardCell, GameState, GameStatus, PlayerState
+from app.models.game import BoardCell
 from app.rules.errors import CardNotInHandError, OccupiedCellError, WrongPlayerTurnError
 from app.rules.reducer import PlacementIntent, apply_intent
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def make_card(key: str, n: int = 5, e: int = 5, s: int = 5, w: int = 5) -> CardDefinition:
-    return CardDefinition(
-        card_key=key,
-        character_key=key,
-        name=key,
-        version="1.0",
-        tier=1,
-        rarity=50,
-        is_named=False,
-        sides=CardSides(n=n, e=e, s=s, w=w),
-        set="test",
-        element="shadow",
-    )
-
-
-def make_state(
-    board: list[BoardCell | None] | None = None,
-    p0_hand: list[str] | None = None,
-    p1_hand: list[str] | None = None,
-    current_player_index: int = 0,
-) -> GameState:
-    players = [
-        PlayerState(player_id="p0", hand=p0_hand or []),
-        PlayerState(player_id="p1", hand=p1_hand or []),
-    ]
-    return GameState(
-        game_id="test-game",
-        status=GameStatus.ACTIVE,
-        players=players,
-        current_player_index=current_player_index,
-        board=board if board is not None else [None] * 9,
-    )
-
+from tests.conftest import make_card, make_state
 
 # ---------------------------------------------------------------------------
 # Wrong-player-turn validation

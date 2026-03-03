@@ -31,10 +31,10 @@ export const ARCHETYPE_COPY: Record<Archetype, ArchetypeCopy> = {
     powerText:
       "If you roll a 1, ignore it. You do not get -1 for this move. Use it once per game.",
   },
-  presence: {
-    name: "Presence",
-    powerTitle: "+1 in one direction",
+  intimidate: {
+    name: "Intimidate",
+    powerTitle: "Weaken an enemy card",
     powerText:
-      "After you place a card, pick N/E/S/W. That side gets +1 for this move only. Use it once per game.",
+      "After you place a card, pick an adjacent opponent card. Its facing side becomes its weakest side for this comparison only. Use it once per game.",
   },
 };

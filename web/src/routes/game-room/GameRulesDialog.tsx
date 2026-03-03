@@ -129,7 +129,7 @@ export function GameRulesDialog({
                 <ArchetypePowerAside archetype="skulker" showName />
                 <ArchetypePowerAside archetype="caster" showName />
                 <ArchetypePowerAside archetype="devout" showName />
-                <ArchetypePowerAside archetype="presence" showName />
+                <ArchetypePowerAside archetype="intimidate" showName />
               </div>
             </section>
 

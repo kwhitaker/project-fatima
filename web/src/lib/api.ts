@@ -20,7 +20,7 @@ export interface CardDefinition {
 export interface PlayerState {
   player_id: string;
   email?: string | null;
-  archetype: "martial" | "skulker" | "caster" | "devout" | "presence" | null;
+  archetype: "martial" | "skulker" | "caster" | "devout" | "intimidate" | null;
   hand: string[];
   archetype_used: boolean;
 }
@@ -139,7 +139,7 @@ export async function placeCard(
   powerOptions?: {
     useArchetype?: boolean;
     skulkerBoostSide?: string;
-    presenceBoostDirection?: string;
+    intimidateTargetCell?: number;
   }
 ): Promise<GameState> {
   const headers = await authHeaders();
@@ -153,7 +153,7 @@ export async function placeCard(
       idempotency_key: idempotencyKey,
       ...(powerOptions?.useArchetype && { use_archetype: true }),
       ...(powerOptions?.skulkerBoostSide && { skulker_boost_side: powerOptions.skulkerBoostSide }),
-      ...(powerOptions?.presenceBoostDirection && { presence_boost_direction: powerOptions.presenceBoostDirection }),
+      ...(powerOptions?.intimidateTargetCell != null && { intimidate_target_cell: powerOptions.intimidateTargetCell }),
     }),
   });
   if (!res.ok) {
@@ -171,7 +171,7 @@ export async function placeCard(
   return res.json() as Promise<GameState>;
 }
 
-export type Archetype = "martial" | "skulker" | "caster" | "devout" | "presence";
+export type Archetype = "martial" | "skulker" | "caster" | "devout" | "intimidate";
 
 export async function selectArchetype(
   gameId: string,

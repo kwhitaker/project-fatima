@@ -9,7 +9,7 @@ class Archetype(str, Enum):
     SKULKER = "skulker"
     CASTER = "caster"
     DEVOUT = "devout"
-    PRESENCE = "presence"
+    INTIMIDATE = "intimidate"
 
 
 class GameStatus(str, Enum):

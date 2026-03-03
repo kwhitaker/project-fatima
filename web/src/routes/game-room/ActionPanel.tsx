@@ -14,6 +14,8 @@ export function ActionPanel({
   onUsePowerChange,
   powerSide,
   onPowerSideToggle,
+  intimidatePendingCell,
+  onCancelIntimidatePending,
 }: {
   isMyTurn: boolean;
   selectedCard: string | null;
@@ -25,13 +27,15 @@ export function ActionPanel({
   onUsePowerChange: (next: boolean) => void;
   powerSide: string | null;
   onPowerSideToggle: (side: "n" | "e" | "s" | "w") => void;
+  intimidatePendingCell: number | null;
+  onCancelIntimidatePending: () => void;
 }) {
   const hasArchetype = !!myPlayer?.archetype;
   const powerAvailable =
     hasArchetype && !myPlayer!.archetype_used && isMyTurn;
   const needsDirection =
-    usePower &&
-    (myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence");
+    usePower && myPlayer?.archetype === "skulker";
+  const isIntimidate = usePower && myPlayer?.archetype === "intimidate";
 
   // Determine step text (shown below the turn label on my turn)
   let stepText: string | null;
@@ -45,6 +49,8 @@ export function ActionPanel({
     stepText = "Select a card";
   } else if (needsDirection && powerSide === null) {
     stepText = "Choose a direction for your power";
+  } else if (isIntimidate && intimidatePendingCell !== null) {
+    stepText = "Click an adjacent opponent card to debuff";
   } else {
     stepText = "Choose a cell";
   }
@@ -121,6 +127,21 @@ export function ActionPanel({
                   {side}
                 </Button>
               ))}
+            </div>
+          )}
+          {isIntimidate && intimidatePendingCell !== null && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                Placing at cell {intimidatePendingCell}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={onCancelIntimidatePending}
+              >
+                Cancel
+              </Button>
             </div>
           )}
         </div>

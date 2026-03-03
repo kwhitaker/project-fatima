@@ -148,7 +148,7 @@ Implemented powers:
 - **Skulker** (DEX): After placement, add +2 to one chosen side for this placement only.
 - **Caster** (INT): Reroll the Mists die for your placement.
 - **Devout** (WIS): Treat Fog (1) as no effect for your placement (negate the −2 modifier entirely).
-- **Presence** (CHA): Force one adjacent comparison to be re-evaluated with +1 for you (this placement).
+- **Intimidate** (CHA): After placing, choose one adjacent opponent card — its facing side is replaced with its lowest printed side value for this comparison only.
 
 ## Deck Anti-Stacking Rules
 

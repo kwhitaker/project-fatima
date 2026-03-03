@@ -36,7 +36,7 @@ def resolve_captures(
     placed_owner: int,
     card_lookup: dict[str, CardDefinition],
     mists_modifier: int = 0,
-    presence_direction: str | None = None,
+    intimidate_target_cell: int | None = None,
 ) -> tuple[list[BoardCell | None], bool]:
     """Return a new board with ownership flipped for all captured cards (including combos),
     and a bool indicating whether the Plus rule fired.
@@ -50,7 +50,7 @@ def resolve_captures(
     adjacent opponent cards (including the initial placed card's comparisons).
 
     Combo propagation continues via BFS until no new captures occur. The placed card's
-    initial comparisons use mists_modifier and presence_direction; newly-captured cards
+    initial comparisons use mists_modifier and intimidate_target_cell; newly-captured cards
     trigger combo resolution using printed stats only — no modifiers.
 
     Printed stats never change; modifiers are ephemeral and scoped to the initial placement.
@@ -71,11 +71,11 @@ def resolve_captures(
         s = attacking_raw + defending_raw
         sum_to_neighbors.setdefault(s, []).append((neighbor_index, neighbor_cell.card_key))
 
-    # Queue entries: (source_index, source_card, mist_mod, presence_dir)
+    # Queue entries: (source_index, source_card, mist_mod, intim_target)
     # Initial entry: placed card with full modifiers.
     # Combo entries: captured cards with no modifiers (printed stats only).
-    queue: list[tuple[int, CardDefinition, int, str | None]] = [
-        (placed_index, placed_card, mists_modifier, presence_direction)
+    queue: list[tuple[int, CardDefinition, int, int | None]] = [
+        (placed_index, placed_card, mists_modifier, intimidate_target_cell)
     ]
 
     for s, matches in sum_to_neighbors.items():
@@ -91,7 +91,7 @@ def resolve_captures(
 
     # --- Standard BFS ---
     while queue:
-        src_index, src_card, mist_mod, pres_dir = queue.pop(0)
+        src_index, src_card, mist_mod, intim_target = queue.pop(0)
 
         for neighbor_index, placed_side, neighbor_side in _ADJACENCY[src_index]:
             neighbor_cell = new_board[neighbor_index]
@@ -100,9 +100,14 @@ def resolve_captures(
 
             neighbor_def = card_lookup[neighbor_cell.card_key]
             src_value = getattr(src_card.sides, placed_side) + mist_mod
-            if pres_dir and placed_side == pres_dir:
-                src_value += 1
             neighbor_value = getattr(neighbor_def.sides, neighbor_side)
+            if intim_target is not None and neighbor_index == intim_target:
+                neighbor_value = min(
+                    neighbor_def.sides.n,
+                    neighbor_def.sides.e,
+                    neighbor_def.sides.s,
+                    neighbor_def.sides.w,
+                )
 
             if src_value > neighbor_value:
                 new_board[neighbor_index] = BoardCell(

@@ -108,7 +108,7 @@ describe("US-UX-004: unskippable archetype modal", () => {
     renderGameRoom();
 
     const modal = await screen.findByRole("dialog", { name: /choose your archetype/i });
-    for (const arch of ["martial", "skulker", "caster", "devout", "presence"]) {
+    for (const arch of ["martial", "skulker", "caster", "devout", "intimidate"]) {
       expect(within(modal).getByRole("button", { name: new RegExp(arch, "i") })).toBeTruthy();
     }
   });

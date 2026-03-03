@@ -42,6 +42,8 @@ export function ActiveGameView({
   boardElements,
   selectedCardElement,
   onShowRules,
+  intimidatePendingCell,
+  onCancelIntimidatePending,
 }: {
   game: GameState;
   myIndex: number;
@@ -73,6 +75,8 @@ export function ActiveGameView({
   boardElements?: string[] | null;
   selectedCardElement?: string | null;
   onShowRules: () => void;
+  intimidatePendingCell: number | null;
+  onCancelIntimidatePending: () => void;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -82,7 +86,8 @@ export function ActiveGameView({
     selectedCard !== null &&
     !movePending &&
     (!usePower ||
-      !(myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence") ||
+      myPlayer?.archetype === "intimidate" ||
+      myPlayer?.archetype !== "skulker" ||
       powerSide !== null);
 
   const isMyTurn = game.current_player_index === myIndex;
@@ -341,6 +346,8 @@ export function ActiveGameView({
                 onUsePowerChange={onUsePowerChange}
                 powerSide={powerSide}
                 onPowerSideToggle={onPowerSideToggle}
+                intimidatePendingCell={intimidatePendingCell}
+                onCancelIntimidatePending={onCancelIntimidatePending}
               />
             </div>
             <div className="w-full sm:flex-1 sm:min-w-0">

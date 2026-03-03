@@ -21,7 +21,7 @@ export function ArchetypeModal({
     "skulker",
     "caster",
     "devout",
-    "presence",
+    "intimidate",
   ];
 
   return (

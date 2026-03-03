@@ -100,9 +100,7 @@ export function HandDrawer({
                       />
                       Use Power
                     </label>
-                    {usePower &&
-                      (myPlayer.archetype === "skulker" ||
-                        myPlayer.archetype === "presence") && (
+                    {usePower && myPlayer.archetype === "skulker" && (
                         <div className="flex gap-2 mt-2">
                           {(["n", "e", "s", "w"] as const).map((side) => (
                             <Button

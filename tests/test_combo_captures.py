@@ -142,16 +142,16 @@ class TestComboCaptures:
         assert result[2] is not None
         assert result[2].owner == 1, "C not captured (no modifier in combo)"
 
-    def test_presence_direction_not_applied_to_combo_captures(self):
-        """Presence +1 applies only to the initial placement; combos use printed stats.
+    def test_intimidate_debuff_not_applied_to_combo_captures(self):
+        """Intimidate debuff applies only to the initial placement; combos use printed stats.
 
-        A: e=5 + presence(e) +1 = 6 > B's w=5 → initial capture
-        B: printed e=5 vs C's printed w=5 → tie, NO combo capture
-        If presence were applied to combo: B's e=6 > C's w=5 → wrong capture
+        A placed at cell 0, B at cell 1 (opponent), C at cell 2 (opponent).
+        A.e=6, B.w=7 (min side=1). Intimidate targets cell 1: B's w becomes 1 → 6 > 1 → capture.
+        B.e=4 vs C.w=5 → combo uses printed stats → 4 < 5 → NO combo capture.
         """
-        card_a = make_card("a", n=5, e=5, s=5, w=5)
-        card_b = make_card("b", n=5, e=5, s=5, w=5)
-        card_c = make_card("c", n=5, e=5, s=5, w=5)
+        card_a = make_card("a", n=1, e=6, s=1, w=1)
+        card_b = make_card("b", n=1, e=4, s=1, w=7)
+        card_c = make_card("c", n=1, e=1, s=1, w=5)
 
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="b", owner=1)
@@ -165,13 +165,13 @@ class TestComboCaptures:
             placed_card=card_a,
             placed_owner=0,
             card_lookup=lookup,
-            presence_direction="e",
+            intimidate_target_cell=1,
         )
 
-        assert result[1] is not None and result[1].owner == 0, "B captured (presence: 5+1=6 > 5)"
-        # Combo uses printed stats: B.e=5 == C.w=5, tie → no capture
+        assert result[1] is not None and result[1].owner == 0, "B captured (intimidate: w→1, 6 > 1)"
+        # Combo uses printed stats: B.e=4 < C.w=5 → no capture
         assert result[2] is not None
-        assert result[2].owner == 1, "C not captured (no presence in combo)"
+        assert result[2].owner == 1, "C not captured (no intimidate in combo)"
 
     def test_combo_does_not_recapture_own_cards(self):
         """Combo resolution never flips cards already owned by the placing player."""

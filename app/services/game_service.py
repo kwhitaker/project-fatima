@@ -208,7 +208,7 @@ def submit_move(
     expected_version: int,
     use_archetype: bool = False,
     skulker_boost_side: str | None = None,
-    presence_boost_direction: str | None = None,
+    intimidate_target_cell: int | None = None,
     idempotency_key: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
@@ -240,7 +240,7 @@ def submit_move(
         cell_index=cell_index,
         use_archetype=use_archetype,
         skulker_boost_side=skulker_boost_side,
-        presence_boost_direction=presence_boost_direction,
+        intimidate_target_cell=intimidate_target_cell,
     )
     new_state = apply_intent(state, intent, card_lookup, rng)
 

@@ -1,12 +1,9 @@
 /**
  * US-UXP-006: 8-bit stepped animations for card capture and flip
  *
- * Covers:
- * - card-captured uses steps(3) timing (CSS)
- * - card-flip keyframes and class exist with steps(3) (CSS)
- * - BoardGrid applies card-flip class to captured cells
- * - card-placed animation is now handled by Motion (US-UXP-008),
- *   so CSS animate-card-placed no longer exists
+ * Original story added CSS stepped animations (card-captured, card-flip).
+ * US-UXP-009 replaced these with Motion-powered animations.
+ * These tests now verify the Motion-based capture animations exist in BoardGrid.
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -20,39 +17,21 @@ const boardGridPath = path.resolve(
 
 describe("US-UXP-006: 8-bit stepped animations", () => {
   const css = fs.readFileSync(cssPath, "utf-8");
+  const boardGrid = fs.readFileSync(boardGridPath, "utf-8");
 
-  it("animate-card-captured uses steps(3) timing function", () => {
-    const match = css.match(/\.animate-card-captured\s*\{[^}]*\}/);
-    expect(match).not.toBeNull();
-    expect(match![0]).toContain("steps(3)");
-    expect(match![0]).not.toContain("ease-in-out");
+  it("CSS card-captured/card-flip removed (replaced by Motion in US-UXP-009)", () => {
+    expect(css).not.toContain(".animate-card-captured");
+    expect(css).not.toContain("@keyframes card-captured");
+    expect(css).not.toContain(".animate-card-flip");
+    expect(css).not.toContain("@keyframes card-flip");
   });
 
-  it("card-flip keyframes exist with scaleX squash-and-stretch", () => {
-    expect(css).toContain("@keyframes card-flip");
-    expect(css).toMatch(/scaleX\(0\.1\)/);
+  it("BoardGrid uses Motion for capture flip animation (scaleX keyframes)", () => {
+    expect(boardGrid).toContain("isCaptured");
+    expect(boardGrid).toMatch(/scaleX.*\[.*1.*0.*1.*\]/);
   });
 
-  it("animate-card-flip class uses steps(3) timing", () => {
-    const match = css.match(/\.animate-card-flip\s*\{[^}]*\}/);
-    expect(match).not.toBeNull();
-    expect(match![0]).toContain("steps(3)");
-    expect(match![0]).toContain("card-flip");
-  });
-
-  it("BoardGrid applies animate-card-flip to captured cells", () => {
-    const boardGrid = fs.readFileSync(boardGridPath, "utf-8");
-    expect(boardGrid).toContain("animate-card-flip");
-    expect(boardGrid).toMatch(/isCaptured.*animate-card-captured.*animate-card-flip/);
-  });
-
-  it("card-captured animation duration is 0.55s", () => {
-    const match = css.match(/\.animate-card-captured\s*\{[^}]*\}/);
-    expect(match![0]).toContain("0.55s");
-  });
-
-  it("card-flip animation duration is 0.3s", () => {
-    const match = css.match(/\.animate-card-flip\s*\{[^}]*\}/);
-    expect(match![0]).toContain("0.3s");
+  it("BoardGrid uses Motion for capture brightness flash", () => {
+    expect(boardGrid).toMatch(/brightness/);
   });
 });

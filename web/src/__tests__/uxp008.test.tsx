@@ -44,21 +44,21 @@ describe("US-UXP-008: Motion library + animated card placement", () => {
     expect(css).not.toContain("@keyframes card-placed");
   });
 
-  it("CSS animate-card-captured still exists (not replaced yet)", () => {
-    expect(css).toContain(".animate-card-captured");
-    expect(css).toContain("@keyframes card-captured");
+  it("CSS animate-card-captured removed (replaced by Motion in US-UXP-009)", () => {
+    expect(css).not.toContain(".animate-card-captured");
+    expect(css).not.toContain("@keyframes card-captured");
   });
 
   it("BoardGrid imports motion from motion/react", () => {
     expect(boardGrid).toMatch(/import.*motion.*from\s+["']motion\/react["']/);
   });
 
-  it("BoardGrid uses motion.div with spring for placed cards", () => {
+  it("BoardGrid uses motion.div for placed cards with scale animation", () => {
     expect(boardGrid).toContain("motion.div");
     expect(boardGrid).toContain("isPlaced");
-    expect(boardGrid).toMatch(/initial.*scale.*0/);
-    expect(boardGrid).toMatch(/animate.*scale.*1/);
-    expect(boardGrid).toContain("type: \"spring\"");
+    expect(boardGrid).toContain("initial={{ scale: 0, opacity: 0 }}");
+    expect(boardGrid).toContain("{ scale: 1, opacity: 1 }");
+    // Spring for non-pulse case, tween for pulse case
     expect(boardGrid).toContain("stiffness: 300");
     expect(boardGrid).toContain("damping: 20");
   });

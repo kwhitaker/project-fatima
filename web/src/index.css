@@ -65,25 +65,6 @@
   }
 }
 
-@keyframes card-captured {
-  0%, 100% { filter: brightness(1); }
-  30%       { filter: brightness(2); }
-  65%       { filter: brightness(1.4); }
-}
-
-@keyframes card-flip {
-  0%   { transform: scaleX(1); }
-  50%  { transform: scaleX(0.1); }
-  100% { transform: scaleX(1); }
-}
-
-.animate-card-captured {
-  animation: card-captured 0.55s steps(3);
-}
-
-.animate-card-flip {
-  animation: card-flip 0.3s steps(3);
-}
 
 /* Tier card rarity effects */
 @property --tier-angle {

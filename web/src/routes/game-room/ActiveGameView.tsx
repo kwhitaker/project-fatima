@@ -9,6 +9,7 @@ import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
 import { ActionPanel } from "@/routes/game-room/ActionPanel";
+import { motion, AnimatePresence } from "motion/react";
 
 export function ActiveGameView({
   game,
@@ -124,49 +125,70 @@ export function ActiveGameView({
       )}
 
       {/* Capture feedback */}
-      {capturedCells.size > 0 && (
-        <div
-          className={cn(
-            "text-sm font-heading font-semibold p-2 rounded border",
-            capturedCells.size === 1
-              ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
-              : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
-          )}
-          aria-live="polite"
-          aria-label="capture feedback"
-        >
-          {capturedCells.size === 1
-            ? "1 card captured!"
-            : `Combo! ×${capturedCells.size} captured`}
-        </div>
-      )}
+      <AnimatePresence>
+        {capturedCells.size > 0 && (
+          <motion.div
+            key="capture-feedback"
+            className={cn(
+              "text-sm font-heading font-semibold p-2 rounded border",
+              capturedCells.size === 1
+                ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
+                : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
+            )}
+            aria-live="polite"
+            aria-label="capture feedback"
+            initial={{ scale: 1.2, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          >
+            {capturedCells.size === 1
+              ? "1 card captured!"
+              : `Combo! ×${capturedCells.size} captured`}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Plus! callout */}
-      {game.last_move?.plus_triggered === true && (
-        <div
-          className="text-sm font-heading font-semibold p-2 rounded border bg-cyan-50 border-cyan-200 text-cyan-800 dark:bg-cyan-950/50 dark:border-cyan-800 dark:text-cyan-300"
-          aria-live="polite"
-          aria-label="plus feedback"
-        >
-          Plus!
-        </div>
-      )}
+      <AnimatePresence>
+        {game.last_move?.plus_triggered === true && (
+          <motion.div
+            key="plus-feedback"
+            className="text-sm font-heading font-semibold p-2 rounded border bg-cyan-50 border-cyan-200 text-cyan-800 dark:bg-cyan-950/50 dark:border-cyan-800 dark:text-cyan-300"
+            aria-live="polite"
+            aria-label="plus feedback"
+            initial={{ scale: 1.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 25 }}
+          >
+            Plus!
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Elemental! callout */}
-      {game.last_move != null && game.last_move.elemental_triggered === true && (
-        <div
-          className="text-sm font-heading font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
-          aria-live="polite"
-          aria-label="elemental feedback"
-        >
-          {(() => {
-            const elemKey = boardElements?.[game.last_move!.cell_index];
-            return elemKey
-              ? elemKey.charAt(0).toUpperCase() + elemKey.slice(1) + " Elemental!"
-              : "Elemental!";
-          })()}
-        </div>
-      )}
+      <AnimatePresence>
+        {game.last_move != null && game.last_move.elemental_triggered === true && (
+          <motion.div
+            key="elemental-feedback"
+            className="text-sm font-heading font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
+            aria-live="polite"
+            aria-label="elemental feedback"
+            initial={{ scale: 1.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 25 }}
+          >
+            {(() => {
+              const elemKey = boardElements?.[game.last_move!.cell_index];
+              return elemKey
+                ? elemKey.charAt(0).toUpperCase() + elemKey.slice(1) + " Elemental!"
+                : "Elemental!";
+            })()}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Opponent hand count */}
       <div>
@@ -241,8 +263,33 @@ export function ActiveGameView({
         <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
           {/* Score bar */}
           <div className="flex items-center justify-end shrink-0">
-            <p className="text-sm font-heading text-muted-foreground">
-              You: {myScore} | Opp: {opponentScore}
+            <p className="text-sm font-heading text-muted-foreground flex items-center gap-0">
+              You:&nbsp;
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={`my-${myScore}`}
+                  initial={{ y: -12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 12, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  aria-label="your score"
+                >
+                  {myScore}
+                </motion.span>
+              </AnimatePresence>
+              &nbsp;|&nbsp;Opp:&nbsp;
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={`opp-${opponentScore}`}
+                  initial={{ y: -12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 12, opacity: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  aria-label="opponent score"
+                >
+                  {opponentScore}
+                </motion.span>
+              </AnimatePresence>
             </p>
           </div>
 

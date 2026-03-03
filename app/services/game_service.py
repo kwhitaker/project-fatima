@@ -11,6 +11,25 @@ from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
 
 
+class ActiveGameExistsError(Exception):
+    """Raised when a player tries to create/join but already has a non-complete game."""
+
+    def __init__(self, existing_game_id: str) -> None:
+        self.existing_game_id = existing_game_id
+        super().__init__(
+            f"You already have a non-complete game ({existing_game_id}). "
+            "Finish or forfeit it before starting a new one."
+        )
+
+
+def _check_no_active_game(game_store: GameStore, player_id: str) -> None:
+    """Raise ActiveGameExistsError if player has any non-complete game."""
+    games = game_store.list_games_for_player(player_id)
+    for g in games:
+        if g.status != GameStatus.COMPLETE:
+            raise ActiveGameExistsError(g.game_id)
+
+
 def create_game(
     game_store: GameStore,
     card_store: CardStore,
@@ -19,6 +38,7 @@ def create_game(
     email: str | None = None,
 ) -> GameState:
     """Create a new game and auto-join the caller as player 1."""
+    _check_no_active_game(game_store, player_id)
     game_id = str(uuid.uuid4())
     if seed is None:
         seed = Random().randint(0, 2**31 - 1)
@@ -40,6 +60,7 @@ def join_game(
     player_id: str,
     email: str | None = None,
 ) -> GameState:
+    _check_no_active_game(game_store, player_id)
     state = game_store.get_game(game_id)
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")

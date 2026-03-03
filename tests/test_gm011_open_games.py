@@ -138,13 +138,15 @@ def test_non_complete_games_before_complete(client: TestClient) -> None:
 
 def test_newest_first_within_status_group(client: TestClient) -> None:
     """Within non-complete games, newest game appears first."""
+    # Use different creators to avoid one-active-game constraint; view from charlie
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     older_id = resp.json()["game_id"]
 
-    resp = as_user(client, "alice", "post", "/games", json={"seed": 2})
+    resp = as_user(client, "bob", "post", "/games", json={"seed": 2})
     newer_id = resp.json()["game_id"]
 
-    games = as_user(client, "alice", "get", "/games").json()
+    # Charlie sees both as open games
+    games = as_user(client, "charlie", "get", "/games").json()
     ids = [g["game_id"] for g in games]
     assert ids.index(newer_id) < ids.index(older_id)
 

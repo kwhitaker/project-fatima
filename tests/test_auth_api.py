@@ -199,11 +199,13 @@ def test_participant_can_read_active_game(client: TestClient) -> None:
 
 def test_starting_player_deterministic_from_seed(client: TestClient) -> None:
     """Same seed → same starting player every time."""
+    # Use distinct user pairs per iteration to avoid the one-active-game constraint.
+    pairs = [("alice1", "bob1"), ("alice2", "bob2"), ("alice3", "bob3")]
     starts = []
-    for _ in range(3):
-        resp = as_user(client, "alice", "post", "/games", json={"seed": 999})
+    for creator, joiner in pairs:
+        resp = as_user(client, creator, "post", "/games", json={"seed": 999})
         game_id = resp.json()["game_id"]
-        resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+        resp = as_user(client, joiner, "post", f"/games/{game_id}/join", json={})
         starts.append(resp.json()["current_player_index"])
 
     assert len(set(starts)) == 1, "Same seed must produce same starting player"

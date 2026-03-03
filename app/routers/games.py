@@ -10,6 +10,7 @@ from app.dependencies import get_card_store, get_game_store
 from app.models.game import Archetype, GameState, GameStatus
 from app.rules.errors import InvalidMoveError
 from app.services import game_service
+from app.services.game_service import ActiveGameExistsError
 from app.store import CardStore, ConflictError, DuplicateEventError, GameStore
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -62,7 +63,10 @@ def create_game(
     game_store: GameStoreDep,
     card_store: CardStoreDep,
 ) -> GameState:
-    return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
+    try:
+        return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
+    except ActiveGameExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/{game_id}/join", response_model=GameState)
@@ -75,6 +79,8 @@ def join_game(
 ) -> GameState:
     try:
         return game_service.join_game(game_store, card_store, game_id, caller_id, caller_email)
+    except ActiveGameExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

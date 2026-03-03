@@ -85,7 +85,18 @@ export async function createGame(): Promise<GameState> {
     headers,
     body: JSON.stringify({}),
   });
-  if (!res.ok) throw new Error(`Failed to create game: ${res.status}`);
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to create game: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
   return res.json() as Promise<GameState>;
 }
 
@@ -103,7 +114,18 @@ export async function joinGame(gameId: string): Promise<GameState> {
     headers,
     body: JSON.stringify({}),
   });
-  if (!res.ok) throw new Error(`Failed to join game: ${res.status}`);
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to join game: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
   return res.json() as Promise<GameState>;
 }
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -61,8 +62,19 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 p-6">
-        <h1 className="text-2xl font-bold">{titles[mode]}</h1>
+      <motion.div
+        className="w-full max-w-sm space-y-6 p-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <div className="text-center space-y-2">
+          <div className="text-6xl" aria-hidden="true">🧛</div>
+          <h1 className="font-heading text-xl">Yugi-Strahd</h1>
+          <p className="font-body text-sm text-muted-foreground">A Curse of Strahd Card Game</p>
+        </div>
+
+        <h2 className="text-lg font-bold">{titles[mode]}</h2>
 
         {status === "done" ? (
           <div className="space-y-4">
@@ -82,7 +94,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
             />
             {mode !== "forgot" && (
               <input
@@ -91,7 +103,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
               />
             )}
             <Button type="submit" className="w-full" disabled={status === "sending"}>
@@ -112,21 +124,21 @@ export default function Login() {
         <div className="flex flex-col gap-1 text-sm text-center">
           {mode === "signin" && (
             <>
-              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signup")}>
+              <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signup")}>
                 Create an account
               </button>
-              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("forgot")}>
+              <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("forgot")}>
                 Forgot password?
               </button>
             </>
           )}
           {mode !== "signin" && (
-            <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signin")}>
+            <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signin")}>
               Back to sign in
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

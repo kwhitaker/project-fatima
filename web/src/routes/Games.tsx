@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { listGames, createGame, type GameState } from "@/lib/api";
@@ -89,7 +90,12 @@ export default function Games() {
   const myId = user?.id ?? "";
 
   return (
-    <div className="container py-8">
+    <motion.div
+      className="container py-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.15 }}
+    >
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">My Games</h1>
         <div className="flex flex-wrap gap-2">
@@ -107,17 +113,29 @@ export default function Games() {
       ) : games.length === 0 ? (
         <p className="text-muted-foreground text-sm">No games yet.</p>
       ) : (
-        <ul className="space-y-2">
+        <motion.ul
+          className="space-y-2"
+          initial="hidden"
+          animate="visible"
+          variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+        >
           {games.map((game) => {
             const isOpen = !game.players.some((p) => p.player_id === myId);
             const displayName = getDisplayName(game, myId);
             const shortId = game.game_id.slice(0, 8);
             const resultLabel = getResultLabel(game, myId);
             return (
-              <li key={game.game_id}>
+              <motion.li
+                key={game.game_id}
+                variants={{
+                  hidden: { opacity: 0, y: 10 },
+                  visible: { opacity: 1, y: 0 },
+                }}
+                transition={{ duration: 0.15 }}
+              >
                 <Link
                   to={`/g/${game.game_id}`}
-                  className="hover:bg-muted block w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="hover:bg-accent/20 hover:border-accent block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 flex-col">
@@ -135,11 +153,11 @@ export default function Games() {
                     </div>
                   </div>
                 </Link>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+        </motion.ul>
       )}
-    </div>
+    </motion.div>
   );
 }

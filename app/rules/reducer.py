@@ -30,7 +30,7 @@ class PlacementIntent:
     cell_index: int
     use_archetype: bool = field(default=False)
     skulker_boost_side: str | None = field(default=None)
-    presence_boost_direction: str | None = field(default=None)
+    intimidate_target_cell: int | None = field(default=None)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -155,7 +155,7 @@ def apply_intent(
     archetype_activated = False
     caster_reroll = False
     devout_negate_fog = False
-    presence_direction_boost: str | None = None
+    intimidate_target: int | None = None
 
     if intent.use_archetype and state.players:
         player = state.players[intent.player_index]
@@ -180,13 +180,35 @@ def apply_intent(
         elif player.archetype == Archetype.DEVOUT:
             devout_negate_fog = True
             archetype_activated = True
-        elif player.archetype == Archetype.PRESENCE:
-            if intent.presence_boost_direction not in {"n", "e", "s", "w"}:
+        elif player.archetype == Archetype.INTIMIDATE:
+            if intent.intimidate_target_cell is None or not (
+                0 <= intent.intimidate_target_cell <= 8
+            ):
                 raise ArchetypePowerArgumentError(
-                    f"Presence boost requires presence_boost_direction in {{n,e,s,w}}, "
-                    f"got {intent.presence_boost_direction!r}"
+                    f"Intimidate requires intimidate_target_cell in 0-8, "
+                    f"got {intent.intimidate_target_cell!r}"
                 )
-            presence_direction_boost = intent.presence_boost_direction
+            target_cell = intent.intimidate_target_cell
+            # Validate target is adjacent to placement cell
+            from app.rules.captures import _ADJACENCY
+
+            adjacent_indices = {nb[0] for nb in _ADJACENCY[intent.cell_index]}
+            if target_cell not in adjacent_indices:
+                raise ArchetypePowerArgumentError(
+                    f"Intimidate target cell {target_cell} is not adjacent "
+                    f"to placement cell {intent.cell_index}"
+                )
+            # Validate target cell has an opponent card
+            target_board_cell = state.board[target_cell]
+            if target_board_cell is None:
+                raise ArchetypePowerArgumentError(
+                    f"Intimidate target cell {target_cell} is empty"
+                )
+            if target_board_cell.owner == intent.player_index:
+                raise ArchetypePowerArgumentError(
+                    f"Intimidate target cell {target_cell} contains your own card"
+                )
+            intimidate_target = target_cell
             archetype_activated = True
         else:
             raise ArchetypeNotAvailableError(
@@ -226,7 +248,7 @@ def apply_intent(
         placed_owner,
         card_lookup,
         mists_modifier=mists_modifier + elemental_bonus,
-        presence_direction=presence_direction_boost,
+        intimidate_target_cell=intimidate_target,
     )
 
     # --- Build state delta ---
@@ -257,6 +279,21 @@ def apply_intent(
         new_players[intent.player_index] = player.model_copy(update=player_updates)
         updates["players"] = new_players
         updates["current_player_index"] = (intent.player_index + 1) % 2
+
+    # --- Early finish check (mathematically decided) ---
+    # After capture resolution, check if one player owns enough cells that
+    # the opponent cannot reach majority (5+) even by capturing all remaining.
+    empty_cells = sum(1 for cell in new_board if cell is None)
+    if empty_cells > 0:
+        p0_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 0)
+        p1_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 1)
+        for pi, count in ((0, p0_cells), (1, p1_cells)):
+            if count >= 5 + empty_cells:
+                updates["result"] = GameResult(
+                    winner=pi, is_draw=False, completion_reason="normal", early_finish=True
+                )
+                updates["status"] = GameStatus.COMPLETE
+                return state.model_copy(update=updates)
 
     # --- End-of-round check ---
     if all(cell is not None for cell in new_board):

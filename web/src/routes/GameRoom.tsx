@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
+import { initAudio } from "@/lib/sounds";
 
 import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
 import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
@@ -31,12 +33,20 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
+  const [intimidatePendingCell, setIntimidatePendingCell] = useState<number | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
+
+  // Initialize Web Audio on first user interaction
+  useEffect(() => {
+    const handler = () => { initAudio(); window.removeEventListener("click", handler); };
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
 
   const selectedCardElement =
     (selectedCard && cardDefs.get(selectedCard)?.element) ?? null;
@@ -102,30 +112,39 @@ export default function GameRoom() {
 
   const handlePlaceCard = async (cellIndex: number) => {
     if (!selectedCard || !game || !gameId) return;
-    setMovePending(true);
-    setMoveError(null);
     const callerId = user?.id ?? "";
     const myIdx = game.players.findIndex((p) => p.player_id === callerId);
     const myPlr = myIdx >= 0 ? game.players[myIdx] : undefined;
+
+    // Intimidate two-step: first click sets pending placement, second click picks target
+    if (usePower && myPlr?.archetype === "intimidate" && intimidatePendingCell === null) {
+      setIntimidatePendingCell(cellIndex);
+      return;
+    }
+
+    setMovePending(true);
+    setMoveError(null);
+    const placementCell = intimidatePendingCell ?? cellIndex;
     const idempotencyKey = crypto.randomUUID();
     try {
       let updated: GameState;
       if (usePower) {
         updated = await placeCard(
-          gameId, selectedCard, cellIndex, game.state_version, idempotencyKey,
+          gameId, selectedCard, placementCell, game.state_version, idempotencyKey,
           {
             useArchetype: true,
             skulkerBoostSide: myPlr?.archetype === "skulker" ? (powerSide ?? undefined) : undefined,
-            presenceBoostDirection: myPlr?.archetype === "presence" ? (powerSide ?? undefined) : undefined,
+            intimidateTargetCell: myPlr?.archetype === "intimidate" ? cellIndex : undefined,
           }
         );
       } else {
-        updated = await placeCard(gameId, selectedCard, cellIndex, game.state_version, idempotencyKey);
+        updated = await placeCard(gameId, selectedCard, placementCell, game.state_version, idempotencyKey);
       }
       setGame(updated);
       setSelectedCard(null);
       setUsePower(false);
       setPowerSide(null);
+      setIntimidatePendingCell(null);
     } catch (e: unknown) {
       const errStatus = (e as { status?: number }).status;
       setMoveError(e instanceof Error ? e.message : "Move failed");
@@ -133,6 +152,7 @@ export default function GameRoom() {
         const fresh = await getGame(gameId).catch(() => null);
         if (fresh) setGame(fresh);
       }
+      setIntimidatePendingCell(null);
     } finally {
       setMovePending(false);
     }
@@ -212,7 +232,7 @@ export default function GameRoom() {
         <span
           aria-label="realtime status"
           className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs",
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none border-2 text-xs",
             realtimeStatus === "live"
               ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/50 dark:border-green-800 dark:text-green-400"
               : "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950/50 dark:border-yellow-800 dark:text-yellow-400"
@@ -254,6 +274,7 @@ export default function GameRoom() {
           onUsePowerChange={(next) => {
             setUsePower(next);
             setPowerSide(null);
+            setIntimidatePendingCell(null);
           }}
           powerSide={powerSide}
           onPowerSideToggle={(side) => {
@@ -277,6 +298,8 @@ export default function GameRoom() {
           boardElements={game.board_elements ?? null}
           selectedCardElement={selectedCardElement}
           onShowRules={() => setShowRules(true)}
+          intimidatePendingCell={intimidatePendingCell}
+          onCancelIntimidatePending={() => setIntimidatePendingCell(null)}
         />
       ) : game.status === "waiting" ? (
         <WaitingGameView
@@ -300,13 +323,15 @@ export default function GameRoom() {
       )}
 
       {/* Card inspect preview dialog */}
-      {previewCard !== null && (
-        <CardInspectPreview
-          cardKey={previewCard.cardKey}
-          def={previewCard.def}
-          onClose={() => setPreviewCard(null)}
-        />
-      )}
+      <AnimatePresence>
+        {previewCard !== null && (
+          <CardInspectPreview
+            cardKey={previewCard.cardKey}
+            def={previewCard.def}
+            onClose={() => setPreviewCard(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>

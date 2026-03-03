@@ -946,7 +946,7 @@ describe("archetype selection UX (US-UI-008)", () => {
       expect(screen.getByRole("button", { name: /skulker/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /caster/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /devout/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /presence/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /intimidate/i })).toBeInTheDocument();
     });
   });
 
@@ -1071,16 +1071,15 @@ describe("archetype power UX (US-UI-009)", () => {
     });
   });
 
-  it("presence: shows direction selector (n/e/s/w) after Use Power is toggled", async () => {
+  it("intimidate: does NOT show direction selector after Use Power is toggled", async () => {
     setupAuth(true);
-    mockGetGame.mockResolvedValue(makePowerGame("presence"));
+    mockGetGame.mockResolvedValue(makePowerGame("intimidate"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
     await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
     await user.click(screen.getByRole("checkbox", { name: /use power/i }));
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^n$/i })).toBeInTheDocument();
-    });
+    // Intimidate uses cell picker on the board, not direction buttons
+    expect(screen.queryByRole("button", { name: /^n$/i })).not.toBeInTheDocument();
   });
 
   it("submits move with use_archetype=true and no extra params for martial", async () => {
@@ -1097,7 +1096,7 @@ describe("archetype power UX (US-UI-009)", () => {
     await waitFor(() => {
       expect(mockPlaceCard).toHaveBeenCalledWith(
         "game-power", "card-a", 0, 5, expect.any(String),
-        { useArchetype: true, skulkerBoostSide: undefined, presenceBoostDirection: undefined }
+        { useArchetype: true, skulkerBoostSide: undefined, intimidateTargetCell: undefined }
       );
     });
   });
@@ -1118,7 +1117,7 @@ describe("archetype power UX (US-UI-009)", () => {
     await waitFor(() => {
       expect(mockPlaceCard).toHaveBeenCalledWith(
         "game-power", "card-a", 0, 5, expect.any(String),
-        { useArchetype: true, skulkerBoostSide: "n", presenceBoostDirection: undefined }
+        { useArchetype: true, skulkerBoostSide: "n", intimidateTargetCell: undefined }
       );
     });
   });
@@ -1226,8 +1225,9 @@ describe("effects (US-UI-011)", () => {
     mockGetGame.mockResolvedValue({ ...effectsGame, last_move: { mists_roll: 1, mists_effect: "fog" } });
     renderAt("/g/game-fx");
     await waitFor(() => {
-      expect(screen.getByLabelText(/mists feedback/i)).toBeInTheDocument();
-      expect(screen.getByText(/fog/i)).toBeInTheDocument();
+      const banner = screen.getByLabelText(/mists feedback/i);
+      expect(banner).toBeInTheDocument();
+      expect(banner.textContent).toMatch(/fog/i);
     });
   });
 

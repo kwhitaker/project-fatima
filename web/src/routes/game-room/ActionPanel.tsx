@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import type { CardDefinition, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "motion/react";
 
 export function ActionPanel({
   isMyTurn,
@@ -13,6 +14,8 @@ export function ActionPanel({
   onUsePowerChange,
   powerSide,
   onPowerSideToggle,
+  intimidatePendingCell,
+  onCancelIntimidatePending,
 }: {
   isMyTurn: boolean;
   selectedCard: string | null;
@@ -24,13 +27,15 @@ export function ActionPanel({
   onUsePowerChange: (next: boolean) => void;
   powerSide: string | null;
   onPowerSideToggle: (side: "n" | "e" | "s" | "w") => void;
+  intimidatePendingCell: number | null;
+  onCancelIntimidatePending: () => void;
 }) {
   const hasArchetype = !!myPlayer?.archetype;
   const powerAvailable =
     hasArchetype && !myPlayer!.archetype_used && isMyTurn;
   const needsDirection =
-    usePower &&
-    (myPlayer?.archetype === "skulker" || myPlayer?.archetype === "presence");
+    usePower && myPlayer?.archetype === "skulker";
+  const isIntimidate = usePower && myPlayer?.archetype === "intimidate";
 
   // Determine step text (shown below the turn label on my turn)
   let stepText: string | null;
@@ -44,6 +49,8 @@ export function ActionPanel({
     stepText = "Select a card";
   } else if (needsDirection && powerSide === null) {
     stepText = "Choose a direction for your power";
+  } else if (isIntimidate && intimidatePendingCell !== null) {
+    stepText = "Click an adjacent opponent card to debuff";
   } else {
     stepText = "Choose a cell";
   }
@@ -54,14 +61,21 @@ export function ActionPanel({
       aria-label="action panel"
     >
       {/* Turn label */}
-      <p
-        className={cn(
-          "text-sm font-semibold",
-          !isMyTurn && "text-muted-foreground"
-        )}
-      >
-        {isMyTurn ? "Your turn" : "Opponent's turn"}
-      </p>
+      <AnimatePresence mode="wait">
+        <motion.p
+          key={isMyTurn ? "my-turn" : "opp-turn"}
+          className={cn(
+            "text-sm font-heading font-semibold leading-relaxed",
+            !isMyTurn && "text-muted-foreground"
+          )}
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.9 }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        >
+          {isMyTurn ? "Your turn" : "Opponent's turn"}
+        </motion.p>
+      </AnimatePresence>
 
       {/* Step indicator (my turn only) */}
       {stepText !== null && (
@@ -113,6 +127,21 @@ export function ActionPanel({
                   {side}
                 </Button>
               ))}
+            </div>
+          )}
+          {isIntimidate && intimidatePendingCell !== null && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                Placing at cell {intimidatePendingCell}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={onCancelIntimidatePending}
+              >
+                Cancel
+              </Button>
             </div>
           )}
         </div>

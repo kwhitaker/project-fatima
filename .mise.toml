@@ -1,3 +1,33 @@
 [tools]
 # Frontend runtime / package manager for the UI MVP.
 bun = "latest"
+
+# --- Dev tasks ---
+
+[tasks."dev:api"]
+description = "Start FastAPI backend with hot-reload"
+run = "uv run uvicorn app.main:app --reload"
+
+[tasks."dev:ui"]
+description = "Start Vite frontend dev server"
+dir = "web"
+run = "bun run dev"
+
+[tasks.dev]
+description = "Start backend + frontend concurrently"
+depends = ["dev:*"]
+
+[tasks.test]
+description = "Run backend and frontend tests"
+run = """
+uv run pytest
+cd web && bun run test --run
+"""
+
+[tasks.lint]
+description = "Lint Python code with ruff"
+run = "uv run ruff check ."
+
+[tasks.format]
+description = "Format Python code with ruff"
+run = "uv run ruff format ."

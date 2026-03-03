@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
@@ -48,7 +49,12 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 p-6">
+      <motion.div
+        className="w-full max-w-sm space-y-6 p-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <h1 className="text-2xl font-bold">Set new password</h1>
         {status === "done" ? (
           <p className="text-sm text-green-600">Password updated. Redirecting…</p>
@@ -60,7 +66,7 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
             />
             <input
               type="password"
@@ -68,7 +74,7 @@ export default function ResetPassword() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
             />
             <Button type="submit" className="w-full" disabled={status === "saving"}>
               {status === "saving" ? "Saving…" : "Set password"}
@@ -78,7 +84,7 @@ export default function ResetPassword() {
             )}
           </form>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

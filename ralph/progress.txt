@@ -3,163 +3,275 @@
 ## Codebase Patterns
 - balance errors in validate_card_balance return list[str]; loader wraps them in CardLoadError with line number
 - Test fixtures that create cards with specific sides must now satisfy min(sides) ≤ 3
+- shadcn/ui theme is defined entirely via CSS custom properties in web/src/index.css
+- App uses dark mode by default (class="dark" on <html>)
 
 ---
-Started: 2026-03-01
+Started: 2026-03-03
 ---
 
-## 2026-03-01 - US-GM-001
-- Added weak-side validation to `validate_card_balance` in `app/rules/cards.py`: min(sides) must be ≤ 3
-- Fixed 43 cards in `cards.jsonl` that violated the rule (reduced lowest side to 3, added deficit to highest non-capped side); budget sums preserved
-- Updated 4 test fixtures in `test_cards_balance.py` that used min-side ≥ 4; documented weak-side rule in `CARDS_SPEC.md`
-- Tests run: `uv run pytest` — 490 passed
-- Files changed: `app/rules/cards.py`, `cards.jsonl`, `tests/test_gm001_weak_side.py`, `tests/test_cards_balance.py`, `CARDS_SPEC.md`
-- Learnings: T3 ultra cards (budget=32, cap=10) all converge to n=10, e=10, s=9, w=3 or similar; that's unavoidable with the strict sum+cap constraints. Tests that test ONLY budget/cap failures need sides with min≤3 to avoid dual-failure interference.
+## 2026-03-03 12:55 - US-UXP-001
+- Rewrote root README.md with project summary, prerequisites, backend/frontend setup, test/lint commands, seed data, and Further Reading links
+- Trimmed AGENTS.md: removed duplicated setup/command sections (now in README), kept agent-specific workflow, code style, and useful pytest/ruff flags
+- No existing .md files deleted
+- Tests: 553 backend passed, 207 frontend passed
+- Files changed: README.md, AGENTS.md
+- Learnings: README already existed with basic content; rewrote rather than created fresh
 ---
 
-## 2026-03-01 - US-GM-003
-- Added Plus rule as pre-step in `resolve_captures`: computes raw side-sums for adjacent opponent cells; if 2+ share the same sum, captures all matching cells immediately and enqueues them for BFS combo
-- Changed `resolve_captures` return type to `tuple[list[BoardCell | None], bool]`; updated all callers (reducer, test_captures rc wrapper, test_combo_captures direct calls)
-- Added `plus_triggered: bool = False` to `LastMoveInfo`; reducer passes it from resolve_captures result
-- Fixed pre-existing `test_presence.py` test that coincidentally produced equal Plus sums (changed placed.e from 5 to 4 to differentiate sums)
-- Tests run: `uv run pytest` — 502 passed; Files: `app/rules/captures.py`, `app/rules/reducer.py`, `app/models/game.py`, `tests/test_gm003_plus_rule.py`, `tests/test_captures.py`, `tests/test_combo_captures.py`, `tests/test_presence.py`
-- Learnings: Card sides are bounded 1-10 by CardSides validation — test cards exceeding 10 fail Pydantic validation. When adding pre-steps to BFS, watch for unintended Plus triggers in existing tests that use equal card values (sum matches coincidentally).
+## 2026-03-03 13:00 - US-UXP-002
+- Replaced default shadcn/ui neutral palette with Castlevania NES-inspired colors in both :root and .dark blocks
+- Dark mode: deep blue-black bg (240 20% 6%), warm parchment fg (40 20% 90%), blood-red primary (0 70% 45%), dark stone secondary (240 10% 15%), dull gold accent (45 60% 45%)
+- Light mode: readable inverse with parchment bg, dark fg, same red primary
+- Destructive uses orange-red (hue 25) to stay distinct from blood-red primary
+- Tests: 207 frontend passed
+- Files changed: web/src/index.css
+- Learnings: CSS-variable-only change; all shadcn/ui components pick up theme automatically
 ---
 
-## 2026-03-02 - US-GM-004
-- Added `plus_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`
-- Added cyan "Plus!" callout in `ActiveGameView.tsx` rendered when `game.last_move?.plus_triggered === true`; callout is visually distinct from amber/purple capture feedback; has `aria-live="polite"` and dark mode classes
-- Added 6 tests in `tests/gm004.test.tsx`: Plus! shown on true; hidden on false; hidden when absent; coexists with capture feedback; has aria-live; has dark: classes
-- Tests run: `bun run test --run` — 157 passed
-- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/gm004.test.tsx`
-- Learnings: `plus_triggered` as optional (`?`) in the TS interface handles backward compat naturally; `=== true` check ensures undefined/absent field shows no callout
+## 2026-03-03 13:05 - US-UXP-003
+- Added vampire emoji SVG favicon at web/public/favicon.svg
+- Updated web/index.html: added favicon link, changed title from "Project Fatima" to "Yugi-Strahd"
+- Searched frontend codebase for "Project Fatima" / "Fatima" in user-visible text — none found (only internal __FATIMA_ENV__ which is not user-facing)
+- Tests: 207 frontend passed
+- Files changed: web/public/favicon.svg (new), web/index.html
+- Learnings: No user-visible "Project Fatima" references existed in .tsx files; rename was title-only
 ---
 
-## 2026-03-02 - US-GM-005
-- Added `element: ElementType` (Literal["blood","holy","arcane","shadow","nature"]) to `CardDefinition` in `app/models/cards.py`; validation is Pydantic-native (missing/invalid element = load error)
-- Assigned element to all 65 cards in `cards.jsonl` using `ralph/card_elements.json` as sole source; created migration `supabase/migrations/004_add_element_to_cards.sql`; updated `card_to_row` in `scripts/seed_cards.py` and updated CARDS_SPEC.md
-- Updated 36 test fixtures (all `_make_card`/`make_card`/`_card` helpers across existing test files) to include `element="shadow"`; wrote 18 new tests in `tests/test_gm005_elemental_data.py`
-- Tests run: `uv run pytest` — 521 passed
-- Files changed: `app/models/cards.py`, `cards.jsonl`, `scripts/seed_cards.py`, `supabase/migrations/004_add_element_to_cards.sql`, `tests/test_gm005_elemental_data.py`, `tests/test_seed_cards.py`, `CARDS_SPEC.md`, + 34 test fixture files
-- Learnings: `element` as a required Pydantic `Literal` field is the cleanest validation approach — the model itself rejects bad values, no loader-level check needed beyond what Pydantic provides. All module-level CardDefinition constructions in tests will fail collection if element is missing — easier to catch than runtime-only failures.
+## 2026-03-03 13:10 - US-UXP-004
+- Added Google Fonts (Press Start 2P + VT323) to index.html with preconnect
+- Extended Tailwind config with font-heading and font-body families
+- Set VT323 as body font (18px base) and Press Start 2P for h1-h6 in index.css
+- Applied font-heading to: button component, ActionPanel turn label, ActiveGameView score/callouts, CompleteGameView results, HandPanel/HandDrawer labels
+- Card stats, body text, dialog descriptions use VT323 (body default)
+- Tests: 218 frontend passed, 553 backend passed
+- Files changed: web/index.html, web/tailwind.config.js, web/src/index.css, web/src/components/ui/button.tsx, web/src/routes/game-room/ActionPanel.tsx, ActiveGameView.tsx, CompleteGameView.tsx, HandDrawer.tsx, HandPanel.tsx, web/src/__tests__/uxp004.test.tsx (new)
+- Learnings: Press Start 2P is very small; 14px minimum for buttons works. VT323 at 18px base font-size provides good readability. Using CSS h1-h6 rule covers dialog titles automatically without touching component code.
 ---
 
-## 2026-03-02 - US-GM-006
-- Added `board_elements: list[str] | None = None` to `GameState`; added `elemental_triggered: bool = False` to `LastMoveInfo`
-- Generated `board_elements` (9 cells) deterministically in `join_game` via `Random(seed).choices([...], k=9)` when second player joins; computed `elemental_bonus = 1` in reducer when cell element matches placed card element, stacked onto `mists_modifier` before `resolve_captures`; set `elemental_triggered` in `LastMoveInfo`
-- 13 new tests in `tests/test_gm006_elemental.py`; 534 total passing
-- Files changed: `app/models/game.py`, `app/services/game_service.py`, `app/rules/reducer.py`, `tests/test_gm006_elemental.py`
-- Learnings: Elemental bonus stacks naturally into the existing `mists_modifier` parameter — no new param needed. Both `plus_triggered` and `elemental_triggered` follow the same optional-bool-with-default pattern in `LastMoveInfo` for backward compat. `Random(seed).choices(...)` and `Random(seed).randint(...)` in `join_game` are independent instances so no state sharing issues.
+## 2026-03-03 13:20 - US-UXP-005
+- Set `--radius: 0px` in `:root` to eliminate all border-radius globally from shadcn/ui
+- Replaced all hardcoded `rounded-*` Tailwind classes with `rounded-none` across 14 files (kept `rounded-full` only on the tiny realtime status dot)
+- Added chunky borders: `border-[3px]` on board cells, `border-2` on hand cards, buttons, dialog frames, game list items, form inputs, drawer, archetype asides
+- Button component updated: all variants get `border-2` with appropriate border-color per variant (ghost/link use `border-transparent`)
+- Tests: 218 frontend passed
+- Files changed: index.css, button.tsx, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, ArchetypePowerAside.tsx, Games.tsx, Login.tsx, ResetPassword.tsx, GameRoom.tsx
+- Learnings: `--radius: 0px` handles shadcn components automatically but app code had 19 hardcoded `rounded-*` instances. The `border-2` addition on buttons required setting border-color per variant to avoid ghost/link variants showing unexpected borders.
 ---
 
-## 2026-03-02 - US-GM-007
-- Added `board_elements: string[] | null` to `GameState` and `elemental_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`; added `element?: string` to `CardDefinition`
-- Updated `BoardGrid.tsx`: element symbol badges (🩸 ✦ ✧ ◆ ✿) on every cell (aria-label="element {name}"); emerald ring highlight on cells matching selected card's element; passes `boardElements` and `selectedCardElement` as optional props
-- Added Elemental! callout in `ActiveGameView.tsx` (gold/yellow, distinct from Plus! cyan and amber capture); shows element name ("Blood Elemental!"); updated `GameRoom.tsx` to compute `selectedCardElement` from selected card's def
-- 12 new tests in `gm007.test.tsx`: direct BoardGrid tests for labels and highlight; GameRoom-level tests for callout; 169 total passing
-- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm007.test.tsx`
-- Learnings: Direct component tests (rendering `<BoardGrid>` without full router) are cleaner for visual/structural tests; GameRoom-level tests for behavioral callouts. ring-emerald conflicts with ring-yellow are avoided with `!isLastMove` guard. IIFE in JSX works for inline computation but helper vars before return are cleaner.
+## 2026-03-03 13:25 - US-UXP-006
+- Changed card-placed animation timing from ease-out to steps(4) for 4-frame NES sprite pop
+- Changed card-captured animation timing from ease-in-out to steps(3) for 3-frame brightness blink
+- Added new @keyframes card-flip (scaleX: 1 → 0.1 → 1) with steps(3) at 0.3s for ownership flip effect
+- Applied animate-card-flip alongside animate-card-captured on captured cells in BoardGrid.tsx
+- Callout animations (Plus!, Elemental!) had no existing transitions — no changes needed
+- Tests: 226 frontend passed
+- Files changed: web/src/index.css, web/src/routes/game-room/BoardGrid.tsx, web/src/__tests__/uxp006.test.tsx (new)
+- Learnings: steps(N) CSS timing divides animation into discrete frames with no interpolation — perfect for NES aesthetic. Callouts in ActiveGameView had no animations to convert.
 ---
 
-## 2026-03-02 - US-GM-008
-- Updated `CLAUDE.md` Key Domain Concepts: added weak-side rule description, Plus rule entry, Elemental system entry (5 elements, match=+1, Plus/combo use raw values)
-- Rewrote `GAME_RULES_OVERVIEW.md`: fixed Mists from ±1 to ±2; fixed Devout to say "negate the −2"; added weak-side rule to Components/Cards; added full Plus Rule section with example; added full Elemental System section with thematic mapping; updated MVP Defaults to reflect all implemented systems; removed out-of-scope callouts for now-implemented features
-- `CARDS_SPEC.md`: already up-to-date from US-GM-001 and US-GM-005 (no changes needed)
-- `AGENTS.md`: verified commands unchanged (no changes needed)
-- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
-- Files changed: `CLAUDE.md`, `GAME_RULES_OVERVIEW.md`
-- Learnings: GAME_RULES_OVERVIEW.md had stale ±1 Mists values even after US-GM-002 updated the code — docs lag behind code changes unless explicitly refreshed. A dedicated docs story at sprint end is the right pattern.
+## 2026-03-03 13:30 - US-UXP-007
+- Added `.card-tier-2` (shiny gold/red conic-gradient border) and `.card-tier-3` (holographic prismatic border + color-dodge overlay) CSS classes
+- Used `@property --tier-angle` with `:root` animation for gradient rotation — avoids animation conflicts with existing card-placed/card-captured animations on the same elements
+- Tier 3 rotates at 2x speed via `calc(var(--tier-angle) * 2)` for faster-cycling prismatic effect
+- Exported `tierClass()` helper from CardFace, applied in BoardGrid, HandPanel, HandDrawer, CardInspectPreview
+- Refactored BoardGrid to compute `def` once at top of loop body (was duplicated in 3 branches)
+- Tests: 240 frontend passed, 553 backend passed
+- Files changed: web/src/index.css, CardFace.tsx, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, CardInspectPreview.tsx, web/src/__tests__/uxp007.test.tsx (new)
+- Learnings: `@property` + `:root` animation is a clean pattern for rotating gradients that avoids per-element animation shorthand conflicts. `border-image` with `conic-gradient` works well with `rounded-none` (border-image doesn't support border-radius, but that's desired here).
 ---
 
-## 2026-03-02 - US-GM-008 (second pass)
-- Added Plus rule and Elemental System sections to `GameRulesDialog.tsx` (previously only docs/GAME_RULES_OVERVIEW.md had been updated; the in-game dialog was missing these two sections)
-- Plus rule section explains sum-matching pre-capture with concrete example; Elemental section covers 5 elements, +1 bonus on cell match, and that Plus/combos use raw values
-- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
-- Files changed: `web/src/routes/game-room/GameRulesDialog.tsx`, `ralph/prd.json`
-- Learnings: When a PRD story is expanded in a later commit (e.g. adding a UI copy requirement to an otherwise-docs story), the passes flag is correctly reset — always re-read the current acceptance criteria rather than relying on progress log entries from a prior pass.
+## 2026-03-03 13:35 - US-UXP-008
+- Installed `motion` (v12.34.5) as production dependency via `bun add motion`
+- Replaced CSS `@keyframes card-placed` / `.animate-card-placed` with Motion spring animation (`motion.div` with `initial={{ scale: 0, opacity: 0 }}`, `animate={{ scale: 1, opacity: 1 }}`, spring stiffness 300, damping 20) in BoardGrid.tsx — only applied to cells in `placedCells` set
+- Added `motion.button` with `whileHover={{ scale: 1.05 }}` on empty clickable board cells for interactive feedback
+- Added stagger-animate-in for hand cards in both HandPanel.tsx and HandDrawer.tsx using `motion.div` variants with `staggerChildren: 0.05` and spring transitions (opacity 0→1, y 20→0)
+- Updated uxp006 tests to remove card-placed CSS assertions (now handled by Motion)
+- Tests: 248 frontend passed, 553 backend passed
+- Files changed: web/package.json, web/bun.lock, web/src/index.css, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, uxp006.test.tsx (updated), uxp008.test.tsx (new)
+- Learnings: `import { motion } from "motion/react"` is the correct import path for motion v12+. Spring animation with stiffness 300 / damping 20 gives a snappy pop with one subtle overshoot — good for card placement. Stagger parent needs `variants` with `staggerChildren` on the transition, children need `hidden`/`visible` variant keys.
 ---
 
-## 2026-03-02 - US-GM-009
-- Exported `ELEMENT_SYMBOLS` from `BoardGrid.tsx`; imported it in `HandDrawer.tsx` and `CardInspectPreview.tsx` to keep element symbol mapping consistent across UI
-- Added element badge (absolute bottom-left, aria-label="element {name}") to each hand card tile in `HandDrawer.tsx`; graceful: badge only renders when `def?.element` is present
-- Added "Element: 🩸 Blood" row (or "Element: —" fallback) to `CardInspectPreview.tsx` between title and sides grid
-- Added 3 new tests to `ux014.test.tsx`: preview shows element for card_001 (blood); preview shows "Element: —" for card without element; hand tile shows element badge aria-label; 172 frontend tests + 534 backend tests all pass
-- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/HandDrawer.tsx`, `web/src/routes/game-room/CardInspectPreview.tsx`, `web/src/__tests__/ux014.test.tsx`, `ralph/prd.json`
-- Learnings: Exporting a `const` mapping from one component file so other components can reuse it avoids symbol drift; `aria-label="element {name}"` on element badges enables direct testing via `getByLabelText`.
+## 2026-03-03 13:46 - US-UXP-013
+- Added `character_key` to frontend `CardDefinition` type (backend already returns it)
+- Bundled `ralph/card_emojis.json` as `web/src/lib/card-emojis.json` (single source of truth)
+- Created `cardEmoji()` helper in CardFace.tsx that looks up emoji by character_key, returns undefined for missing keys
+- Updated CardFace: emoji displayed prominently center (text-2xl/3xl), name shrunk below it; side values unchanged at edges
+- Updated HandPanel, HandDrawer: emoji shown above card name with reduced name text size
+- Updated CardInspectPreview: larger emoji (text-4xl) above card name in modal
+- Graceful fallback: missing character_key → no emoji, layout unchanged
+- Tests: 259 frontend passed, 553 backend passed
+- Files changed: web/src/lib/api.ts, web/src/lib/card-emojis.json (new), CardFace.tsx, HandPanel.tsx, HandDrawer.tsx, CardInspectPreview.tsx, uxp013.test.tsx (new)
+- Learnings: Backend already returns character_key in /api/cards — just needed to add it to the frontend type. JSON static import works cleanly with Vite+TS (resolveJsonModule already enabled). Multi-emoji strings (🌕🐺) render fine at text-2xl; no overflow handling needed at current card sizes.
 ---
 
-## 2026-03-01 - US-GM-002
-- Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
-- Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`
-- Updated UI strings in `GameRulesDialog.tsx` and `ActiveGameView.tsx` from ±1 to ±2; updated `CLAUDE.md` Mists entry
-- Tests run: `uv run pytest` — 490 passed; `bun run test --run` — 151 passed
-- Files changed: `app/rules/reducer.py`, `tests/test_mists.py`, `tests/test_presence.py`, `web/src/routes/game-room/GameRulesDialog.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `CLAUDE.md`
-- Learnings: Integration test scenarios for fog/omen still work without adjusting card values since -2 still suppresses the same marginal captures and +2 still enables ties-to-capture. Only the direct modifier-value assertions needed changing.
+## 2026-03-03 13:57 - US-UXP-010
+- Replaced static `<button>` with `motion.button` for hand cards in HandPanel.tsx and HandDrawer.tsx
+- Selected card animates to lifted state (scale 1.1, y: -8) with primary-color boxShadow glow; non-selected cards dim to opacity 0.7
+- Added AnimatePresence for card exit animations (scale to 0 + fade) and layout prop for smooth gap-closing when cards leave the hand
+- Added whileHover (scale 1.05, y: -4) for card preview lift; removed CSS transition-transform/hover:scale classes (now handled by motion)
+- Updated ux009 test to reflect motion-based hover (no longer checks for CSS hover:scale class)
+- Tests: 284 frontend passed, 553 backend passed
+- Files changed: HandPanel.tsx, HandDrawer.tsx, uxp010.test.tsx (new), ux009.test.tsx (updated)
+- Learnings: motion.div wrapper with `animate` prop handles selection state cleanly — conditional object for selected/hasSelection/default avoids class-based approach. `layout` prop on motion.div enables automatic position transitions when siblings are removed via AnimatePresence.
 ---
 
-## 2026-03-03 08:38 - US-GM-010
-- Added `title` attribute to all three cell rendering branches in `BoardGrid.tsx`: empty cells show "Element: Blood" (capitalized); occupied cells show "Zombie (Tier 1) — Element: Blood" (card title + element); non-clickable empty cells also show element tooltip
-- Computed `elementTitle` once per cell from `boardElements[i]`, reused across button and div branches
-- Added 5 new tests in `gm007.test.tsx`: empty cell tooltip, occupied cell combined tooltip, non-clickable empty cell tooltip, no title when boardElements is null, clickable empty cell tooltip
-- Tests run: `bun run test --run` — 177 passed
-- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/__tests__/gm007.test.tsx`, `ralph/prd.json`
-- Learnings: The three cell branches (clickable empty, occupied with inspect, fallback div) each need their own `title` logic; computing `elementTitle` once at the top of the map callback avoids duplication. `getByTitle` works well for testing native tooltip `title` attributes.
+## 2026-03-03 13:53 - US-UXP-009
+- Replaced CSS card-captured/card-flip animations with Motion-powered sequential capture chain in BoardGrid.tsx: captured cards flip (scaleX 1→0→1 with brightness flash) one by one with staggered delay (0.35s base + 0.3s per card)
+- Placed card pulses (scale overshoot to 1.08) when captures exist, drawing attention to the source
+- Added punch-in animations for Plus! and Elemental! callouts (scale 1.5→1 with spring) and capture feedback (scale 1.2→1) using AnimatePresence in ActiveGameView.tsx
+- Score numbers animate with AnimatePresence popLayout (slide up/down on change)
+- Updated uxp006/uxp008 tests to reflect CSS→Motion migration; added uxp009 test suite (13 assertions)
+- Tests: 268 frontend passed, 553 backend passed
+- Files changed: web/src/index.css, BoardGrid.tsx, ActiveGameView.tsx, uxp006.test.tsx, uxp008.test.tsx, uxp009.test.tsx (new)
+- Learnings: Motion spring animations only support 2 keyframes — use `type: "tween"` with `times` array for multi-keyframe sequences (pulse, flip). `easeInOut` works well for the scaleX flip. AnimatePresence `mode="popLayout"` prevents layout jumps during score number swaps.
 ---
 
-## 2026-03-03 09:49 - US-GM-011
-- Added `created_at: str | None` to `GameState` (set in `create_game` via `datetime.now(UTC).isoformat()`); added `list_open_games(exclude_player_id)` to `GameStore` protocol + both implementations (memory + supabase)
-- Updated `GET /games` router to combine own games + open joinable games (WAITING, 1 player, caller not in it); sorted non-complete before complete, newest first (stable two-pass sort)
-- Frontend: `Games.tsx` shows "Open" badge (emerald) for games user is not a participant of; displays host email for open games; updated `GameState` TS interface with `created_at`
-- Updated 2 existing tests (`test_auth_api.py`) that assumed old behavior (caller only sees own games); added 9 backend tests + 5 frontend tests
-- Tests run: `uv run pytest` — 543 passed; `bun run test --run` — 182 passed
-- Files changed: `app/models/game.py`, `app/routers/games.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`, `web/src/__tests__/routes.test.tsx`, `web/src/__tests__/gm011.test.tsx`, `web/src/lib/api.ts`, `web/src/routes/Games.tsx`
-- Learnings: When adding open games to a list endpoint, existing tests that assert "caller only sees own games" need updating. Python stable sort (two passes) cleanly handles multi-key sorts where one key is descending — sort by secondary descending first, then by primary ascending. Frontend test game_ids must be ≤8 chars since `Games.tsx` uses `slice(0, 8)` for display.
+## 2026-03-03 14:02 - US-UXP-011
+- Added slide-in entrance/exit animations (opacity 0→1, x 20→0) to last move callout and Mists feedback via motion.div + AnimatePresence in ActiveGameView.tsx
+- Added turn indicator animation in ActionPanel.tsx: motion.p with AnimatePresence mode="wait" swaps between "Your turn" / "Opponent's turn" with scale pulse (0.9→1)
+- Replaced instant mobile drawer show/hide with AnimatePresence + motion.div height animation (0→auto with spring)
+- Existing callout animations (capture, Plus!, Elemental!, score) were already implemented in US-UXP-009 — verified still present
+- Tests: 300 frontend passed, 553 backend passed
+- Files changed: ActiveGameView.tsx, ActionPanel.tsx, uxp011.test.tsx (new)
+- Learnings: Many sidebar animations were already done in US-UXP-009 (capture/Plus/Elemental callouts, score numbers). This story completed the remaining gaps: last move, Mists, turn indicator, and mobile drawer. AnimatePresence `initial={false}` on the drawer prevents animation on first mount.
 ---
 
-## 2026-03-03 10:53 - US-GM-012
-- Converted game list rows in `Games.tsx` from `<button onClick={navigate}>` to `<Link to={...}>` (react-router-dom); added `block` class for display
-- Converted "Back to Games" in `GameRoom.tsx` from `<Button onClick={navigate}>` to `<Button asChild><Link to="/games">` preserving ghost/sm styling
-- Updated 4 test files: `ux005` (role="button" → role="link" for Back to Games × 3), `ux015` (role="button" → role="link" for game row), `ux001`/`ux007` (selector `button.cursor-pointer` → `a.cursor-pointer`)
-- Tests run: `bun run test --run` — 182 passed; `uv run pytest` — 543 passed
-- Files changed: `web/src/routes/Games.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux001.test.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/ux007.test.tsx`, `web/src/__tests__/ux015.test.tsx`
-- Learnings: `Button asChild` + `<Link>` via radix-ui Slot delegates rendering to the child anchor while preserving Button's variant/size classes and focus-visible ring. For game rows, plain `<Link>` with custom classes is simpler than wrapping in Button since the original wasn't using the Button component.
+## 2026-03-03 14:06 - US-UXP-012
+- Added page entrance animations: Login and ResetPassword fade+slide up (motion.div, opacity 0→1, y 12→0, 0.2s); Games page fades in (0.15s)
+- Games list items stagger in with motion.ul/motion.li variants (staggerChildren: 0.04, opacity 0→1, y 10→0)
+- All 4 modals (ArchetypeModal, ForfeitDialog, CardInspectPreview, GameRulesDialog) now use AnimatePresence with scale+fade entrance/exit (scale 0.9→1, opacity 0→1, duration 0.15s). Backdrop fades independently
+- Removed `if (!open) return null` early returns from ArchetypeModal, ForfeitDialog, GameRulesDialog — replaced with AnimatePresence conditional rendering
+- CardInspectPreview wrapped in AnimatePresence at parent level (GameRoom.tsx) since it's conditionally rendered by parent
+- Fixed ux014 test: added waitFor around close-button dialog removal assertion (AnimatePresence keeps element during exit animation)
+- Tests: 310 frontend passed
+- Files changed: Login.tsx, Games.tsx, ResetPassword.tsx, GameRoom.tsx, ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, ux014.test.tsx, uxp012.test.tsx (new)
+- Learnings: AnimatePresence with conditional `{open && (...)}` replaces `if (!open) return null` pattern cleanly. All durations kept at 0.15s for snappy feel. Existing tests that assert immediate DOM removal after close need `waitFor` when AnimatePresence is introduced.
 ---
 
-## 2026-03-03 12:01 - US-GM-013
-- Added `ActiveGameExistsError` + `_check_no_active_game` helper in `game_service.py`; called at top of `create_game` and `join_game`; router catches it → 409 with error message including existing game_id
-- Updated `createGame()` and `joinGame()` in `web/src/lib/api.ts` to parse error detail from response body (matching `placeCard` pattern); error flows to existing `setError` UI in Games.tsx and GameRoom.tsx
-- 10 new backend tests in `test_gm013_one_active_game.py`; 4 new frontend tests in `gm013.test.tsx`; updated 3 existing tests that assumed multiple games per user (`test_cannot_join_twice` 400→409, `test_starting_player_deterministic_from_seed` uses distinct users, `test_newest_first_within_status_group` uses distinct creators)
-- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 186 passed
-- Files changed: `app/services/game_service.py`, `app/routers/games.py`, `web/src/lib/api.ts`, `tests/test_gm013_one_active_game.py`, `web/src/__tests__/gm013.test.tsx`, `tests/test_api.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`
-- Learnings: One-active-game constraint cascades into many existing tests that create multiple games for the same user — these need different user identities or completed games between creates. The service-layer check uses existing `list_games_for_player` so no new store method is needed.
+## 2026-03-03 15:10 - US-UXP-016
+- Replaced Presence archetype with Intimidate: after placing a card, choose one adjacent opponent card whose facing side is replaced with min(n,e,s,w) for this comparison only
+- Backend: renamed PRESENCE→INTIMIDATE enum, replaced `presence_boost_direction` (str) with `intimidate_target_cell` (int 0-8) across PlacementIntent, MoveRequest, game_service, captures.py
+- Reducer validates target cell is adjacent to placement, contains opponent card, and is not empty/own
+- captures.py: substitutes neighbor's facing side with its min printed side when neighbor_index matches intimidate target
+- Frontend: updated Archetype type, archetypesCopy, replaced N/E/S/W direction picker with two-step cell picker (click empty cell → click adjacent opponent card), added intimidatePendingCell state
+- Tests: 556 backend passed, 310 frontend passed; 15 new test_intimidate.py tests covering debuff, validation, once-per-game
+- Files changed: game.py, reducer.py, captures.py, games.py, game_service.py, test_intimidate.py (new), test_presence.py (deleted), test_combo_captures.py, api.ts, GameRoom.tsx, ActionPanel.tsx, ActiveGameView.tsx, HandDrawer.tsx, ArchetypeModal.tsx, GameRulesDialog.tsx, archetypesCopy.ts, routes.test.tsx, ux004.test.tsx, CLAUDE.md, GAME_RULES_OVERVIEW.md
+- Learnings: Be careful with Plus rule in tests — equal sums across adjacent cells trigger Plus captures before standard comparisons, masking the intended test scenario. Use distinct sums in non-Plus tests.
 ---
 
-## 2026-03-03 - US-GM-015
-- Created `ActionPanel` component: always-visible panel showing turn label ("Your turn"/"Opponent's turn"), step text ("Select a card", "Choose a cell", "Choose a direction for your power"), selected card summary with Cancel button, and archetype power controls (checkbox + direction buttons for skulker/presence)
-- Moved power toggle/direction controls from `ActiveGameView` into `ActionPanel`; removed redundant step text from `HandPanel`; removed duplicate turn text from turn bar (now lives in ActionPanel)
-- 8 new tests in `gm015.test.tsx`: step text, opponent's turn, selected card summary, cancel deselect, direction gating, choose-cell after direction, disabled hand on opponent turn, hidden power when used
-- Tests run: `bun run test --run` — 199 passed; `uv run pytest` — 553 passed
-- Files changed: `web/src/routes/game-room/ActionPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/game-room/HandPanel.tsx`, `web/src/__tests__/gm015.test.tsx` (new)
-- Learnings: Removing "Your turn"/"Opponent's turn" from the turn bar breaks many existing tests that use `getByText(/your turn/i)` as a wait condition; keeping the turn label in the ActionPanel preserves backward compat. "Choose your archetype" as step text conflicts with the ArchetypeModal heading — use distinct wording. Hand card buttons and inspect buttons both match `/card name/i`; use `{ pressed: false }` to target only the selection button.
+## 2026-03-03 15:15 - US-UXP-017
+- Updated button component: outline variant gets visible dark-mode border (muted-foreground/40), subtle bg tint (muted/30), hover:border-accent; ghost variant uses text-accent (gold) default color
+- Promoted archetype selection buttons from outline → default (blood-red) variant
+- Game list items hover: bg-muted → bg-accent/20 + border-accent for gold highlight
+- Login/ResetPassword inputs: added hover:border-accent and focus:border-primary transitions
+- Login mode toggle links: added text-accent (gold) color with hover:text-primary
+- Replaced all hardcoded zinc-* color classes with theme tokens (bg-card, border-border, bg-muted-foreground/30) in 5 dialog/drawer components
+- Info buttons (HandPanel, HandDrawer): added hover:border-accent
+- Tests: 325 frontend passed, 556 backend passed; 15 new uxp017.test.tsx assertions
+- Files changed: button.tsx, ArchetypeModal.tsx, Games.tsx, Login.tsx, ResetPassword.tsx, GameRulesDialog.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, HandDrawer.tsx, HandPanel.tsx, uxp017.test.tsx (new)
+- Learnings: Many components used hardcoded zinc-* colors from shadcn/ui defaults instead of theme CSS custom properties. Converting to bg-card/border-border ensures all dialogs follow the Castlevania palette automatically.
 ---
 
-## 2026-03-03 13:07 - US-GM-014
-- Created `HandPanel` component as in-flow replacement for fixed-overlay `HandDrawer`; board and hand now render simultaneously without occlusion
-- Rewrote `ActiveGameView` with responsive two-column layout: board+hand (left) + secondary sidebar (right on lg+); mobile uses collapsible "Info & Actions" panel for secondary content (last move callouts, archetypes, leave button)
-- Removed `drawerOpen`, `useMeasuredHeight`, `drawerRef`, `drawerHeight` state and props from `GameRoom.tsx`; deleted `useMeasuredHeight` import
-- Updated `routes.test.tsx` score assertion (text changed from "Score — You: X | Opponent: Y" to compact "You: X | Opp: Y")
-- 5 new tests in `gm014.test.tsx`: board+hand both rendered; no drawer toggle; hand shows all cards; hand not inside fixed element; secondary info region present
-- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 191 passed
-- Files changed: `web/src/routes/game-room/HandPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm014.test.tsx` (new), `web/src/__tests__/routes.test.tsx`
-- Learnings: The fixed-bottom HandDrawer + useMeasuredHeight padding hack was the root of the "UI covers board" problem. Moving to in-flow components eliminates the entire class of layout bugs. Secondary content (callouts, archetypes, leave) is non-critical during active play and fits naturally in a sidebar/drawer that doesn't compete with the board+hand.
+
+## 2026-03-03 15:20 - US-UXP-018
+- Added vampire emoji (🧛) as large visual centerpiece above login form (text-6xl, aria-hidden)
+- Added "Yugi-Strahd" title with font-heading (Press Start 2P) and tagline "A Curse of Strahd Card Game" in font-body (VT323)
+- Demoted form title (Sign in / Create account / Reset password) from h1 to h2, kept functional
+- Tests: 330 frontend passed; 5 new uxp018 assertions
+- Files changed: Login.tsx, uxp018.test.tsx (new)
+- Learnings: Simple additive branding — no structural changes to form logic needed. font-heading/font-body utility classes from US-UXP-004 make font assignment trivial.
 ---
 
-## 2026-03-03 - US-GM-016
-- Added Rules button entrypoint to secondary content in `ActiveGameView.tsx`; passed `onShowRules` callback from `GameRoom.tsx` so Rules dialog can be opened from both the header bar and the sidebar/mobile drawer
-- Desktop sidebar already had `overflow-y-auto` for independent scrolling from US-GM-014; mobile bottom drawer with peek handle/toggle already existed — this story completed the content hierarchy by adding the Rules entrypoint
-- 8 new tests in `gm016.test.tsx`: sidebar contains Rules button; sidebar contains Leave button; archetypes for both players present; last move callout in sidebar; independent scrolling class on sidebar; mobile drawer toggle exists; drawer opens on click; drawer closes on second click
-- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 207 passed
-- Files changed: `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm016.test.tsx` (new)
-- Learnings: US-GM-014 laid most of the groundwork for the sidebar/drawer layout; US-GM-016 was primarily about ensuring all secondary content (especially Rules) was accessible from the sidebar rather than only the header. `querySelector("button")` only returns the first match — use `querySelectorAll` and iterate when testing for a specific button among several.
+## 2026-03-03 15:25 - US-UXP-019
+- Added slam overshoot: non-pulse placed cards use scale keyframes [0, 1.08, 1] for a decisive pop effect
+- Added impact ripple: motion.div pseudo-element scales from 0.8→1.6 with opacity fade on placed cards
+- Added board micro-shake: grid container is now motion.div with translateX oscillation [0, -2, 2, -1, 1, 0] keyed to placedCells
+- Added Mists tint: CSS keyframes mists-fog-flash (blue inset glow) and mists-omen-flash (gold inset glow), applied via animate-mists-fog/animate-mists-omen classes on placed cards based on mistsEffect prop
+- ActiveGameView passes game.last_move.mists_effect to BoardGrid when placement is active
+- Updated uxp008 test to reflect slam overshoot change (no longer asserts spring params for non-pulse)
+- Tests: 339 frontend passed; 11 new uxp019 assertions
+- Files changed: BoardGrid.tsx, ActiveGameView.tsx, index.css, uxp008.test.tsx (updated), uxp019.test.tsx (new)
+- Learnings: motion.div key trick for grid container allows re-triggering shake animation on each new placement. CSS box-shadow inset animation works well for brief color tints without affecting layout or z-ordering.
 ---
 
+## 2026-03-03 15:30 - US-UXP-020
+- Escalating brightness: each successive combo capture uses brightness(2 + captureSeq * 0.2) for increasingly dramatic flashes
+- Ownership color wipe: semi-transparent blue/red overlay fades in/out during the scaleX flip midpoint, reinforcing color change
+- Combo counter overlay: "+N" labels (font-heading, yellow, drop-shadow) appear on each captured cell during multi-captures
+- Chain pulse ring: yellow border ring scales outward (0.5→1.3) and fades on each captured cell
+- Custom events: `capture-step` CustomEvent dispatched at each capture delay with { cellIndex, step, total } detail for future sound system
+- Tests: 345 frontend passed; 8 new uxp020 assertions
+- Files changed: BoardGrid.tsx, uxp020.test.tsx (new)
+- Learnings: Template literal in Motion animate prop works for dynamic brightness values. useRef tracks emitted event keys to avoid re-dispatching on re-renders. setTimeout aligns custom events with animation delays.
+---
+
+## 2026-03-03 15:35 - US-UXP-021
+- Created VictoryOverlay component: fixed full-screen overlay with dark backdrop, VICTORY text in Press Start 2P with gold color + text-shadow, bat swarm (🦇 emoji particles), blood-red/gold confetti squares
+- All animations use custom steppedEase() function (simulates CSS steps(N)) for pixel/NES aesthetic — bats use steps(8), confetti steps(6), VICTORY text steps(4)
+- VICTORY text scale-in uses discrete keyframes [0, 0.5, 1.3, 1] for punch-in overshoot
+- Added victory card glow: BoardGrid accepts `victoryCells` prop, applies `animate-victory-glow` CSS class with staggered animationDelay (0.2s per cell)
+- CompleteGameView computes victoryCells (owned cells by winner) and passes to BoardGrid
+- Auto-dismiss: 3s timeout or click-to-dismiss, with 400ms exit animation delay
+- Tests: 360 frontend passed, 556 backend passed; 15 new uxp021 assertions
+- Files changed: VictoryOverlay.tsx (new), CompleteGameView.tsx, BoardGrid.tsx, index.css, uxp021.test.tsx (new)
+- Learnings: Motion doesn't support CSS steps() directly — custom easing function `(t) => Math.floor(t * steps) / steps` simulates it perfectly. Splitting glow into CSS animation (vs motion.div) avoids conflicts with existing motion props on board cells.
+---
+
+## 2026-03-03 16:05 - US-UXP-022
+- Created DefeatOverlay.tsx: dark overlay (bg-black/80), slow DEFEAT fade-in (1.2s stepped), 18 drifting fog particles with blur, red vignette (radial-gradient), grayscale backdropFilter desaturation
+- Integrated into CompleteGameView: detects isLoser, shows DefeatOverlay with auto-dismiss (3s) or click-dismiss
+- Contrast with victory: defeat is slow/solemn (1.2s fade, no scale overshoot), fog drifts horizontally; victory is fast/punchy (0.5s scale pop, bats + confetti)
+- Tests: 376 frontend passed, 556 backend passed; 16 new uxp022 assertions
+- Files changed: DefeatOverlay.tsx (new), CompleteGameView.tsx, uxp022.test.tsx (new)
+- Learnings: backdropFilter: grayscale() provides real-time desaturation behind overlay without affecting overlay content itself. Blur on fog particles (filter: blur(8px)) creates convincing mist at low particle counts.
+---
+
+## 2026-03-03 16:10 - US-UXP-023
+- Added `early_finish` bool field to GameResult model (default False)
+- Implemented early-finish check in reducer: after capture resolution, if `player_cells >= 5 + empty_cells`, game ends with early_finish=True
+- Check runs before normal end-of-round check, works with captures creating clinch scenarios
+- Frontend: GameResult type updated with `early_finish` field; CompleteGameView shows "Inevitable victory" / "The darkness claims this match" messages
+- BoardGrid: empty cells on early-finish boards show ✕ marker with dashed border, dimmed opacity
+- Tests: 562 backend passed (6 new), 385 frontend passed (9 new)
+- Files changed: game.py, reducer.py, api.ts, BoardGrid.tsx, CompleteGameView.tsx, test_early_finish.py (new), uxp023.test.tsx (new)
+- Learnings: The clinch formula `cells >= 5 + empty` is clean — on a 3x3 board you need 5+ to win, so if you own that many plus enough to cover all remaining empty cells, opponent can't catch up. Captures can push a player over the threshold in a single move.
+---
+
+## 2026-03-03 16:10 - US-UXP-024
+- Added mise task definitions to existing .mise.toml: dev (concurrent), dev:api, dev:ui, test, lint, format
+- Updated README.md Tooling section with all mise task commands and usage note
+- No code changes — config-only; `depends = ["dev:*"]` gives concurrent dev startup
+- Tests: 562 backend passed, 385 frontend passed
+- Files changed: .mise.toml, README.md
+- Learnings: mise `depends = ["dev:*"]` wildcard runs matching subtasks concurrently by default. Existing .mise.toml already had [tools] section from prior work.
+---
+
+## 2026-03-03 16:15 - US-UXP-025
+- Created DevPlayground route at /dev/playground with 11 scenario buttons: card placement, single capture, combo chain (4), Plus trigger, Elemental trigger, Plus+Elemental combined, Fog mists, Omen mists, Victory screen, Defeat screen, early finish
+- Dev-only guard: lazy import gated by import.meta.env.DEV in App.tsx, tree-shaken from production
+- Mock data covers edge cases: 4-card combo chain, Plus+Elemental same move, Fog on placement, early finish clinch
+- Tests: 562 backend passed, 403 frontend passed (18 new uxp025 assertions)
+- Files changed: DevPlayground.tsx (new), App.tsx, uxp025.test.tsx (new)
+- Learnings: Lazy import gated by import.meta.env.DEV ensures the component and its mock data are fully tree-shaken in production builds. setTimeout(50ms) after reset() prevents React batching from swallowing state transitions.
+---
+
+## 2026-03-03 16:20 - US-UXP-014
+- Generated `web/src/lib/api-types.generated.ts` from backend OpenAPI schema via `openapi-typescript`
+- Refactored `web/src/lib/api.ts`: replaced 7 manual interface definitions with re-exports from generated types (`components["schemas"]["X"]` pattern)
+- Updated 2 existing tests (uxp013, uxp023) that read api.ts source to point at generated file instead
+- Added `typegen` workflow docs to AGENTS.md
+- Tests: 413 frontend passed (10 new uxp014 assertions), 562 backend passed, pyright unchanged (2 pre-existing errors)
+- Files changed: api.ts, api-types.generated.ts (new), uxp014.test.tsx (new), uxp013.test.tsx, uxp023.test.tsx, AGENTS.md
+- Learnings: openapi-typescript generates types using `components["schemas"]["X"]` nested pattern rather than flat exports. Re-export aliases in api.ts keep all downstream imports working unchanged. The `typegen` script dumps schema via `uv run python` (no server needed).
+---
+
+## 2026-03-03 16:25 - US-UXP-015
+- Created `web/src/lib/sounds.ts` with 8 procedural sound effects (place, capture, combo, plus, elemental, turn start, victory, defeat) using Web Audio API oscillators (square/sawtooth waveforms for 8-bit feel)
+- Shared AudioContext lazy-initialized on first click; masterGain controls mute; localStorage persists mute preference
+- Wired sounds: BoardGrid (playPlace on placedCells, playCapture/playCombo on capture-step), ActiveGameView (playPlus, playElemental, playTurnStart on turn change), CompleteGameView (playVictory/playDefeat on mount)
+- Created MuteToggle component (speaker emoji button) placed next to score bar in ActiveGameView
+- Tests: 427 frontend passed (17 new uxp015 assertions), 562 backend passed
+- Files changed: sounds.ts (new), MuteToggle.tsx (new), BoardGrid.tsx, ActiveGameView.tsx, CompleteGameView.tsx, GameRoom.tsx, uxp015.test.tsx (new)
+- Learnings: Web Audio `new AudioContext` matches regex `/new Audio/` — use `/new Audio\(/` to check for HTMLAudioElement. All play* functions no-op gracefully when AudioContext is not yet initialized (before first user gesture).
+---

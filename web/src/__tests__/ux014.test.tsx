@@ -179,7 +179,9 @@ describe("US-UX-014: mobile card inspect — tap-to-preview", () => {
     expect(screen.getByRole("dialog", { name: /card preview/i })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /close/i }));
-    expect(screen.queryByRole("dialog", { name: /card preview/i })).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /card preview/i })).not.toBeInTheDocument();
+    });
   });
 
   it("preview dialog can be closed with the Escape key", async () => {

@@ -1,3 +1,4 @@
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 
@@ -8,20 +9,30 @@ export function GameRulesDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  if (!open) return null;
-
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="game-rules-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-      onKeyDown={(e) => {
-        if (e.key === "Escape") onClose();
-      }}
-    >
-      <div className="bg-white border border-zinc-200 rounded-lg w-full max-w-2xl shadow-xl dark:bg-zinc-900 dark:border-zinc-700 max-h-[85vh] overflow-hidden">
-        <div className="p-6 overflow-y-auto max-h-[85vh]">
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="game-rules-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onClose();
+          }}
+        >
+          <motion.div
+            className="bg-card border-2 border-border rounded-none w-full max-w-2xl shadow-xl max-h-[85vh] overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.15 }}
+          >
+            <div className="p-6 overflow-y-auto max-h-[85vh]">
           <div className="flex items-start justify-between gap-4">
             <h2 id="game-rules-title" className="text-lg font-bold">
               How To Play
@@ -118,7 +129,7 @@ export function GameRulesDialog({
                 <ArchetypePowerAside archetype="skulker" showName />
                 <ArchetypePowerAside archetype="caster" showName />
                 <ArchetypePowerAside archetype="devout" showName />
-                <ArchetypePowerAside archetype="presence" showName />
+                <ArchetypePowerAside archetype="intimidate" showName />
               </div>
             </section>
 
@@ -130,7 +141,9 @@ export function GameRulesDialog({
             </section>
           </div>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

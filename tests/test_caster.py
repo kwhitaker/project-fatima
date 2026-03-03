@@ -1,7 +1,8 @@
-"""Tests for US-008: Caster archetype Mists reroll.
+"""Tests for Caster archetype Mists reroll (best of two).
 
-Caster power: reroll the Mists die for this placement; the second result is
-used. Once per game per player.
+Caster power: roll the Mists die twice and keep the better (higher) result.
+Higher is always better: 1=Fog (−2) is worst, 6=Omen (+2) is best.
+Once per game per player.
 """
 
 from functools import partial
@@ -18,18 +19,18 @@ make_state = partial(_make_state, p0_archetype=Archetype.CASTER)
 
 
 # ---------------------------------------------------------------------------
-# Reroll behaviour
+# Best-of-two reroll behaviour
 # ---------------------------------------------------------------------------
 
 
 class TestCasterReroll:
-    def test_caster_uses_second_roll(self):
-        """Caster discards first roll; second result determines modifier.
+    def test_caster_best_of_two_picks_higher_roll(self):
+        """Caster rolls twice and keeps the higher (better) result.
 
         Setup: placed N=6 vs neighbor S=6.
-        First roll = 1 (Fog, -1): 6-1=5 < 6 → no capture.
-        Second roll = 6 (Omen, +1): 6+1=7 > 6 → capture.
-        With Caster the second roll is used → capture should occur.
+        First roll = 1 (Fog, −2): 6−2=4 < 6 → no capture.
+        Second roll = 6 (Omen, +2): 6+2=8 > 6 → capture.
+        max(1, 6) = 6 → Omen used → capture should occur.
         """
         placed = make_card("placed", n=6, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=6, w=1)
@@ -43,21 +44,19 @@ class TestCasterReroll:
             cell_index=4,
             use_archetype=True,
         )
-        rng = mock_rng(1, 6)  # first=Fog, second=Omen
+        rng = mock_rng(1, 6)  # first=Fog, second=Omen → max picks Omen
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 0, "Neighbor should be captured (Omen from reroll)"
+        assert next_state.board[1].owner == 0, "Neighbor should be captured (Omen from best-of-two)"
 
-    def test_caster_discards_omen_on_first_roll(self):
-        """Caster must use second roll even if first was Omen.
+    def test_caster_keeps_first_when_higher(self):
+        """When first roll is better, best-of-two keeps it.
 
         Setup: placed N=4 vs neighbor S=5.
-        First roll = 6 (Omen, +1): 4+1=5 == 5 → no capture (strict >).
-        Second roll = 6 (Omen, +1): same → still no capture.
-        Mainly confirms two rolls are consumed.
-        But let us make it meaningful: second roll = 1 (Fog, -1): 4-1=3 < 5 → no capture.
-        Outcome is no capture regardless, but rng must have been called twice.
+        First roll = 6 (Omen, +2): 4+2=6 > 5 → capture.
+        Second roll = 1 (Fog, −2): 4−2=2 < 5 → no capture.
+        max(6, 1) = 6 → Omen kept → capture should occur.
         """
         placed = make_card("placed", n=4, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
@@ -71,9 +70,11 @@ class TestCasterReroll:
             cell_index=4,
             use_archetype=True,
         )
-        rng = mock_rng(6, 1)  # first=Omen, second=Fog
-        apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
+        rng = mock_rng(6, 1)  # first=Omen, second=Fog → max keeps Omen
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 0, "Neighbor captured (Omen kept from first roll)"
         assert rng.randint.call_count == 2, "Caster should trigger exactly two die rolls"
 
     def test_without_caster_uses_only_one_roll(self):
@@ -143,6 +144,32 @@ class TestCasterReroll:
         )
         next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(2, 4))
         assert next_state.players[1].archetype_used is False
+
+    def test_caster_deterministic_with_seeded_rng(self):
+        """Best-of-two with a real seeded RNG produces deterministic results."""
+        from random import Random
+
+        placed = make_card("placed", n=5, e=1, s=1, w=1)
+        neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+        )
+        lookup = {"placed": placed, "neighbor": neighbor}
+
+        # Run twice with same seed → same outcome
+        result1 = apply_intent(state, intent, lookup, Random(42))
+        result2 = apply_intent(state, intent, lookup, Random(42))
+
+        assert result1.board[1] is not None
+        assert result2.board[1] is not None
+        assert result1.board[1].owner == result2.board[1].owner
 
 
 # ---------------------------------------------------------------------------

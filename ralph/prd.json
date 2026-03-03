@@ -1,154 +1,80 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/code-health-1",
-  "description": "Code health pass 1: extract shared test fixtures, deduplicate backend test scenarios, refactor reducer internals, reduce frontend prop drilling, extract shared modal shell, and convert source-string tests to behavioral tests.",
+  "branchName": "ralph/archetype-power-revamp",
+  "description": "Archetype power rebalance: buff Caster (best-of-two rolls), make Devout conditional (only consumed on Fog), buff Skulker (+2 → +3), and add CW/CCW direction choice to Martial.",
   "userStories": [
     {
-      "id": "US-CH-001",
-      "title": "Extract shared backend test fixtures into conftest.py",
-      "description": "As a developer, I want common test helpers (_make_card, _mock_caller_id, client fixture, make_state, mock_rng) to live in tests/conftest.py instead of being copy-pasted across 12+ test files — so adding a new test file doesn't require duplicating 40 lines of boilerplate.",
+      "id": "US-PR-001",
+      "title": "Caster reroll: best of two rolls",
+      "description": "As a Caster player, I want the reroll power to use the better of two Mists rolls instead of blindly discarding the first — so the power reliably improves my outcome rather than being a coin flip.",
       "acceptanceCriteria": [
-        "Create `tests/conftest.py` with the following shared fixtures/helpers:",
-        "`_make_card(idx: int)` — returns a CardDefinition with `card_key=f'card_{idx}'`, tier=1, rarity=15, sides all 4 (w=3), element='shadow'. This is the 'standard' test card used by 11+ files",
-        "`_mock_caller_id(request)` — extracts X-User-Id header, defaults to 'test-user'",
-        "`client` pytest fixture — creates a TestClient with MemoryGameStore, MemoryCardStore (seeded with `_TEST_CARDS` from 10 `_make_card` calls), and dependency overrides for `get_caller_id` and both stores. Returns the TestClient",
-        "`make_state(overrides)` — returns a GameState with sensible defaults (2 players, empty board, version 0). Accepts keyword overrides for any field. The archetype test files (test_caster, test_devout, etc.) should call `make_state(p0_archetype=Archetype.CASTER)` instead of defining their own variant",
-        "`mock_rng(*rolls)` — returns a MagicMock with `randint.side_effect = list(rolls)`",
-        "Remove the duplicated definitions from all test files that now import from conftest: test_api.py, test_auth_api.py, test_error_responses.py, test_gm011_open_games.py, test_gm013_one_active_game.py, test_idempotency.py, test_leave_game.py, test_ux002.py, test_ux003.py, test_ux004.py, test_ux008.py, test_ux011.py, test_caster.py, test_devout.py, test_intimidate.py, test_skulker.py, test_martial.py, test_captures.py, test_mists.py, test_turn_flow.py",
-        "Files with genuinely different `_make_card` signatures (test_cards_balance.py, test_gm001_weak_side.py, test_seed_cards.py) may keep their local variants if the signatures differ materially — but add a comment explaining why",
-        "Conftest fixtures must use `@pytest.fixture` properly — `client` is session-or-function scoped, helpers like `_make_card` are plain functions (not fixtures)",
-        "`uv run pytest` passes with all existing tests unchanged in behavior"
+        "In `apply_intent` (reducer.py), when `caster_reroll` is True, roll twice and keep the max: `roll = max(rng.randint(1, 6), rng.randint(1, 6))`",
+        "Higher roll is always better: 1=Fog (−2) is worst, 6=Omen (+2) is best, so `max()` is correct",
+        "Both rolls are consumed from the RNG stream (two calls to `rng.randint`)",
+        "Add/update tests in `tests/test_reducer.py` covering: Caster best-of-two picks the higher roll, Caster without power still rolls once, seeded RNG produces deterministic results",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
       ],
       "priority": 1,
-      "passes": true,
-      "notes": "This is the highest-impact cleanup. The `_make_card` + `_mock_caller_id` + `client` trio is copy-pasted across 12 files. The `make_state` factory has 5 archetype-specific copies that differ only in the default archetype value. The `mock_rng` helper is identical in 3 files. Pytest auto-discovers conftest.py — no explicit imports needed for fixtures. Plain helper functions (not fixtures) DO need explicit imports. Keep test_store.py and test_supabase_store.py untouched if their make_state variants have materially different shapes."
+      "passes": false
     },
     {
-      "id": "US-CH-002",
-      "title": "Extract shared frontend test fixtures into helpers.ts",
-      "description": "As a developer, I want common frontend test setup (Supabase mock, API mock, MOCK_SESSION, setupAuth, makeGame, mockChannel) to live in web/src/__tests__/helpers.ts instead of being copy-pasted across 20 test files — so test files are focused on assertions, not boilerplate.",
+      "id": "US-PR-002",
+      "title": "Devout conditional consume: only spent on Fog",
+      "description": "As a Devout player, I want my fog-negation power to only be consumed when Fog actually rolls — so I'm not punished for activating it on a non-Fog roll and can keep trying until Fog appears.",
       "acceptanceCriteria": [
-        "Create `web/src/__tests__/helpers.ts` with the following shared exports:",
-        "`MOCK_SESSION` — the standard `{ user: { id: 'user-123', email: 'test@example.com' }, access_token: 'tok' }` object",
-        "`MOCK_CARD_DEFS` — an empty Map (or a small populated one if tests need it) for `mockGetCardDefinitions`",
-        "`makeGame(overrides?: Partial<GameState>)` — returns a default GameState with game_id, status='active', 2 players, empty board, board_elements, state_version, round_number, result, created_at. Accepts partial overrides",
-        "`makePlayer(overrides?: Partial<PlayerState>)` — returns a default PlayerState. Useful for constructing custom player arrays",
-        "A `setupSupabaseMock()` function or documented pattern for the `vi.hoisted` + `vi.mock('@/lib/supabase')` block that test files can reuse. Note: due to vitest hoisting constraints, the `vi.mock` call itself must remain in each test file, but the mock factory and the hoisted variables can be shared",
-        "A `setupApiMock()` function or documented pattern for `vi.mock('@/lib/api')` — same hoisting constraint applies",
-        "Refactor at minimum these files to use the shared helpers: routes.test.tsx, gm011.test.tsx, gm013.test.tsx, gm014.test.tsx, gm015.test.tsx, gm016.test.tsx",
-        "For files that only need a subset (e.g. ux* files with simpler mocks), refactoring is optional but importing MOCK_SESSION and makeGame from helpers.ts is encouraged where they apply",
-        "`bun run test --run` passes with all existing tests unchanged in behavior"
+        "In `apply_intent` (reducer.py), set `archetype_activated = True` only inside the `if devout_negate_fog and mists_modifier == -2:` block, not at dispatch time",
+        "At dispatch time for Devout, set `devout_negate_fog = True` but do NOT set `archetype_activated = True`",
+        "When `devout_negate_fog` is True and the roll is NOT Fog (modifier != −2), `archetype_activated` stays False and the player's `archetype_used` is not set — they can use_archetype again next turn",
+        "When `devout_negate_fog` is True and the roll IS Fog, set `archetype_activated = True` so the power is consumed",
+        "Add/update tests: Devout on non-Fog roll → power NOT consumed (archetype_used stays False), Devout on Fog roll → power consumed and modifier zeroed, Devout can retry on subsequent turns until Fog triggers",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
       ],
       "priority": 2,
-      "passes": true,
-      "notes": "The vi.mock hoisting constraint is the main complexity here. `vi.mock` calls are hoisted to the top of the file by vitest's transform — the factory function must not reference variables from the module scope UNLESS they are created via `vi.hoisted()`. The practical pattern: helpers.ts exports data (MOCK_SESSION, makeGame) and can export factory functions, but each test file still needs its own `vi.mock(...)` call and its own `vi.hoisted()` block for mock function references. The win is deduplicating the data/factories, not the mock wiring. Don't try to be too clever with mock abstractions — keep it simple. The gm01x and routes test files have the most duplication and should be the priority."
+      "passes": false
     },
     {
-      "id": "US-CH-003",
-      "title": "Deduplicate backend test scenarios across test_api / test_auth_api / test_error_responses",
-      "description": "As a developer, I want each error scenario (404, 403, 409, 422) tested exactly once — not duplicated across test_api.py, test_auth_api.py, and test_error_responses.py — so I can modify error behavior without updating 3 files.",
+      "id": "US-PR-003",
+      "title": "Skulker boost +2 → +3",
+      "description": "As a Skulker player, I want my side boost increased from +2 to +3 — so the power is competitive with the buffed Caster and conditional Devout.",
       "acceptanceCriteria": [
-        "Identify all duplicate test scenarios between test_api.py, test_auth_api.py, and test_error_responses.py. Known duplicates: GET /games/{id} 404, POST /games/{id}/join 404, archetype non-participant 403, move non-participant 403, wrong turn 422, stale state_version 409",
-        "Keep each scenario in exactly ONE file. Recommended split: test_error_responses.py owns all error-code-specific scenarios (it's organized by status code). Remove the duplicate from test_api.py",
-        "test_api.py should keep only happy-path and basic flow tests",
-        "test_auth_api.py should keep only auth-specific tests (missing token, invalid token, etc.) — not game-logic errors that happen to return 403/404",
-        "Do not delete any test FILE — just remove duplicate test functions and update any shared setup that becomes unused",
-        "No test coverage should be lost — every scenario that was tested before must still be tested after, just in one place",
-        "`uv run pytest` passes"
+        "In `apply_skulker_boost` (archetypes.py), change `sides_dict[side] += 2` to `sides_dict[side] += 3`",
+        "Update the docstring to say 'increased by 3'",
+        "Update any existing tests that assert the +2 value to assert +3 instead",
+        "Add a test confirming Skulker boost applies +3 to the chosen side and leaves other sides unchanged",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
       ],
       "priority": 3,
-      "passes": true,
-      "notes": "The 6 known duplicates are all cases where test_api.py tests an error path that test_error_responses.py also tests more systematically. The fix is simple: delete the duplicate test functions from test_api.py. Check that test_error_responses.py covers each scenario with equivalent or better assertions before deleting. If test_api.py has a better assertion for a particular case, move that assertion to test_error_responses.py instead of deleting it."
+      "passes": false
     },
     {
-      "id": "US-CH-004",
-      "title": "Extract archetype dispatch from apply_intent reducer",
-      "description": "As a developer, I want the archetype dispatch logic extracted from the 189-line apply_intent function into a dedicated function — so the reducer reads as a clear sequence of phases (validate → archetype → place → capture → score) without a 58-line if/elif block inline.",
+      "id": "US-PR-004",
+      "title": "Martial rotation direction choice (CW/CCW)",
+      "description": "As a Martial player, I want to choose clockwise or counter-clockwise rotation when activating my power — so I have more tactical flexibility.",
       "acceptanceCriteria": [
-        "Extract the archetype dispatch block (lines ~160-217 in reducer.py) into a new function: `_apply_archetype(state, intent, card) -> tuple[card, ArchetypeResult]` or similar signature that returns the modified card and any archetype side effects (caster_reroll, devout_negate_fog, intimidate target info)",
-        "The extracted function should contain all archetype validation and application: MARTIAL rotation, SKULKER boost, CASTER reroll flag, DEVOUT negate flag, INTIMIDATE target validation + debuff info",
-        "Keep the function in the same file (reducer.py) — this is an internal refactor, not a new module",
-        "The `apply_intent` function should call the extracted function and destructure the result, replacing the inline if/elif block with a single function call + result handling",
-        "Define a small dataclass or NamedTuple for the archetype result to avoid returning a loose tuple",
-        "Do NOT change any game behavior — this is a pure refactor. All existing tests must pass without modification",
-        "`uv run pytest` passes"
+        "Add `rotate_card_ccw(card: CardDefinition) -> CardDefinition` to `archetypes.py` with mapping: new.n=old.e, new.e=old.s, new.s=old.w, new.w=old.n",
+        "Add `martial_rotation_direction: str | None = field(default=None)` to `PlacementIntent` in reducer.py, accepting 'cw' or 'ccw'",
+        "Add `martial_rotation_direction: str | None = None` to `MoveRequest` in games.py router, accepting 'cw' or 'ccw'",
+        "In the reducer Martial dispatch block, validate `martial_rotation_direction` is 'cw' or 'ccw' (raise `ArchetypePowerArgumentError` otherwise), then call `rotate_card_once` for 'cw' or `rotate_card_ccw` for 'ccw'",
+        "Default to 'cw' if `martial_rotation_direction` is None for backward compatibility",
+        "Pass `martial_rotation_direction` from `MoveRequest` through to `PlacementIntent` in the router",
+        "Add `martialRotationDirection?: 'cw' | 'ccw'` to the `powerOptions` parameter in `web/src/lib/api.ts` and spread it as `martial_rotation_direction` in the request body",
+        "In `ActionPanel.tsx`, when the player's archetype is Martial and Use Power is checked, show a CW / CCW toggle (two buttons, similar to Skulker's direction picker)",
+        "Wire the selected direction through GameRoom state to the `placeCard` call",
+        "Add backend tests: CCW rotation produces correct side mapping, CW rotation still works, missing direction defaults to CW, invalid direction raises error",
+        "Add frontend test: ActionPanel renders CW/CCW toggle when Martial power is active",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean",
+        "`bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": true,
-      "notes": "The INTIMIDATE branch is the longest (30 lines) because it validates adjacency, checks opponent ownership, etc. The others are 2-6 lines each. The extraction should make apply_intent read like a pipeline: validate turn → apply archetype → place card → resolve captures → check game over → return state. The archetype result type might look like: `ArchetypeResult(card: CardDefinition, caster_reroll: bool, devout_negate_fog: bool, intimidate_debuff: tuple[int, str] | None)`. Keep it simple — don't over-engineer the result type."
-    },
-    {
-      "id": "US-CH-005",
-      "title": "Extract adjacency helper into shared board module",
-      "description": "As a developer, I want the board adjacency lookup to live in a shared module (app/rules/board.py) instead of being a private dict in captures.py that reducer.py imports via an underscore-prefixed internal reference — so both modules use a clean public API.",
-      "acceptanceCriteria": [
-        "Create `app/rules/board.py` with: the `ADJACENCY` dict (mapping cell index → list of (neighbor_index, attacking_side, defending_side) tuples) and a `get_adjacent_indices(cell_index: int) -> set[int]` helper function",
-        "Update `app/rules/captures.py` to import `ADJACENCY` from `app.rules.board` instead of defining `_ADJACENCY` locally",
-        "Update `app/rules/reducer.py` to import `get_adjacent_indices` (or `ADJACENCY`) from `app.rules.board` instead of the current `from app.rules.captures import _ADJACENCY` internal import at line ~193",
-        "Remove the deferred import inside `apply_intent` — top-level imports only",
-        "Add `test_board.py` (or add tests to an existing file) verifying: `get_adjacent_indices(4)` returns {1,3,5,7} (center cell), corner cells return 2 neighbors, edge cells return 3 neighbors",
-        "`uv run pytest` passes"
-      ],
-      "priority": 5,
-      "passes": true,
-      "notes": "The adjacency data is a static mapping of the 3x3 grid. It's currently defined as `_ADJACENCY` in captures.py and imported (breaking the private convention) by reducer.py. Moving it to a shared board.py is a clean separation. The `get_adjacent_indices` helper is a one-liner (`{nb[0] for nb in ADJACENCY[cell_index]}`) but saves the caller from knowing the tuple structure. Keep board.py minimal — just the adjacency data and helper."
-    },
-    {
-      "id": "US-CH-006",
-      "title": "Extract ModalShell shared dialog wrapper component",
-      "description": "As a developer, I want a shared <ModalShell> component that handles the backdrop overlay, content container, enter/exit animations, and Escape key handling — so the 4 modal components don't each duplicate 15+ lines of identical wrapper markup.",
-      "acceptanceCriteria": [
-        "Create `web/src/components/ui/ModalShell.tsx` with props: `open: boolean`, `onClose: () => void`, `maxWidth?: string` (default 'max-w-sm'), `className?: string` (for content container), `children: ReactNode`",
-        "ModalShell renders: (1) AnimatePresence wrapping the conditional, (2) full-screen backdrop with `bg-black/70`, fade in/out animation, (3) content container with `bg-card border-2 border-border p-6 shadow-xl`, scale+fade animation, (4) Escape key handler calling onClose",
-        "Refactor these 4 components to use ModalShell: GameRulesDialog.tsx (maxWidth='max-w-2xl'), ForfeitDialog.tsx (maxWidth='max-w-sm'), ArchetypeModal.tsx (maxWidth='max-w-lg'), CardInspectPreview.tsx (maxWidth='max-w-xs')",
-        "Each refactored component should only contain its unique content — title, body, buttons — not the wrapper/animation boilerplate",
-        "CardInspectPreview has a dynamic `tierClass` on the container — support this via the `className` prop on ModalShell",
-        "GameRulesDialog has a scrollable inner container — this stays inside the dialog content, not in ModalShell",
-        "Preserve all existing behavior: close on Escape, backdrop click behavior, animation timing",
-        "`bun run test --run` passes"
-      ],
-      "priority": 6,
-      "passes": true,
-      "notes": "All 4 modals share identical two-layer motion.div structure (backdrop + content). The only differences are maxWidth and optional extra classes. ModalShell wraps AnimatePresence internally so callers just pass `open` and don't manage AnimatePresence themselves. The Escape handler should be on the backdrop div (or use useEffect with keydown listener). One subtlety: ArchetypeModal currently does NOT have an Escape handler — adding one via ModalShell is fine (it's a UX improvement, not a behavior change). CardInspectPreview currently doesn't wrap itself in AnimatePresence (the caller does) — ModalShell internalizes this."
-    },
-    {
-      "id": "US-CH-007",
-      "title": "Reduce ActiveGameView prop count via useGameRoom context",
-      "description": "As a developer, I want game room state and callbacks to flow through a React context (useGameRoom) instead of being drilled through 28 props on ActiveGameView — so adding a new piece of game state doesn't require threading a prop through 3 component layers.",
-      "acceptanceCriteria": [
-        "Create `web/src/routes/game-room/GameRoomContext.tsx` with a React context and `useGameRoom()` hook that provides game room state and callbacks",
-        "The context should hold at minimum the pass-through props that ActiveGameView never uses directly: `usePower`, `onUsePowerChange`, `powerSide`, `onPowerSideToggle`, `archetypePending`, `archetypeError`, `onSelectArchetype`, `onPreviewCard`, `selectedCardElement`, `onCancelIntimidatePending`, `intimidatePendingCell`",
-        "The context provider should be placed in GameRoom.tsx (the parent that currently passes all props to ActiveGameView)",
-        "ActiveGameView should consume the context via useGameRoom() for the pass-through values instead of receiving them as props",
-        "Child components (ActionPanel, BoardGrid, HandPanel, ArchetypeModal) should consume directly from context instead of receiving props tunneled through ActiveGameView",
-        "Props that ActiveGameView uses directly (game, myIndex, myPlayer, myScore, etc.) may remain as props OR move to context — use judgment on what keeps the component readable",
-        "ActiveGameView's prop interface should shrink from 28 to ~15 or fewer",
-        "No behavior changes — all existing functionality must work identically",
-        "`bun run test --run` passes"
-      ],
-      "priority": 7,
-      "passes": true,
-      "notes": "The 12-13 pure pass-through props are the clear candidates for context. The remaining ~15 props that ActiveGameView uses directly could stay as props (they document the component's actual interface) or move to context — either is fine as long as the result is cleaner. Don't move everything into context just because you can — if a prop is used by only ActiveGameView and one child, a prop might still be clearer. The test files that render ActiveGameView or GameRoom will need updated setup — they'll need a context provider wrapper. Consider adding a `renderWithGameContext` helper to helpers.ts."
-    },
-    {
-      "id": "US-CH-008",
-      "title": "Convert source-string tests to behavioral tests",
-      "description": "As a developer, I want the UXP test files to test rendered behavior (what users see in the DOM) instead of reading .tsx source files with fs.readFileSync and asserting on string content — so tests don't break on every CSS class rename or code reformatting.",
-      "acceptanceCriteria": [
-        "Audit all 19 uxp*.test.tsx files that use `fs.readFileSync` on `.tsx` source files",
-        "For each test that reads a .tsx source file and asserts on its content, determine if it can be converted to a behavioral test (render the component, assert on DOM output). Categories:",
-        "  (a) Tests asserting on CSS classes (e.g. 'contains hover:border-accent') — convert to rendering and checking `getComputedStyle` or checking the element's `className` via `toHaveClass`. If the class is a Tailwind utility that only matters visually, consider whether the test adds value at all",
-        "  (b) Tests asserting on import statements (e.g. 'imports cardEmoji') — these are implementation tests and should be deleted. The behavior they guard is already covered by the rendered output tests",
-        "  (c) Tests asserting on structural patterns (e.g. 'uses AnimatePresence') — delete if the animation behavior is tested elsewhere, or convert to a render test that checks the animated behavior",
-        "  (d) Tests that scan ALL .tsx files for banned patterns (e.g. 'no zinc classes in any file') — these are linting-style checks. Convert to a ruff/eslint rule if possible, or keep as-is since they scan config-like content. These are acceptable",
-        "It is acceptable to DELETE source-string tests that have no meaningful behavioral equivalent — not every implementation detail needs a test",
-        "Do NOT create new tests that just replicate the source-string check in a different way. If the behavior isn't worth testing via render, delete the test",
-        "Tests that read static config files (package.json, index.html, index.css) are OK and should NOT be converted",
-        "`bun run test --run` passes"
-      ],
-      "priority": 8,
-      "passes": true,
-      "notes": "This is the largest story by file count (19 files) but many of the individual test changes are deletions. The key judgment call: does this test guard behavior a user would notice, or does it guard an implementation detail? 'Button has hover:border-accent' is implementation — if we change the hover color, the test breaks but nothing is actually wrong. 'Card shows emoji for strahd_von_zarovich' is behavior — worth testing. Err on the side of deleting low-value tests rather than investing effort converting them. The goal is fewer, better tests — not the same number of tests in a different style. Work through the files in numeric order (uxp004, uxp006, uxp007, ...). This story may be split if it's too large for one iteration — if so, do the highest-value conversions first and mark the remainder for a follow-up."
+      "passes": false
     }
   ]
 }

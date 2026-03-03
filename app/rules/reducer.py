@@ -281,7 +281,7 @@ def apply_intent(
     if rng is not None:
         roll = rng.randint(1, 6)
         if caster_reroll:
-            roll = rng.randint(1, 6)  # second result is used
+            roll = max(roll, rng.randint(1, 6))  # best of two rolls
         mists_modifier = mists_modifier_from_roll(roll)
         if devout_negate_fog and mists_modifier == -2:
             mists_modifier = 0  # Devout treats Fog as no effect

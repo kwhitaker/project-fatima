@@ -160,3 +160,16 @@ Started: 2026-03-03
 - Learnings: Be careful with Plus rule in tests — equal sums across adjacent cells trigger Plus captures before standard comparisons, masking the intended test scenario. Use distinct sums in non-Plus tests.
 ---
 
+## 2026-03-03 15:15 - US-UXP-017
+- Updated button component: outline variant gets visible dark-mode border (muted-foreground/40), subtle bg tint (muted/30), hover:border-accent; ghost variant uses text-accent (gold) default color
+- Promoted archetype selection buttons from outline → default (blood-red) variant
+- Game list items hover: bg-muted → bg-accent/20 + border-accent for gold highlight
+- Login/ResetPassword inputs: added hover:border-accent and focus:border-primary transitions
+- Login mode toggle links: added text-accent (gold) color with hover:text-primary
+- Replaced all hardcoded zinc-* color classes with theme tokens (bg-card, border-border, bg-muted-foreground/30) in 5 dialog/drawer components
+- Info buttons (HandPanel, HandDrawer): added hover:border-accent
+- Tests: 325 frontend passed, 556 backend passed; 15 new uxp017.test.tsx assertions
+- Files changed: button.tsx, ArchetypeModal.tsx, Games.tsx, Login.tsx, ResetPassword.tsx, GameRulesDialog.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, HandDrawer.tsx, HandPanel.tsx, uxp017.test.tsx (new)
+- Learnings: Many components used hardcoded zinc-* colors from shadcn/ui defaults instead of theme CSS custom properties. Converting to bg-card/border-border ensures all dialogs follow the Castlevania palette automatically.
+---
+

@@ -27,9 +27,9 @@ export const ARCHETYPE_COPY: Record<Archetype, ArchetypeCopy> = {
   },
   devout: {
     name: "Devout",
-    powerTitle: "Ignore a 1",
+    powerTitle: "Negate Fog",
     powerText:
-      "If you roll a 1, ignore it. You do not get -1 for this move. Use it once per game.",
+      "If you roll a 1 (Fog), ignore it. You do not get -2 for this move. Use it once per game.",
   },
   intimidate: {
     name: "Intimidate",

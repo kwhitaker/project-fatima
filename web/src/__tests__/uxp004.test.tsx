@@ -22,16 +22,15 @@ describe("US-UXP-004: Retro pixel fonts", () => {
     expect(html).toContain("fonts.gstatic.com");
   });
 
-  it("tailwind.config.js defines heading and body font families", () => {
-    const config = fs.readFileSync(
-      path.join(webRoot, "tailwind.config.js"),
+  it("theme defines heading and body font families", () => {
+    const css = fs.readFileSync(
+      path.join(webRoot, "src/index.css"),
       "utf-8"
     );
-    expect(config).toContain('"Press Start 2P"');
-    expect(config).toContain("VT323");
-    expect(config).toMatch(/fontFamily/);
-    expect(config).toMatch(/heading/);
-    expect(config).toMatch(/body/);
+    expect(css).toContain("--font-heading");
+    expect(css).toContain("--font-body");
+    expect(css).toContain('"Press Start 2P"');
+    expect(css).toContain("VT323");
   });
 
   it("index.css sets VT323 as body font-family", () => {
@@ -109,12 +108,12 @@ describe("US-UXP-004: Retro pixel fonts", () => {
   });
 
   it("fonts include monospace fallback", () => {
-    const config = fs.readFileSync(
-      path.join(webRoot, "tailwind.config.js"),
+    const css = fs.readFileSync(
+      path.join(webRoot, "src/index.css"),
       "utf-8"
     );
     // Both font families should have monospace fallback
-    expect(config).toMatch(/heading.*monospace/s);
-    expect(config).toMatch(/body.*monospace/s);
+    expect(css).toMatch(/--font-heading.*monospace/s);
+    expect(css).toMatch(/--font-body.*monospace/s);
   });
 });

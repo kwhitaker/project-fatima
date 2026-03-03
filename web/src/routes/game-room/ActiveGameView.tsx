@@ -327,6 +327,7 @@ export function ActiveGameView({
               boardElements={boardElements}
               selectedCardElement={selectedCardElement}
               mistsEffect={placedCells.size > 0 ? game.last_move?.mists_effect : null}
+              intimidatePendingCell={intimidatePendingCell}
             />
           </div>
 

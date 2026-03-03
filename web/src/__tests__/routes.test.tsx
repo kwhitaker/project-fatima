@@ -1225,8 +1225,9 @@ describe("effects (US-UI-011)", () => {
     mockGetGame.mockResolvedValue({ ...effectsGame, last_move: { mists_roll: 1, mists_effect: "fog" } });
     renderAt("/g/game-fx");
     await waitFor(() => {
-      expect(screen.getByLabelText(/mists feedback/i)).toBeInTheDocument();
-      expect(screen.getByText(/fog/i)).toBeInTheDocument();
+      const banner = screen.getByLabelText(/mists feedback/i);
+      expect(banner).toBeInTheDocument();
+      expect(banner.textContent).toMatch(/fog/i);
     });
   });
 

@@ -177,12 +177,12 @@ export function HandDrawer({
                             disabled={disabled}
                             title={cardTitle(cardKey, def)}
                             className={cn(
-                              "flex aspect-square w-24 sm:w-28 flex-col items-center justify-between p-2 border-2 border-border rounded-none text-xs sm:text-sm",
+                              "flex aspect-square w-24 sm:w-28 flex-col items-center justify-between p-2 border-2 border-border rounded-none text-xs sm:text-sm bg-card",
                               "disabled:opacity-50 disabled:cursor-not-allowed",
                               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                               isSelected
                                 ? "border-primary bg-primary/10 cursor-pointer"
-                                : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer",
+                                : "border-border hover:border-primary hover:bg-accent/20 cursor-pointer",
                               tierClass(def?.tier)
                             )}
                             aria-pressed={isSelected}

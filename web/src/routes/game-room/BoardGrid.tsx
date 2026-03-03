@@ -34,6 +34,7 @@ export function BoardGrid({
   selectedCardElement,
   mistsEffect,
   victoryCells,
+  intimidatePendingCell,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -48,6 +49,7 @@ export function BoardGrid({
   selectedCardElement?: string | null;
   mistsEffect?: "fog" | "omen" | "none" | null;
   victoryCells?: number[];
+  intimidatePendingCell?: number | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -291,20 +293,30 @@ export function BoardGrid({
             ? { animationDelay: `${victoryIdx * 0.2}s` }
             : undefined;
 
-          if (cell !== null && onCellInspect) {
+          // When intimidate is pending, clicking an occupied cell selects it as the target
+          const isIntimidateTarget = intimidatePendingCell != null && cell !== null && onCellClick;
+
+          if (cell !== null && (onCellInspect || isIntimidateTarget)) {
             return (
               <button
                 key={i}
                 className={cn(
                   cellClass,
                   victoryGlowClass,
-                  "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  isIntimidateTarget && "ring-2 ring-orange-400 dark:ring-orange-300"
                 )}
                 style={victoryGlowStyle}
                 data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
                 data-last-move={isLastMove ? "true" : undefined}
-                onClick={() => onCellInspect(cell.card_key)}
-                aria-label={`inspect ${def?.name ?? cell.card_key}`}
+                onClick={() => {
+                  if (isIntimidateTarget) {
+                    onCellClick!(i);
+                  } else if (onCellInspect) {
+                    onCellInspect(cell.card_key);
+                  }
+                }}
+                aria-label={isIntimidateTarget ? `intimidate target cell ${i}` : `inspect ${def?.name ?? cell.card_key}`}
                 title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
               >
                 {elementBadge}

@@ -59,7 +59,7 @@ export function HandDrawer({
     <div className="fixed inset-x-0 bottom-0 z-40">
       <div
         ref={drawerRef}
-        className="bg-white/95 dark:bg-zinc-900/95 border border-zinc-200 dark:border-zinc-700 rounded-t-2xl shadow-[0_-10px_30px_rgba(0,0,0,0.15)]"
+        className="bg-white/95 dark:bg-zinc-900/95 border-2 border-zinc-200 dark:border-zinc-700 rounded-none shadow-[0_-10px_30px_rgba(0,0,0,0.15)]"
       >
         <button
           type="button"
@@ -69,7 +69,7 @@ export function HandDrawer({
           onClick={onToggle}
         >
           <div className="flex items-center gap-3">
-            <span className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+            <span className="h-1.5 w-12 bg-zinc-300 dark:bg-zinc-700" />
             <span className="text-sm font-heading font-semibold">Hand & Players</span>
           </div>
           <span className="text-xs text-muted-foreground">{open ? "Hide" : "Show"}</span>
@@ -142,7 +142,7 @@ export function HandDrawer({
                           disabled={disabled}
                           title={cardTitle(cardKey, def)}
                           className={cn(
-                            "flex aspect-square w-24 sm:w-28 flex-col items-center justify-between p-2 border rounded text-xs sm:text-sm transition-transform hover:scale-105",
+                            "flex aspect-square w-24 sm:w-28 flex-col items-center justify-between p-2 border-2 border-border rounded-none text-xs sm:text-sm transition-transform hover:scale-105",
                             "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                             selectedCard === cardKey
@@ -175,7 +175,7 @@ export function HandDrawer({
                           aria-label={`inspect ${displayName}`}
                           onClick={() => onPreviewCard(cardKey, def)}
                           title={`Preview: ${cardTitle(cardKey, def)}`}
-                          className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-muted border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                          className="absolute -top-2 -right-2 w-5 h-5 rounded-none bg-muted border-2 border-border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                           tabIndex={0}
                         >
                           ⓘ

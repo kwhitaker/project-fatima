@@ -212,7 +212,7 @@ export default function GameRoom() {
         <span
           aria-label="realtime status"
           className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs",
+            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none border-2 text-xs",
             realtimeStatus === "live"
               ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/50 dark:border-green-800 dark:text-green-400"
               : "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950/50 dark:border-yellow-800 dark:text-yellow-400"

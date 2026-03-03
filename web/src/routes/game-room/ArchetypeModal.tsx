@@ -33,7 +33,7 @@ export function ArchetypeModal({
       data-testid="archetype-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
     >
-      <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-lg shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+      <div className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-lg shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
         <h2 id="archetype-modal-title" className="text-lg font-bold mb-1">
           Choose Your Archetype
         </h2>

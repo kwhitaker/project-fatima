@@ -54,7 +54,7 @@ export function BoardGrid({
             elementLabel === selectedCardElement;
 
           const cellClass = cn(
-            "aspect-square w-full border rounded flex items-center justify-center text-xs text-center relative",
+            "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative",
             cell === null
               ? "bg-muted text-muted-foreground"
               : cell.owner === myIndex

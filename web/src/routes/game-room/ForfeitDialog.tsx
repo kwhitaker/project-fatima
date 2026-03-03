@@ -24,7 +24,7 @@ export function ForfeitDialog({
         if (e.key === "Escape") onCancel();
       }}
     >
-      <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-sm shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+      <div className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-sm shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
         <h2 id="forfeit-dialog-title" className="text-lg font-bold mb-1">
           Forfeit Game?
         </h2>

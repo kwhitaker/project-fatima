@@ -20,7 +20,7 @@ export function GameRulesDialog({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="bg-white border border-zinc-200 rounded-lg w-full max-w-2xl shadow-xl dark:bg-zinc-900 dark:border-zinc-700 max-h-[85vh] overflow-hidden">
+      <div className="bg-white border-2 border-zinc-200 rounded-none w-full max-w-2xl shadow-xl dark:bg-zinc-900 dark:border-zinc-700 max-h-[85vh] overflow-hidden">
         <div className="p-6 overflow-y-auto max-h-[85vh]">
           <div className="flex items-start justify-between gap-4">
             <h2 id="game-rules-title" className="text-lg font-bold">

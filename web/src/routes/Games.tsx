@@ -117,7 +117,7 @@ export default function Games() {
               <li key={game.game_id}>
                 <Link
                   to={`/g/${game.game_id}`}
-                  className="hover:bg-muted block w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="hover:bg-muted block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 flex-col">

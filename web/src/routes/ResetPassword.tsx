@@ -60,7 +60,7 @@ export default function ResetPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm"
             />
             <input
               type="password"
@@ -68,7 +68,7 @@ export default function ResetPassword() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-md border px-3 py-2 text-sm"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm"
             />
             <Button type="submit" className="w-full" disabled={status === "saving"}>
               {status === "saving" ? "Saving…" : "Set password"}

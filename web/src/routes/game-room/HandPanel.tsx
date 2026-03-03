@@ -42,7 +42,7 @@ export function HandPanel({
                 disabled={disabled}
                 title={cardTitle(cardKey, def)}
                 className={cn(
-                  "flex aspect-square w-20 sm:w-24 flex-col items-center justify-between p-1.5 sm:p-2 border rounded text-xs sm:text-sm transition-transform hover:scale-105",
+                  "flex aspect-square w-20 sm:w-24 flex-col items-center justify-between p-1.5 sm:p-2 border-2 border-border rounded-none text-xs sm:text-sm transition-transform hover:scale-105",
                   "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   selectedCard === cardKey
@@ -75,7 +75,7 @@ export function HandPanel({
                 aria-label={`inspect ${displayName}`}
                 onClick={() => onPreviewCard(cardKey, def)}
                 title={`Preview: ${cardTitle(cardKey, def)}`}
-                className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-muted border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                className="absolute -top-2 -right-2 w-5 h-5 rounded-none bg-muted border-2 border-border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 tabIndex={0}
               >
                 ⓘ

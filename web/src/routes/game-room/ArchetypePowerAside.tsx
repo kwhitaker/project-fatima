@@ -18,7 +18,7 @@ export function ArchetypePowerAside({
     <aside
       aria-label={label ?? "archetype power"}
       className={cn(
-        "rounded-lg border border-border bg-muted/40 p-3 text-sm",
+        "rounded-none border-2 border-border bg-muted/40 p-3 text-sm",
         "dark:bg-muted/20",
         className
       )}

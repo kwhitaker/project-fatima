@@ -22,7 +22,7 @@ export function CardInspectPreview({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div className="bg-white border border-zinc-200 rounded-lg p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
+      <div className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700">
         <h2 className="text-lg font-bold mb-3">{name}</h2>
         <div className="text-sm text-muted-foreground mb-3">
           {def?.element

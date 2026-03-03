@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
   blood: "🩸",
@@ -58,6 +58,25 @@ export function BoardGrid({
     const m = new Map<number, number>();
     capturedOrder.forEach((cellIdx, seqIdx) => m.set(cellIdx, seqIdx));
     return m;
+  }, [capturedOrder]);
+
+  // Emit custom capture-step events as sound hook points
+  const emittedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = capturedOrder.length > 0 ? capturedOrder.join(",") : null;
+    if (key && key !== emittedRef.current) {
+      emittedRef.current = key;
+      capturedOrder.forEach((cellIdx, seqIdx) => {
+        const delay = (CAPTURE_BASE_DELAY + seqIdx * CAPTURE_STAGGER) * 1000;
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("capture-step", {
+              detail: { cellIndex: cellIdx, step: seqIdx + 1, total: capturedOrder.length },
+            })
+          );
+        }, delay);
+      });
+    }
   }, [capturedOrder]);
 
   // Micro-shake: derive a key from placed cells so the shake replays on each new placement
@@ -200,12 +219,16 @@ export function BoardGrid({
               </motion.div>
             ) : isCaptured ? (
               <motion.div
-                className="w-full h-full flex items-center justify-center"
+                className="w-full h-full flex items-center justify-center relative"
                 data-anim="captured"
                 initial={{ scaleX: 1, filter: "brightness(1)" }}
                 animate={{
                   scaleX: [1, 0, 1],
-                  filter: ["brightness(1)", "brightness(2)", "brightness(1)"],
+                  filter: [
+                    "brightness(1)",
+                    `brightness(${2 + (captureSeq ?? 0) * 0.2})`,
+                    "brightness(1)",
+                  ],
                 }}
                 transition={{
                   duration: CAPTURE_FLIP_DURATION,
@@ -214,6 +237,42 @@ export function BoardGrid({
                 }}
               >
                 <CardFace cardKey={cell.card_key} def={def} />
+                {/* Ownership color wipe at flip midpoint */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ backgroundColor: cell.owner === myIndex ? "rgba(59,130,246,0.3)" : "rgba(239,68,68,0.3)" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 1, 0] }}
+                  transition={{
+                    duration: CAPTURE_FLIP_DURATION,
+                    delay: captureDelay,
+                    ease: "easeInOut",
+                  }}
+                />
+                {/* Combo counter overlay */}
+                {capturedOrder.length > 1 && captureSeq != null && (
+                  <motion.span
+                    className="absolute top-0 right-0 text-xs font-heading font-bold text-yellow-300 drop-shadow-md pointer-events-none z-10"
+                    data-testid="combo-counter"
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: captureDelay + CAPTURE_FLIP_DURATION * 0.5, duration: 0.2 }}
+                  >
+                    +{captureSeq + 1}
+                  </motion.span>
+                )}
+                {/* Chain pulse ring */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none border-2 border-yellow-400"
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1.3, opacity: [0, 0.8, 0] }}
+                  transition={{
+                    duration: 0.3,
+                    delay: captureDelay,
+                    ease: "easeOut",
+                  }}
+                />
               </motion.div>
             ) : (
               <CardFace cardKey={cell.card_key} def={def} />

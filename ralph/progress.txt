@@ -92,3 +92,16 @@ Started: 2026-03-03
 - Learnings: `import { motion } from "motion/react"` is the correct import path for motion v12+. Spring animation with stiffness 300 / damping 20 gives a snappy pop with one subtle overshoot — good for card placement. Stagger parent needs `variants` with `staggerChildren` on the transition, children need `hidden`/`visible` variant keys.
 ---
 
+## 2026-03-03 13:46 - US-UXP-013
+- Added `character_key` to frontend `CardDefinition` type (backend already returns it)
+- Bundled `ralph/card_emojis.json` as `web/src/lib/card-emojis.json` (single source of truth)
+- Created `cardEmoji()` helper in CardFace.tsx that looks up emoji by character_key, returns undefined for missing keys
+- Updated CardFace: emoji displayed prominently center (text-2xl/3xl), name shrunk below it; side values unchanged at edges
+- Updated HandPanel, HandDrawer: emoji shown above card name with reduced name text size
+- Updated CardInspectPreview: larger emoji (text-4xl) above card name in modal
+- Graceful fallback: missing character_key → no emoji, layout unchanged
+- Tests: 259 frontend passed, 553 backend passed
+- Files changed: web/src/lib/api.ts, web/src/lib/card-emojis.json (new), CardFace.tsx, HandPanel.tsx, HandDrawer.tsx, CardInspectPreview.tsx, uxp013.test.tsx (new)
+- Learnings: Backend already returns character_key in /api/cards — just needed to add it to the frontend type. JSON static import works cleanly with Vite+TS (resolveJsonModule already enabled). Multi-emoji strings (🌕🐺) render fine at text-2xl; no overflow handling needed at current card sizes.
+---
+

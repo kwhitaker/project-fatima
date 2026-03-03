@@ -228,7 +228,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "The authoritative emoji mapping is `ralph/card_emojis.json`, keyed by `character_key` (not `card_key`). Cards share character_key across tiers (e.g. all 3 Strahd tiers → `character_key: strahd_von_zarovich` → 🧛). The CardDefinition type doesn't currently include `character_key` — it may need to be added to the API response or the mapping could use `card_key` with a prefix-strip helper. Check what fields the `/api/cards` endpoint returns. Multi-emoji strings range from 1 glyph (most cards) to 2 glyphs (werewolf, party members, Izek, Decibelus). The longest are 2 emoji wide — test that these fit at the smallest card size (hand panel ~w-20). Emoji render at native OS size so `font-size` controls their scale directly."
     },
     {

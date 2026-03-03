@@ -240,7 +240,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Primary goal is interaction flow and visibility. Keep the redesign scoped to the game room views; avoid broad design-system changes."
     },
     {

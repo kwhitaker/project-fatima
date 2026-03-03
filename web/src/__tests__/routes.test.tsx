@@ -717,8 +717,8 @@ describe("game room active state", () => {
     mockGetGame.mockResolvedValue(activeGame);
     renderAt("/g/game-active");
     await waitFor(() => {
-      // Score section should be visible
-      expect(screen.getByText(/score/i)).toBeInTheDocument();
+      // Score section should be visible (compact format: "You: X | Opp: Y")
+      expect(screen.getByText(/You:.*Opp:/)).toBeInTheDocument();
     });
   });
 

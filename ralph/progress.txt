@@ -134,3 +134,14 @@ Started: 2026-03-01
 - Learnings: One-active-game constraint cascades into many existing tests that create multiple games for the same user — these need different user identities or completed games between creates. The service-layer check uses existing `list_games_for_player` so no new store method is needed.
 ---
 
+## 2026-03-03 13:07 - US-GM-014
+- Created `HandPanel` component as in-flow replacement for fixed-overlay `HandDrawer`; board and hand now render simultaneously without occlusion
+- Rewrote `ActiveGameView` with responsive two-column layout: board+hand (left) + secondary sidebar (right on lg+); mobile uses collapsible "Info & Actions" panel for secondary content (last move callouts, archetypes, leave button)
+- Removed `drawerOpen`, `useMeasuredHeight`, `drawerRef`, `drawerHeight` state and props from `GameRoom.tsx`; deleted `useMeasuredHeight` import
+- Updated `routes.test.tsx` score assertion (text changed from "Score — You: X | Opponent: Y" to compact "You: X | Opp: Y")
+- 5 new tests in `gm014.test.tsx`: board+hand both rendered; no drawer toggle; hand shows all cards; hand not inside fixed element; secondary info region present
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 191 passed
+- Files changed: `web/src/routes/game-room/HandPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm014.test.tsx` (new), `web/src/__tests__/routes.test.tsx`
+- Learnings: The fixed-bottom HandDrawer + useMeasuredHeight padding hack was the root of the "UI covers board" problem. Moving to in-flow components eliminates the entire class of layout bugs. Secondary content (callouts, archetypes, leave) is non-critical during active play and fits naturally in a sidebar/drawer that doesn't compete with the board+hand.
+---
+

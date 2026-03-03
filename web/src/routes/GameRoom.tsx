@@ -13,7 +13,6 @@ import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
 
 import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
 import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
-import { useMeasuredHeight } from "@/routes/game-room/hooks/useMeasuredHeight";
 
 export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -32,10 +31,6 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  const { ref: drawerRef, height: drawerHeight } = useMeasuredHeight<HTMLDivElement>([
-    drawerOpen,
-  ]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
@@ -276,10 +271,6 @@ export default function GameRoom() {
           capturedCells={capturedCells}
           onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
           onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
-          drawerHeight={drawerHeight}
-          drawerRef={drawerRef}
-          drawerOpen={drawerOpen}
-          onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
           leaving={leaving}
           onOpenLeaveConfirm={() => setShowLeaveConfirm(true)}
           showLeaveConfirm={showLeaveConfirm}

@@ -50,7 +50,7 @@ export function ActionPanel({
 
   return (
     <div
-      className="rounded border border-border bg-muted/30 p-3 space-y-2 dark:bg-muted/20"
+      className="rounded border border-border bg-muted/30 p-2 space-y-1 dark:bg-muted/20"
       aria-label="action panel"
     >
       {/* Turn label */}

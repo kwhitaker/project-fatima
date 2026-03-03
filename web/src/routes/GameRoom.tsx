@@ -192,18 +192,10 @@ export default function GameRoom() {
       : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
 
   return (
-    <div className="container py-4 min-h-[100dvh] flex flex-col">
+    <div className="container py-4 h-[100dvh] flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">{titleText}</h1>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowRules(true)}
-            className="cursor-pointer"
-          >
-            Rules
-          </Button>
           <Button
             variant="ghost"
             size="sm"
@@ -216,7 +208,7 @@ export default function GameRoom() {
       </div>
 
       {/* Realtime status indicator + manual refresh */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <span
           aria-label="realtime status"
           className={cn(

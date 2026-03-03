@@ -26,7 +26,7 @@ export function HandPanel({
 
   return (
     <div aria-label="hand panel">
-      <p className="text-sm font-medium mb-2">Your hand</p>
+      <p className="text-sm font-medium mb-1">Your hand</p>
       <div className="flex gap-2 flex-wrap">
         {myPlayer?.hand.map((cardKey) => {
           const def = cardDefs.get(cardKey);
@@ -46,7 +46,7 @@ export function HandPanel({
                   "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   selectedCard === cardKey
-                    ? "border-primary bg-primary/10 cursor-pointer"
+                    ? "border-primary bg-primary/10 ring-2 ring-primary/50 scale-105 shadow-md cursor-pointer"
                     : "border-border hover:border-primary hover:bg-accent/80 cursor-pointer"
                 )}
                 aria-pressed={selectedCard === cardKey}

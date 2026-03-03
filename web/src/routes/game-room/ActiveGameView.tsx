@@ -238,57 +238,63 @@ export function ActiveGameView({
       {/* Main two-column layout: play area (left) + sidebar (right on desktop) */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         {/* ─── Primary play area: board + hand ─── */}
-        <div className="flex-1 min-w-0 space-y-4">
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
           {/* Score bar */}
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end shrink-0">
             <p className="text-sm text-muted-foreground">
               You: {myScore} | Opp: {opponentScore}
             </p>
           </div>
 
-          {/* Board */}
-          <BoardGrid
-            board={game.board}
-            myIndex={myIndex}
-            canPlace={canPlace}
-            onCellClick={(i) => void onPlaceCard(i)}
-            onCellInspect={(cardKey) => onPreviewCard(cardKey, cardDefs.get(cardKey))}
-            placedCells={placedCells}
-            capturedCells={capturedCells}
-            cardDefs={cardDefs}
-            lastMoveCellIndex={game.last_move?.cell_index ?? null}
-            boardElements={boardElements}
-            selectedCardElement={selectedCardElement}
-          />
+          {/* Board: centered, takes remaining vertical space */}
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+            <BoardGrid
+              board={game.board}
+              myIndex={myIndex}
+              canPlace={canPlace}
+              onCellClick={(i) => void onPlaceCard(i)}
+              onCellInspect={(cardKey) => onPreviewCard(cardKey, cardDefs.get(cardKey))}
+              placedCells={placedCells}
+              capturedCells={capturedCells}
+              cardDefs={cardDefs}
+              lastMoveCellIndex={game.last_move?.cell_index ?? null}
+              boardElements={boardElements}
+              selectedCardElement={selectedCardElement}
+            />
+          </div>
 
           {/* Move error */}
-          {moveError && <p className="text-destructive text-sm">{moveError}</p>}
+          {moveError && <p className="text-destructive text-sm shrink-0">{moveError}</p>}
 
-          {/* Action panel: step indicator, selected card, power controls */}
-          <ActionPanel
-            isMyTurn={isMyTurn}
-            selectedCard={selectedCard}
-            selectedCardDef={selectedCard ? cardDefs.get(selectedCard) : undefined}
-            onDeselectCard={() => onSelectCard(null)}
-            movePending={movePending}
-            myPlayer={myPlayer}
-            usePower={usePower}
-            onUsePowerChange={onUsePowerChange}
-            powerSide={powerSide}
-            onPowerSideToggle={onPowerSideToggle}
-          />
-
-          {/* Hand panel (always visible, in-flow) */}
-          <HandPanel
-            game={game}
-            myIndex={myIndex}
-            myPlayer={myPlayer}
-            cardDefs={cardDefs}
-            selectedCard={selectedCard}
-            onSelectCard={onSelectCard}
-            movePending={movePending}
-            onPreviewCard={onPreviewCard}
-          />
+          {/* Bottom section: action panel + hand, side by side on sm+ */}
+          <div className="shrink-0 flex flex-col sm:flex-row gap-2 items-start">
+            <div className="w-full sm:w-52 shrink-0">
+              <ActionPanel
+                isMyTurn={isMyTurn}
+                selectedCard={selectedCard}
+                selectedCardDef={selectedCard ? cardDefs.get(selectedCard) : undefined}
+                onDeselectCard={() => onSelectCard(null)}
+                movePending={movePending}
+                myPlayer={myPlayer}
+                usePower={usePower}
+                onUsePowerChange={onUsePowerChange}
+                powerSide={powerSide}
+                onPowerSideToggle={onPowerSideToggle}
+              />
+            </div>
+            <div className="w-full sm:flex-1 sm:min-w-0">
+              <HandPanel
+                game={game}
+                myIndex={myIndex}
+                myPlayer={myPlayer}
+                cardDefs={cardDefs}
+                selectedCard={selectedCard}
+                onSelectCard={onSelectCard}
+                movePending={movePending}
+                onPreviewCard={onPreviewCard}
+              />
+            </div>
+          </div>
         </div>
 
         {/* ─── Desktop sidebar (hidden on mobile, visible lg+) ─── */}

@@ -37,7 +37,10 @@ export function BoardGrid({
   selectedCardElement?: string | null;
 }) {
   return (
-    <div className="w-full max-w-[22rem] sm:max-w-[28rem] md:max-w-[34rem] lg:max-w-[40rem] mx-auto">
+    <div
+      className="mx-auto aspect-square"
+      style={{ width: 'min(100%, 24rem, calc(100dvh - 20rem))' }}
+    >
       <div className="grid grid-cols-3 gap-2 sm:gap-3" aria-label="game board">
         {board.map((cell, i) => {
           const isPlaced = placedCells?.has(i) ?? false;
@@ -45,6 +48,7 @@ export function BoardGrid({
           const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
           const elementLabel = boardElements?.[i];
           const isElementMatch =
+            cell === null &&
             selectedCardElement != null &&
             elementLabel != null &&
             elementLabel === selectedCardElement;

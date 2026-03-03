@@ -35,6 +35,23 @@ Important constraints:
 - Do not commit broken code.
 - Don't assume something is missing; search before adding duplicates.
 
+Code quality constraints (MUST follow):
+- **No dead code.** If you replace a component or module, delete the old one and remove
+  all references (imports, test assertions, comments). Never leave orphaned files.
+- **Shared test fixtures.** Before writing a helper like `makeGame()`, `_make_card()`,
+  or a mock factory, check `tests/conftest.py` (backend) or `web/src/__tests__/helpers.ts`
+  (frontend) first. If one exists, import it. If not, add it there — never duplicate
+  helpers across test files.
+- **Test behavior, not source strings.** Frontend tests must render components and assert
+  on DOM output. Never use `fs.readFileSync` to read `.tsx` source files and assert on
+  string content — these tests break on any refactor and test implementation, not behavior.
+  Exception: asserting on static config files (package.json, index.html, index.css) is OK.
+- **No duplicate test scenarios.** Before writing a test for an error case (404, 403, 409,
+  422), search existing test files to see if it's already covered. One test per scenario
+  is sufficient.
+- **Parameterize repetitive tests.** If you'd write 3+ near-identical tests varying only
+  one input, use `@pytest.mark.parametrize` (backend) or `it.each` (frontend) instead.
+
 Stop condition:
 - If all stories have `passes: true`, output:
   <promise>COMPLETE</promise>

@@ -105,6 +105,38 @@ Rules engine guidance (MVP):
 - Use Arrange/Act/Assert; keep tests deterministic.
 - Name tests for behavior, not implementation.
 
+### Testing — shared fixtures (backend)
+
+- Common helpers (`_make_card`, `make_state`, `mock_rng`, `_mock_caller_id`, the
+  `client` fixture with MemoryGameStore) live in `tests/conftest.py`.
+- Import them — never copy-paste into individual test files.
+- When adding a new helper used by 2+ test files, put it in `conftest.py`.
+
+### Testing — shared fixtures (frontend)
+
+- Common helpers (`makeGame`, `makeActiveGame`, `makePlayer`, Supabase channel mock,
+  `renderGameRoom`, `MOCK_SESSION`, `MOCK_CARD_DEFS`) live in
+  `web/src/__tests__/helpers.ts`.
+- Import them — never copy-paste into individual test files.
+
+### Testing — frontend test quality
+
+- **Test behavior, not source strings.** Render components and assert on DOM output
+  (text, roles, aria attributes, visibility). Never use `fs.readFileSync` to read
+  `.tsx` source and assert on string/regex matches — these tests are brittle and test
+  implementation, not behavior. Exception: static config files (package.json,
+  index.html, index.css) are OK to read directly.
+- **No duplicate test scenarios.** Before adding a test for an error case (404, 403,
+  409, 422), search existing tests. One test per scenario is enough.
+- **Parameterize repetitive tests.** Use `it.each` / `describe.each` when 3+ tests
+  differ only by input values.
+
+### Dead code policy
+
+- When replacing a component, module, or hook, delete the old file and remove all
+  references (imports, test assertions, comments) in the same commit.
+- Never leave orphaned files "for reference" — git history preserves them.
+
 ### Performance / correctness
 
 - Prefer clarity first; optimize only with evidence.

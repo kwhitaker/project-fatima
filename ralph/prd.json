@@ -20,7 +20,7 @@
         "`uv run pytest` passes with all existing tests unchanged in behavior"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "This is the highest-impact cleanup. The `_make_card` + `_mock_caller_id` + `client` trio is copy-pasted across 12 files. The `make_state` factory has 5 archetype-specific copies that differ only in the default archetype value. The `mock_rng` helper is identical in 3 files. Pytest auto-discovers conftest.py — no explicit imports needed for fixtures. Plain helper functions (not fixtures) DO need explicit imports. Keep test_store.py and test_supabase_store.py untouched if their make_state variants have materially different shapes."
     },
     {

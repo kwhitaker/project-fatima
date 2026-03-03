@@ -275,3 +275,14 @@ Started: 2026-03-03
 - Files changed: sounds.ts (new), MuteToggle.tsx (new), BoardGrid.tsx, ActiveGameView.tsx, CompleteGameView.tsx, GameRoom.tsx, uxp015.test.tsx (new)
 - Learnings: Web Audio `new AudioContext` matches regex `/new Audio/` — use `/new Audio\(/` to check for HTMLAudioElement. All play* functions no-op gracefully when AudioContext is not yet initialized (before first user gesture).
 ---
+
+## 2026-03-03 16:30 - US-CH-001
+- Extracted shared backend test fixtures into tests/conftest.py: _make_card, _TEST_CARDS, make_card, make_state, mock_rng, _mock_caller_id, game_store fixture, client fixture
+- Removed duplicated helpers from 20 test files (863 lines deleted, 203 added)
+- Archetype test files use functools.partial to set default archetype on make_state
+- Files with genuinely different signatures kept local variants: test_ux008 (asymmetric sides), test_ux002 (email override), test_idempotency (different make_state shape)
+- Fixed import paths (tests/__init__.py requires `from tests.conftest import`), added p0_hand to make_state calls in test_captures/test_mists
+- Tests: 562 backend passed
+- Files changed: tests/conftest.py (new), 19 test files updated
+- Learnings: tests/__init__.py makes conftest a package module — must use `from tests.conftest import` not `from conftest import`. make_state with players[] means hand validation runs — tests that bypassed it before now need p0_hand.
+---

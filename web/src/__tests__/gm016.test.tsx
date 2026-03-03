@@ -10,6 +10,7 @@ import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import App from "@/App";
 import type { BoardCell, GameState } from "@/lib/api";
+import { MOCK_SESSION } from "./helpers";
 
 // --- Supabase mock -----------------------------------------------------------
 
@@ -63,11 +64,6 @@ vi.mock("@/lib/api", () => ({
 }));
 
 // --- Helpers -----------------------------------------------------------------
-
-const MOCK_SESSION = {
-  user: { id: "user-123", email: "test@example.com" },
-  access_token: "tok",
-};
 
 function setupAuth() {
   mockGetSession.mockResolvedValue({ data: { session: MOCK_SESSION } });

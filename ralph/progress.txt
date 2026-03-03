@@ -154,3 +154,12 @@ Started: 2026-03-01
 - Learnings: The fixed-bottom HandDrawer + useMeasuredHeight padding hack was the root of the "UI covers board" problem. Moving to in-flow components eliminates the entire class of layout bugs. Secondary content (callouts, archetypes, leave) is non-critical during active play and fits naturally in a sidebar/drawer that doesn't compete with the board+hand.
 ---
 
+## 2026-03-03 - US-GM-016
+- Added Rules button entrypoint to secondary content in `ActiveGameView.tsx`; passed `onShowRules` callback from `GameRoom.tsx` so Rules dialog can be opened from both the header bar and the sidebar/mobile drawer
+- Desktop sidebar already had `overflow-y-auto` for independent scrolling from US-GM-014; mobile bottom drawer with peek handle/toggle already existed — this story completed the content hierarchy by adding the Rules entrypoint
+- 8 new tests in `gm016.test.tsx`: sidebar contains Rules button; sidebar contains Leave button; archetypes for both players present; last move callout in sidebar; independent scrolling class on sidebar; mobile drawer toggle exists; drawer opens on click; drawer closes on second click
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 207 passed
+- Files changed: `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm016.test.tsx` (new)
+- Learnings: US-GM-014 laid most of the groundwork for the sidebar/drawer layout; US-GM-016 was primarily about ensuring all secondary content (especially Rules) was accessible from the sidebar rather than only the header. `querySelector("button")` only returns the first match — use `querySelectorAll` and iterate when testing for a specific button among several.
+---
+

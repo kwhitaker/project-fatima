@@ -284,6 +284,7 @@ export default function GameRoom() {
           onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
           boardElements={game.board_elements ?? null}
           selectedCardElement={selectedCardElement}
+          onShowRules={() => setShowRules(true)}
         />
       ) : game.status === "waiting" ? (
         <WaitingGameView

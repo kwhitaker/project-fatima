@@ -40,6 +40,7 @@ export function ActiveGameView({
   onSelectArchetype,
   boardElements,
   selectedCardElement,
+  onShowRules,
 }: {
   game: GameState;
   myIndex: number;
@@ -70,6 +71,7 @@ export function ActiveGameView({
   onSelectArchetype: (archetype: Archetype) => void | Promise<void>;
   boardElements?: string[] | null;
   selectedCardElement?: string | null;
+  onShowRules: () => void;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -211,6 +213,11 @@ export function ActiveGameView({
           )}
         </div>
       )}
+
+      {/* Rules */}
+      <Button variant="outline" size="sm" onClick={onShowRules}>
+        Rules
+      </Button>
 
       {/* Leave */}
       <Button variant="outline" size="sm" onClick={onOpenLeaveConfirm} disabled={leaving}>

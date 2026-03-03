@@ -273,7 +273,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "This is about hierarchy and layout. Keep the copy tight; avoid adding new routes. Prefer using existing components (`ForfeitDialog`, `GameRulesDialog`, `ArchetypePowerAside`) within the new sidebar/drawer."
     }
   ]

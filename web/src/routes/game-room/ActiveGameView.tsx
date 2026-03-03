@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import type { Archetype, CardDefinition, GameState, PlayerState } from "@/lib/api";
@@ -9,7 +9,9 @@ import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
 import { ActionPanel } from "@/routes/game-room/ActionPanel";
+import { MuteToggle } from "@/routes/game-room/MuteToggle";
 import { motion, AnimatePresence } from "motion/react";
+import { playPlus, playElemental, playTurnStart } from "@/lib/sounds";
 
 export function ActiveGameView({
   game,
@@ -91,6 +93,35 @@ export function ActiveGameView({
       powerSide !== null);
 
   const isMyTurn = game.current_player_index === myIndex;
+
+  // Sound: play turn start when it becomes my turn
+  const prevTurnRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (prevTurnRef.current === false && isMyTurn) {
+      playTurnStart();
+    }
+    prevTurnRef.current = isMyTurn;
+  }, [isMyTurn]);
+
+  // Sound: Plus trigger
+  const prevPlusRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = game.last_move?.plus_triggered ? `${game.last_move.cell_index}` : null;
+    if (key && key !== prevPlusRef.current) {
+      playPlus();
+    }
+    prevPlusRef.current = key;
+  }, [game.last_move?.plus_triggered, game.last_move?.cell_index]);
+
+  // Sound: Elemental trigger
+  const prevElemRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = game.last_move?.elemental_triggered ? `${game.last_move.cell_index}` : null;
+    if (key && key !== prevElemRef.current) {
+      playElemental();
+    }
+    prevElemRef.current = key;
+  }, [game.last_move?.elemental_triggered, game.last_move?.cell_index]);
 
   /* ─── Secondary sidebar content (shared between desktop sidebar & mobile drawer) ─── */
   const secondaryContent = (
@@ -280,8 +311,8 @@ export function ActiveGameView({
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-4">
         {/* ─── Primary play area: board + hand ─── */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
-          {/* Score bar */}
-          <div className="flex items-center justify-end shrink-0">
+          {/* Score bar + mute toggle */}
+          <div className="flex items-center justify-end gap-2 shrink-0">
             <p className="text-sm font-heading text-muted-foreground flex items-center gap-0">
               You:&nbsp;
               <AnimatePresence mode="popLayout">
@@ -310,6 +341,7 @@ export function ActiveGameView({
                 </motion.span>
               </AnimatePresence>
             </p>
+            <MuteToggle />
           </div>
 
           {/* Board: centered, takes remaining vertical space */}

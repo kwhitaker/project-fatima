@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
+import { initAudio } from "@/lib/sounds";
 
 import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
 import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
@@ -39,6 +40,13 @@ export default function GameRoom() {
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
+
+  // Initialize Web Audio on first user interaction
+  useEffect(() => {
+    const handler = () => { initAudio(); window.removeEventListener("click", handler); };
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
 
   const selectedCardElement =
     (selectedCard && cardDefs.get(selectedCard)?.element) ?? null;

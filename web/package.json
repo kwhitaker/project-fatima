@@ -9,7 +9,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "typegen": "uv run python -c 'from app.main import app; import json; print(json.dumps(app.openapi()))' > /tmp/fatima-openapi.json && bunx openapi-typescript /tmp/fatima-openapi.json -o src/lib/api-types.generated.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -35,6 +36,7 @@
     "@vitejs/plugin-react": "^5.1.4",
     "autoprefixer": "^10.4.27",
     "jsdom": "^28.1.0",
+    "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",

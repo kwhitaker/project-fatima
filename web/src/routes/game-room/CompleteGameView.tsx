@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CardDefinition, GameState } from "@/lib/api";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { VictoryOverlay } from "@/routes/game-room/VictoryOverlay";
 import { DefeatOverlay } from "@/routes/game-room/DefeatOverlay";
+import { playVictory, playDefeat } from "@/lib/sounds";
 
 export function CompleteGameView({
   game,
@@ -28,6 +29,12 @@ export function CompleteGameView({
   const [showDefeat, setShowDefeat] = useState(isLoser);
   const dismissVictory = useCallback(() => setShowVictory(false), []);
   const dismissDefeat = useCallback(() => setShowDefeat(false), []);
+
+  // Play victory/defeat sound on mount
+  useEffect(() => {
+    if (isWinner) playVictory();
+    else if (isLoser) playDefeat();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cells owned by the winner for sequential victory glow
   const victoryCells = useMemo(() => {

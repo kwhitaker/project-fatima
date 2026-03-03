@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { motion, AnimatePresence } from "motion/react";
+import { playPlace, playCapture, playCombo } from "@/lib/sounds";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
   blood: "🩸",
@@ -66,15 +67,20 @@ export function BoardGrid({
     return m;
   }, [capturedOrder]);
 
-  // Emit custom capture-step events as sound hook points
+  // Emit custom capture-step events as sound hook points + play capture sounds
   const emittedRef = useRef<string | null>(null);
   useEffect(() => {
     const key = capturedOrder.length > 0 ? capturedOrder.join(",") : null;
     if (key && key !== emittedRef.current) {
       emittedRef.current = key;
+      // Play combo arpeggio at start if multi-capture
+      if (capturedOrder.length > 1) {
+        setTimeout(() => playCombo(capturedOrder.length), CAPTURE_BASE_DELAY * 1000);
+      }
       capturedOrder.forEach((cellIdx, seqIdx) => {
         const delay = (CAPTURE_BASE_DELAY + seqIdx * CAPTURE_STAGGER) * 1000;
         setTimeout(() => {
+          playCapture();
           window.dispatchEvent(
             new CustomEvent("capture-step", {
               detail: { cellIndex: cellIdx, step: seqIdx + 1, total: capturedOrder.length },
@@ -84,6 +90,18 @@ export function BoardGrid({
       });
     }
   }, [capturedOrder]);
+
+  // Play placement sound when new cells appear
+  const prevPlacedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = placedCells && placedCells.size > 0
+      ? Array.from(placedCells).sort().join(",")
+      : null;
+    if (key && key !== prevPlacedRef.current) {
+      prevPlacedRef.current = key;
+      playPlace();
+    }
+  }, [placedCells]);
 
   // Micro-shake: derive a key from placed cells so the shake replays on each new placement
   const shakeKey = placedCells && placedCells.size > 0

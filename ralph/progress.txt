@@ -38,3 +38,14 @@ Started: 2026-03-03
 - Learnings: No user-visible "Project Fatima" references existed in .tsx files; rename was title-only
 ---
 
+## 2026-03-03 13:10 - US-UXP-004
+- Added Google Fonts (Press Start 2P + VT323) to index.html with preconnect
+- Extended Tailwind config with font-heading and font-body families
+- Set VT323 as body font (18px base) and Press Start 2P for h1-h6 in index.css
+- Applied font-heading to: button component, ActionPanel turn label, ActiveGameView score/callouts, CompleteGameView results, HandPanel/HandDrawer labels
+- Card stats, body text, dialog descriptions use VT323 (body default)
+- Tests: 218 frontend passed, 553 backend passed
+- Files changed: web/index.html, web/tailwind.config.js, web/src/index.css, web/src/components/ui/button.tsx, web/src/routes/game-room/ActionPanel.tsx, ActiveGameView.tsx, CompleteGameView.tsx, HandDrawer.tsx, HandPanel.tsx, web/src/__tests__/uxp004.test.tsx (new)
+- Learnings: Press Start 2P is very small; 14px minimum for buttons works. VT323 at 18px base font-size provides good readability. Using CSS h1-h6 rule covers dialog titles automatically without touching component code.
+---
+

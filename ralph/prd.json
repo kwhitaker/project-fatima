@@ -66,7 +66,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "Press Start 2P is the single highest-impact change for 8-bit feel. But it's notoriously hard to read at small sizes — err on the side of too large rather than too small. VT323 is more readable at smaller sizes and works well for data-dense areas like card stats. Both are free on Google Fonts. Do NOT apply Press Start 2P to long-form text (rules dialog body, descriptions) — only headings and short labels."
     },
     {

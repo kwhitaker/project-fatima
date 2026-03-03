@@ -88,7 +88,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
             />
             {mode !== "forgot" && (
               <input
@@ -97,7 +97,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
               />
             )}
             <Button type="submit" className="w-full" disabled={status === "sending"}>
@@ -118,16 +118,16 @@ export default function Login() {
         <div className="flex flex-col gap-1 text-sm text-center">
           {mode === "signin" && (
             <>
-              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signup")}>
+              <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signup")}>
                 Create an account
               </button>
-              <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("forgot")}>
+              <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("forgot")}>
                 Forgot password?
               </button>
             </>
           )}
           {mode !== "signin" && (
-            <button className="underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signin")}>
+            <button className="text-accent underline hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => switchMode("signin")}>
               Back to sign in
             </button>
           )}

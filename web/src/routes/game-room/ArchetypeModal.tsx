@@ -39,7 +39,7 @@ export function ArchetypeModal({
           transition={{ duration: 0.15 }}
         >
           <motion.div
-            className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-lg shadow-xl dark:bg-zinc-900 dark:border-zinc-700"
+            className="bg-card border-2 border-border rounded-none p-6 w-full max-w-lg shadow-xl"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
@@ -56,7 +56,7 @@ export function ArchetypeModal({
                 {archetypes.map((arch) => (
                   <Button
                     key={arch}
-                    variant="outline"
+                    variant="default"
                     className="capitalize w-full justify-start"
                     onClick={() => void onSelect(arch)}
                     disabled={pending}

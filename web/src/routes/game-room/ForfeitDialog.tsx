@@ -30,7 +30,7 @@ export function ForfeitDialog({
           }}
         >
           <motion.div
-            className="bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-sm shadow-xl dark:bg-zinc-900 dark:border-zinc-700"
+            className="bg-card border-2 border-border rounded-none p-6 w-full max-w-sm shadow-xl"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

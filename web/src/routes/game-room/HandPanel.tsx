@@ -121,7 +121,7 @@ export function HandPanel({
                   aria-label={`inspect ${displayName}`}
                   onClick={() => onPreviewCard(cardKey, def)}
                   title={`Preview: ${cardTitle(cardKey, def)}`}
-                  className="absolute -top-2 -right-2 w-5 h-5 rounded-none bg-muted border-2 border-border text-[10px] leading-none flex items-center justify-center hover:bg-accent cursor-pointer dark:bg-zinc-800 dark:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-none bg-muted border-2 border-border text-[10px] leading-none flex items-center justify-center hover:bg-accent hover:border-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                   tabIndex={0}
                 >
                   ⓘ

@@ -26,7 +26,7 @@ export function GameRulesDialog({
           }}
         >
           <motion.div
-            className="bg-white border-2 border-zinc-200 rounded-none w-full max-w-2xl shadow-xl dark:bg-zinc-900 dark:border-zinc-700 max-h-[85vh] overflow-hidden"
+            className="bg-card border-2 border-border rounded-none w-full max-w-2xl shadow-xl max-h-[85vh] overflow-hidden"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

@@ -361,7 +361,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 21,
-      "passes": false,
+      "passes": true,
       "notes": "The math: on a 3x3 board (9 cells), you need 5+ to win. If you own 6 cells and there are 2 empty cells left, the opponent can't reach 5 even if they get both remaining cells (they'd have at most 3). Formula: `my_cells >= 5 + empty_cells` means I've clinched. This should trigger immediately after capture resolution in the reducer, before advancing the turn."
     },
     {

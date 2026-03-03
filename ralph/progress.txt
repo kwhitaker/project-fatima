@@ -226,3 +226,14 @@ Started: 2026-03-03
 - Files changed: DefeatOverlay.tsx (new), CompleteGameView.tsx, uxp022.test.tsx (new)
 - Learnings: backdropFilter: grayscale() provides real-time desaturation behind overlay without affecting overlay content itself. Blur on fog particles (filter: blur(8px)) creates convincing mist at low particle counts.
 ---
+
+## 2026-03-03 16:10 - US-UXP-023
+- Added `early_finish` bool field to GameResult model (default False)
+- Implemented early-finish check in reducer: after capture resolution, if `player_cells >= 5 + empty_cells`, game ends with early_finish=True
+- Check runs before normal end-of-round check, works with captures creating clinch scenarios
+- Frontend: GameResult type updated with `early_finish` field; CompleteGameView shows "Inevitable victory" / "The darkness claims this match" messages
+- BoardGrid: empty cells on early-finish boards show ✕ marker with dashed border, dimmed opacity
+- Tests: 562 backend passed (6 new), 385 frontend passed (9 new)
+- Files changed: game.py, reducer.py, api.ts, BoardGrid.tsx, CompleteGameView.tsx, test_early_finish.py (new), uxp023.test.tsx (new)
+- Learnings: The clinch formula `cells >= 5 + empty` is clean — on a 3x3 board you need 5+ to win, so if you own that many plus enough to cover all remaining empty cells, opponent can't catch up. Captures can push a player over the threshold in a single move.
+---

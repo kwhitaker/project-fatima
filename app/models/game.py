@@ -44,6 +44,8 @@ class LastMoveInfo(BaseModel):
     cell_index: int  # 0-8
     mists_roll: int  # 1-6 die result
     mists_effect: str  # "fog" | "omen" | "none" | "fog_negated"
+    plus_triggered: bool = False  # True when the Plus rule fired this placement
+    elemental_triggered: bool = False  # True when elemental bonus (+1) was applied
 
 
 class GameState(BaseModel):
@@ -59,6 +61,8 @@ class GameState(BaseModel):
     result: GameResult | None = None
     seed: int = 0
     last_move: LastMoveInfo | None = None
+    board_elements: list[str] | None = None  # one element per cell (0-8); None for old snapshots
+    created_at: str | None = None  # ISO-8601 UTC timestamp; None for old snapshots
 
     @model_validator(mode="before")
     @classmethod

@@ -1,6 +1,7 @@
 """Game orchestration: create, join, archetype selection, and move submission."""
 
 import uuid
+from datetime import UTC, datetime
 from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
@@ -8,6 +9,25 @@ from app.rules.deck import generate_matched_decks
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
+
+
+class ActiveGameExistsError(Exception):
+    """Raised when a player tries to create/join but already has a non-complete game."""
+
+    def __init__(self, existing_game_id: str) -> None:
+        self.existing_game_id = existing_game_id
+        super().__init__(
+            f"You already have a non-complete game ({existing_game_id}). "
+            "Finish or forfeit it before starting a new one."
+        )
+
+
+def _check_no_active_game(game_store: GameStore, player_id: str) -> None:
+    """Raise ActiveGameExistsError if player has any non-complete game."""
+    games = game_store.list_games_for_player(player_id)
+    for g in games:
+        if g.status != GameStatus.COMPLETE:
+            raise ActiveGameExistsError(g.game_id)
 
 
 def create_game(
@@ -18,6 +38,7 @@ def create_game(
     email: str | None = None,
 ) -> GameState:
     """Create a new game and auto-join the caller as player 1."""
+    _check_no_active_game(game_store, player_id)
     game_id = str(uuid.uuid4())
     if seed is None:
         seed = Random().randint(0, 2**31 - 1)
@@ -26,6 +47,7 @@ def create_game(
         seed=seed,
         status=GameStatus.WAITING,
         players=[PlayerState(player_id=player_id, email=email)],
+        created_at=datetime.now(UTC).isoformat(),
     )
     game_store.create_game(game_id, initial_state)
     return initial_state
@@ -38,6 +60,7 @@ def join_game(
     player_id: str,
     email: str | None = None,
 ) -> GameState:
+    _check_no_active_game(game_store, player_id)
     state = game_store.get_game(game_id)
     if state is None:
         raise KeyError(f"Game {game_id!r} not found")
@@ -61,6 +84,10 @@ def join_game(
         starting = Random(state.seed).randint(0, 1)
         extra_updates["starting_player_index"] = starting
         extra_updates["current_player_index"] = starting
+        # Generate board elements deterministically from seed (one per cell)
+        extra_updates["board_elements"] = Random(state.seed).choices(
+            ["blood", "holy", "arcane", "shadow", "nature"], k=9
+        )
     else:
         new_status = state.status
 

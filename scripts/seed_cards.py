@@ -15,6 +15,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from dotenv import load_dotenv
+
 from app.models.cards import CardDefinition
 from app.rules.cards import load_cards_from_file
 
@@ -35,6 +37,7 @@ def card_to_row(card: CardDefinition) -> dict[str, Any]:
         "w": card.sides.w,
         "set": card.set,
         "tags": card.tags,
+        "element": card.element,
         "definition": card.model_dump(mode="json"),
     }
 
@@ -60,6 +63,9 @@ def seed_cards(client: Any, cards_file: Path | str) -> tuple[int, list[str]]:
 
 if __name__ == "__main__":
     from supabase import create_client  # type: ignore[import-untyped]
+
+    _repo_root = Path(__file__).resolve().parent.parent
+    load_dotenv(dotenv_path=_repo_root / ".env", override=True)
 
     _url = os.environ["SUPABASE_URL"]
     _key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]

@@ -38,6 +38,7 @@ def make_card(
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="test",
+        element="shadow",
     )
 
 
@@ -113,10 +114,11 @@ class TestPresenceBoost:
         """Presence +1 applies only to the chosen direction; other comparisons unaffected.
 
         Placed at cell 4 with neighbors to the north (cell 1) and east (cell 5).
-        placed N=5, E=5 vs neighbor_n S=5 and neighbor_e W=5.
-        Boost direction = "n": north gets +1 (5+1=6 > 5 → capture), east stays 5 == 5 (no capture).
+        placed N=5 vs neighbor_n S=5: boost "n" → 5+1=6 > 5 → capture.
+        placed E=4 vs neighbor_e W=5: no boost → 4 < 5 → no capture.
+        Sums differ (5+5=10 vs 4+5=9) so Plus rule does not fire.
         """
-        placed = make_card("placed", n=5, e=5, s=1, w=1)
+        placed = make_card("placed", n=5, e=4, s=1, w=1)
         neighbor_n = make_card("neighbor_n", n=1, e=1, s=5, w=1)
         neighbor_e = make_card("neighbor_e", n=1, e=1, s=1, w=5)
         board: list[BoardCell | None] = [None] * 9
@@ -222,9 +224,8 @@ class TestPresenceBoost:
     def test_boost_combined_with_mists_modifier(self):
         """Presence +1 and mists_modifier stack on the chosen direction.
 
-        placed N=5 vs neighbor S=7. Omen roll (+1) + Presence north (+1):
-        5+1+1=7 == 7 → no capture (strict >).
-        Increase placed N to 6: 6+1+1=8 > 7 → capture.
+        placed N=6 vs neighbor S=7. Omen roll (+2) + Presence north (+1):
+        6+2+1=9 > 7 → capture.
         """
         placed = make_card("placed", n=6, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=7, w=1)

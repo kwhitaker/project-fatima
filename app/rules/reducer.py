@@ -36,14 +36,14 @@ class PlacementIntent:
 def mists_modifier_from_roll(roll: int) -> int:
     """Map a 1d6 Mists roll to a comparison modifier.
 
-    1 (Fog)  → -1 (all comparisons this placement reduced by 1)
-    6 (Omen) → +1 (all comparisons this placement increased by 1)
+    1 (Fog)  → -2 (all comparisons this placement reduced by 2)
+    6 (Omen) → +2 (all comparisons this placement increased by 2)
     2-5      →  0 (no effect)
     """
     if roll == 1:
-        return -1
+        return -2
     if roll == 6:
-        return 1
+        return 2
     return 0
 
 
@@ -51,9 +51,9 @@ def _mists_effect_label(roll: int, modifier: int) -> str:
     """Human-readable effect label for LastMoveInfo."""
     if roll == 1 and modifier == 0:
         return "fog_negated"  # Devout negated a Fog
-    if modifier == -1:
+    if modifier == -2:
         return "fog"
-    if modifier == 1:
+    if modifier == 2:
         return "omen"
     return "none"
 
@@ -202,21 +202,30 @@ def apply_intent(
         if caster_reroll:
             roll = rng.randint(1, 6)  # second result is used
         mists_modifier = mists_modifier_from_roll(roll)
-        if devout_negate_fog and mists_modifier == -1:
+        if devout_negate_fog and mists_modifier == -2:
             mists_modifier = 0  # Devout treats Fog as no effect
         mists_roll = roll
+
+    # --- Elemental bonus ---
+    # +1 to all initial comparisons when placed card's element matches the cell's element.
+    # Treated as missing (0) if board_elements is absent (old snapshot backward compat).
+    # Does not apply to BFS combo chain or Plus sum calculations.
+    elemental_bonus = 0
+    if state.board_elements is not None:
+        if state.board_elements[intent.cell_index] == placed_card.element:
+            elemental_bonus = 1
 
     # --- Board update ---
     new_board: list[BoardCell | None] = list(state.board)
     new_board[intent.cell_index] = BoardCell(card_key=intent.card_key, owner=placed_owner)
 
-    new_board = resolve_captures(
+    new_board, plus_triggered = resolve_captures(
         new_board,
         intent.cell_index,
         placed_card,
         placed_owner,
         card_lookup,
-        mists_modifier=mists_modifier,
+        mists_modifier=mists_modifier + elemental_bonus,
         presence_direction=presence_direction_boost,
     )
 
@@ -233,6 +242,8 @@ def apply_intent(
             cell_index=intent.cell_index,
             mists_roll=mists_roll,
             mists_effect=_mists_effect_label(mists_roll, mists_modifier),
+            plus_triggered=plus_triggered,
+            elemental_triggered=elemental_bonus > 0,
         )
 
     if state.players:

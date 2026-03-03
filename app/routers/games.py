@@ -10,6 +10,7 @@ from app.dependencies import get_card_store, get_game_store
 from app.models.game import Archetype, GameState, GameStatus
 from app.rules.errors import InvalidMoveError
 from app.services import game_service
+from app.services.game_service import ActiveGameExistsError
 from app.store import CardStore, ConflictError, DuplicateEventError, GameStore
 
 router = APIRouter(prefix="/games", tags=["games"])
@@ -45,7 +46,13 @@ class MoveRequest(BaseModel):
 
 @router.get("", response_model=list[GameState])
 def list_games(caller_id: CallerIdDep, game_store: GameStoreDep) -> list[GameState]:
-    return game_store.list_games_for_player(caller_id)
+    own = game_store.list_games_for_player(caller_id)
+    open_games = game_store.list_open_games(caller_id)
+    combined = own + open_games
+    # Newest first, then non-complete before complete (stable sort)
+    combined.sort(key=lambda g: g.created_at or "", reverse=True)
+    combined.sort(key=lambda g: g.status == GameStatus.COMPLETE)
+    return combined
 
 
 @router.post("", response_model=GameState, status_code=201)
@@ -56,7 +63,10 @@ def create_game(
     game_store: GameStoreDep,
     card_store: CardStoreDep,
 ) -> GameState:
-    return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
+    try:
+        return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
+    except ActiveGameExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @router.post("/{game_id}/join", response_model=GameState)
@@ -69,6 +79,8 @@ def join_game(
 ) -> GameState:
     try:
         return game_service.join_game(game_store, card_store, game_id, caller_id, caller_email)
+    except ActiveGameExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:

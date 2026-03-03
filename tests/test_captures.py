@@ -21,6 +21,7 @@ def make_card(key: str, n: int, e: int, s: int, w: int) -> CardDefinition:
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="test",
+        element="shadow",
     )
 
 
@@ -41,7 +42,7 @@ def rc(
     mists_modifier: int = 0,
 ) -> list[BoardCell | None]:
     """Thin wrapper to keep call sites short."""
-    return resolve_captures(
+    result_board, _ = resolve_captures(
         board,
         placed_index=placed_index,
         placed_card=placed_card,
@@ -49,6 +50,7 @@ def rc(
         card_lookup=lookup,
         mists_modifier=mists_modifier,
     )
+    return result_board
 
 
 # Board layout:

@@ -32,6 +32,7 @@ def _make_card(idx: int) -> CardDefinition:
         is_named=False,
         sides=CardSides(n=4, e=4, s=4, w=4),
         set="test",
+        element="shadow",
     )
 
 
@@ -98,15 +99,21 @@ def test_list_games_returns_created_game(client: TestClient) -> None:
 
 def test_list_games_only_returns_caller_games(client: TestClient) -> None:
     # Alice creates a game; Bob creates a different game
-    as_user(client, "alice", "post", "/games", json={"seed": 1})
-    as_user(client, "bob", "post", "/games", json={"seed": 2})
+    resp_a = as_user(client, "alice", "post", "/games", json={"seed": 1})
+    resp_b = as_user(client, "bob", "post", "/games", json={"seed": 2})
+    alice_id = resp_a.json()["game_id"]
+    bob_id = resp_b.json()["game_id"]
 
     alice_games = as_user(client, "alice", "get", "/games").json()
     bob_games = as_user(client, "bob", "get", "/games").json()
 
-    assert len(alice_games) == 1
-    assert len(bob_games) == 1
-    assert alice_games[0]["game_id"] != bob_games[0]["game_id"]
+    # Both see 2 games (own + other's open game)
+    assert len(alice_games) == 2
+    assert len(bob_games) == 2
+    alice_ids = {g["game_id"] for g in alice_games}
+    bob_ids = {g["game_id"] for g in bob_games}
+    assert alice_ids == {alice_id, bob_id}
+    assert bob_ids == {alice_id, bob_id}
 
 
 def test_list_games_includes_games_joined_as_player2(client: TestClient) -> None:
@@ -122,9 +129,11 @@ def test_list_games_includes_games_joined_as_player2(client: TestClient) -> None
     assert any(g["game_id"] == game_id for g in bob_games)
 
 
-def test_list_games_excludes_unrelated_games(client: TestClient) -> None:
-    # Alice creates a game; Charlie is not involved
-    as_user(client, "alice", "post", "/games", json={"seed": 1})
+def test_list_games_excludes_active_unrelated_games(client: TestClient) -> None:
+    # Alice creates + Bob joins (now ACTIVE); Charlie is not involved
+    resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
+    game_id = resp.json()["game_id"]
+    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
     charlie_games = as_user(client, "charlie", "get", "/games").json()
     assert charlie_games == []
 
@@ -190,11 +199,13 @@ def test_participant_can_read_active_game(client: TestClient) -> None:
 
 def test_starting_player_deterministic_from_seed(client: TestClient) -> None:
     """Same seed → same starting player every time."""
+    # Use distinct user pairs per iteration to avoid the one-active-game constraint.
+    pairs = [("alice1", "bob1"), ("alice2", "bob2"), ("alice3", "bob3")]
     starts = []
-    for _ in range(3):
-        resp = as_user(client, "alice", "post", "/games", json={"seed": 999})
+    for creator, joiner in pairs:
+        resp = as_user(client, creator, "post", "/games", json={"seed": 999})
         game_id = resp.json()["game_id"]
-        resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+        resp = as_user(client, joiner, "post", f"/games/{game_id}/join", json={})
         starts.append(resp.json()["current_player_index"])
 
     assert len(set(starts)) == 1, "Same seed must produce same starting player"

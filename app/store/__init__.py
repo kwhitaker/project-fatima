@@ -35,6 +35,10 @@ class GameStore(Protocol):
         """Return all games where player_id appears in state.players."""
         ...
 
+    def list_open_games(self, exclude_player_id: str) -> list[GameState]:
+        """Return WAITING games with exactly 1 player that exclude_player_id is not in."""
+        ...
+
     def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
         """Return True if this idempotency_key was already used for the given game."""
         ...

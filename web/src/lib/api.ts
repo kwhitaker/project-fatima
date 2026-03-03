@@ -13,6 +13,7 @@ export interface CardDefinition {
   version: string;
   tier: number;
   sides: CardSides;
+  element?: string;
 }
 
 export interface PlayerState {
@@ -41,6 +42,8 @@ export interface LastMoveInfo {
   cell_index: number;   // 0-8
   mists_roll: number;   // 1–6 die result
   mists_effect: string; // "fog" | "omen" | "none"
+  plus_triggered?: boolean;
+  elemental_triggered?: boolean;
 }
 
 export interface GameState {
@@ -54,6 +57,8 @@ export interface GameState {
   round_number: number;
   result: GameResult | null;
   last_move?: LastMoveInfo | null;
+  board_elements: string[] | null;
+  created_at?: string | null;
 }
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -80,7 +85,18 @@ export async function createGame(): Promise<GameState> {
     headers,
     body: JSON.stringify({}),
   });
-  if (!res.ok) throw new Error(`Failed to create game: ${res.status}`);
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to create game: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
   return res.json() as Promise<GameState>;
 }
 
@@ -98,7 +114,18 @@ export async function joinGame(gameId: string): Promise<GameState> {
     headers,
     body: JSON.stringify({}),
   });
-  if (!res.ok) throw new Error(`Failed to join game: ${res.status}`);
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to join game: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
   return res.json() as Promise<GameState>;
 }
 

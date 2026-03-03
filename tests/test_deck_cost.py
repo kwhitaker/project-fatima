@@ -19,6 +19,7 @@ def _card(*, card_key: str = "c", tier: int, rarity: int, sides: CardSides) -> C
         is_named=False,
         sides=sides,
         set="test",
+        element="shadow",
     )
 
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,6 @@ import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
 
 import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
 import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
-import { useMeasuredHeight } from "@/routes/game-room/hooks/useMeasuredHeight";
 
 export default function GameRoom() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -32,16 +31,15 @@ export default function GameRoom() {
   const [archetypeError, setArchetypeError] = useState<string | null>(null);
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  const { ref: drawerRef, height: drawerHeight } = useMeasuredHeight<HTMLDivElement>([
-    drawerOpen,
-  ]);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
+
+  const selectedCardElement =
+    (selectedCard && cardDefs.get(selectedCard)?.element) ?? null;
 
   const refetchGame = useCallback(() => {
     if (!gameId) return;
@@ -194,31 +192,23 @@ export default function GameRoom() {
       : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
 
   return (
-    <div className="container py-4 min-h-[100dvh] flex flex-col">
+    <div className="container py-4 h-[100dvh] flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-2xl font-bold">{titleText}</h1>
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowRules(true)}
-            className="cursor-pointer"
-          >
-            Rules
-          </Button>
-          <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/games")}
+            asChild
             className="hover:bg-accent cursor-pointer"
           >
-            ← Back to Games
+            <Link to="/games">← Back to Games</Link>
           </Button>
         </div>
       </div>
 
       {/* Realtime status indicator + manual refresh */}
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-2">
         <span
           aria-label="realtime status"
           className={cn(
@@ -273,10 +263,6 @@ export default function GameRoom() {
           capturedCells={capturedCells}
           onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
           onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
-          drawerHeight={drawerHeight}
-          drawerRef={drawerRef}
-          drawerOpen={drawerOpen}
-          onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
           leaving={leaving}
           onOpenLeaveConfirm={() => setShowLeaveConfirm(true)}
           showLeaveConfirm={showLeaveConfirm}
@@ -288,6 +274,9 @@ export default function GameRoom() {
           archetypePending={archetypePending}
           archetypeError={archetypeError}
           onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
+          boardElements={game.board_elements ?? null}
+          selectedCardElement={selectedCardElement}
+          onShowRules={() => setShowRules(true)}
         />
       ) : game.status === "waiting" ? (
         <WaitingGameView

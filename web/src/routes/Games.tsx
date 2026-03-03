@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { listGames, createGame, type GameState } from "@/lib/api";
@@ -10,7 +10,10 @@ const STATUS_LABELS: Record<GameState["status"], string> = {
   complete: "Complete",
 };
 
-function StatusBadge({ status }: { status: GameState["status"] }) {
+function StatusBadge({ status, isOpen }: { status: GameState["status"]; isOpen?: boolean }) {
+  if (isOpen) {
+    return <span className="text-xs font-semibold text-emerald-400">Open</span>;
+  }
   return <span className="text-xs font-medium">{STATUS_LABELS[status]}</span>;
 }
 
@@ -26,7 +29,14 @@ function ResultBadge({ label }: { label: string }) {
   return <span className={`text-xs font-semibold ${colorClass}`}>{label}</span>;
 }
 
-function getOpponentEmail(game: GameState, myId: string): string {
+function getDisplayName(game: GameState, myId: string): string {
+  const isParticipant = game.players.some((p) => p.player_id === myId);
+
+  if (!isParticipant) {
+    // Open game: show host email
+    return game.players[0]?.email ?? "Waiting...";
+  }
+
   if (game.players.length < 2) return "Waiting...";
   const opponent = game.players.find((p) => p.player_id !== myId);
   return opponent?.email ?? "Waiting...";
@@ -99,18 +109,19 @@ export default function Games() {
       ) : (
         <ul className="space-y-2">
           {games.map((game) => {
-            const opponentEmail = getOpponentEmail(game, myId);
+            const isOpen = !game.players.some((p) => p.player_id === myId);
+            const displayName = getDisplayName(game, myId);
             const shortId = game.game_id.slice(0, 8);
             const resultLabel = getResultLabel(game, myId);
             return (
               <li key={game.game_id}>
-                <button
-                  className="hover:bg-muted w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => void navigate(`/g/${game.game_id}`)}
+                <Link
+                  to={`/g/${game.game_id}`}
+                  className="hover:bg-muted block w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 flex-col">
-                      <span className="truncate font-medium">{opponentEmail}</span>
+                      <span className="truncate font-medium">{displayName}</span>
                       <span
                         className="text-muted-foreground font-mono text-xs"
                         title={game.game_id}
@@ -119,11 +130,11 @@ export default function Games() {
                       </span>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <StatusBadge status={game.status} />
+                      <StatusBadge status={game.status} isOpen={isOpen} />
                       {resultLabel && <ResultBadge label={resultLabel} />}
                     </div>
                   </div>
-                </button>
+                </Link>
               </li>
             );
           })}

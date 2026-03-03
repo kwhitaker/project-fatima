@@ -1,138 +1,165 @@
 # Ralph Progress Log
 
-## 2026-03-01 15:25 - US-UX-015
-- Added `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2` to all native `<button>` elements in `GameRoom.tsx` (empty board cells, board cell inspect buttons, hand card selection buttons, hand card inspect icon buttons)
-- Added focus-visible ring classes to the game list row button in `Games.tsx`; added focus ring + `rounded` to Login.tsx mode-switch buttons; added focus ring to Login input fields; fixed dark mode contrast: `text-red-600 → dark:text-red-400`, `text-green-600 → dark:text-green-400`
-- Tests: `ux015.test.tsx` (10 frontend: board cell focus class, inspect cell focus class, hand card focus class, inspect icon focus class, games list button focus class, 3 Login mode-switch focus tests, Login error dark text, board cell tagName); 475 backend + 151 frontend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/routes/Games.tsx`, `web/src/routes/Login.tsx`, `web/src/__tests__/ux015.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: empty board cells only render as `<button>` when `canPlace` is true (requires `selectedCard !== null`); tests must select a card before querying for `cell N` buttons; `mockSignIn` module-level variable (with `mock` prefix) enables auth mock control from top-level `vi.mock` factory
----
-
-## 2026-03-01 15:16 - US-UX-014
-- Added `CardInspectPreview` inline dialog component in `GameRoom.tsx` (role="dialog", aria-modal, aria-label="card preview", escape key, autoFocus Close button, dark: classes)
-- Added `onCellInspect` prop to `BoardGrid`; occupied cells rendered as `<button>` with aria-label `"inspect <name>"` that open the preview; passed to both ACTIVE and COMPLETE board sections
-- Added inspect icon button (`ⓘ`) as sibling to each hand card button (inside a relative wrapper div, stops propagation, opens preview without interfering with card selection)
-- Tests: `ux014.test.tsx` (8 frontend: inspect button opens dialog, shows name, shows N/E/S/W, Close button closes, Escape closes, board cell tap opens, aria-pressed not broken, dark mode classes); updated `ux009.test.tsx` and `ux004.test.tsx` to filter hand card buttons by `hasAttribute("aria-pressed")` to distinguish from inspect buttons; 475 backend + 141 frontend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux014.test.tsx`, `web/src/__tests__/ux009.test.tsx`, `web/src/__tests__/ux004.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: when adding a sibling inspect button alongside a card selection button, pre-existing tests that query `getByRole("button", { name: /card name/i })` find both; fix by filtering by `hasAttribute("aria-pressed")` which only the selection button has; the inspect button uses `aria-label="inspect <Name>"` so ux014 tests can query `{ name: /inspect .../i }` specifically
----
-
-
-
-## 2026-03-01 15:09 - US-UX-013
-- Added `realtimeStatus: "connecting" | "live" | "reconnecting"` state to `GameRoom.tsx`; subscribe callback now calls `setRealtimeStatus("live")` on SUBSCRIBED and `setRealtimeStatus("reconnecting")` on CLOSED/CHANNEL_ERROR
-- Added `handleRefresh` function (calls `getGame(gameId)` and updates game state); added realtime status badge (green "Live" / yellow pulsing "Reconnecting…") + "Refresh" button rendered between the header and the status-specific sections, visible in all game states (waiting/active/complete)
-- Tests: `ux013.test.tsx` (6 frontend: Live on SUBSCRIBED, Reconnecting on CLOSED, Reconnecting on CHANNEL_ERROR, Refresh button present, Refresh calls getGame, dark mode classes on indicator); `mockSubscribeCallback` pattern (variables starting with "mock" bypass vi.mock hoisting restriction); 475 backend + 133 frontend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux013.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: use `mock`-prefixed variable in vi.mock factory closure to capture subscribe callback for status simulation in tests; `realtimeStatus` state cleanly separates UI display from the underlying fallback interval logic
----
-
-
-
-## 2026-03-01 15:15 - US-UX-012
-- Updated `LastMoveInfo` interface in `web/src/lib/api.ts` to add `player_index`, `card_key`, `cell_index` (matching US-UX-011 backend fields)
-- Added last move callout div in `GameRoom.tsx` (ACTIVE section): shows "You played <Name>" or "Opponent played <Name>" using `game.last_move.player_index` and `cardDefs` for display name; `aria-label="last move callout"` + `aria-live="polite"` + dark: classes
-- Added `lastMoveCellIndex` prop to `BoardGrid`; applies `ring-2 ring-yellow-400 dark:ring-yellow-300` + `data-last-move="true"` to the matching cell
-- Tests: `ux012.test.tsx` (5 frontend: opponent/you callout text, no callout when null, display name not card_key, data-last-move on cell, dark mode classes); also fixed pre-existing lint issues in `test_ux011.py` (unused var) and formatted `test_supabase_store.py`; 475 backend + 127 frontend tests pass
-- Files: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux012.test.tsx`, `tests/test_ux011.py`, `tests/test_supabase_store.py`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: `lastMoveCellIndex` is snapshot-first (`game.last_move?.cell_index`) — no client-side inference; `data-last-move` attribute enables reliable test querying via `querySelectorAll("[data-last-move]")`
----
-
-## 2026-03-01 16:00 - US-UX-011
-- Added `player_index: int`, `card_key: str`, `cell_index: int` to `LastMoveInfo` model in `app/models/game.py` (additive fields, backward-compatible)
-- Updated `apply_intent` in `app/rules/reducer.py` to populate all three new fields when building `LastMoveInfo`; existing `mists_roll`/`mists_effect` and `begin_sudden_death_round` logic unchanged
-- Tests: `test_ux011.py` (6 backend: player_index correct, card_key matches placed card, cell_index matches target cell, mists fields still present, second move updates all fields, archetype activation works); 475 backend + 121 frontend tests pass
-- Files: `app/models/game.py`, `app/rules/reducer.py`, `tests/test_ux011.py`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: `LastMoveInfo` changes are additive (new required fields on a model only constructed in `apply_intent`); no existing call sites needed updating since the construction is in one place
----
-
-## 2026-03-01 14:57 - US-UX-010
-- Extended capture feedback in `GameRoom.tsx`: replaced `capturedCells.size >= 2` combo-only indicator with a unified `capturedCells.size > 0` block; single flip shows "1 card captured!" (amber styling), combo shows "Combo! ×N captured" (purple styling); both share `aria-label="capture feedback"` and `aria-live="polite"`
-- Tests: `ux010.test.tsx` (5 frontend: single flip shows indicator, single flip no "combo" text, combo shows "Combo" text, no indicator for no captures, aria-live="polite" present); existing `routes.test.tsx` combo + single-capture tests still pass unchanged (single-capture still has no "combo" text; combo still matches `/combo/i`); 469 backend + 121 frontend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux010.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: single/combo distinction handled entirely in existing `capturedCells` diff — no new snapshot fields needed; `aria-label` on the feedback div enables `getByLabelText(/capture feedback/i)` for robust test queries; dark mode amber/purple palette mirrors the existing mists banner pattern
----
-
-## 2026-03-01 15:10 - US-UX-009
-- Added `CardFace` component to `GameRoom.tsx` rendering display name + N/E/S/W in a diamond layout (N top, W/E sides, S bottom); used by `BoardGrid` for occupied cells
-- Updated hand card buttons to show display name + N/E/S/W values with `hover:scale-105 transition-transform` for enlargement and `disabled:hover:scale-100` to suppress scale when disabled
-- Fetches `getCardDefinitions()` via `Promise.all` alongside `getGame()` on initial load; empty-Map fallback keeps card_key display when defs unavailable
-- Tests: `ux009.test.tsx` (6 frontend: board shows name not key, board shows N/E/S/W values, hand shows name not key, hand shows N/E/S/W values, hover:scale class present, aria-pressed state); updated ux004/ux005/ux006/routes.test.tsx api mocks to include `getCardDefinitions: vi.fn().mockResolvedValue(new Map())`; 469 backend + 115 frontend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux009.test.tsx`, `web/src/__tests__/ux004.test.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/ux006.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: when a new async call is added to GameRoom's init effect, ALL existing test mocks for `@/lib/api` must include it with a safe default (empty Map) to avoid unhandled rejections; `disabled:hover:scale-100` cancels hover transform for disabled buttons in Tailwind v4
----
-
-## 2026-03-01 15:00 - US-UX-008
-- Added `GET /cards` endpoint (`app/routers/cards.py`): requires auth, returns full `CardDefinition` list from `CardStore`; registered router in `app/main.py` (added `# noqa: E402` for intentional post-`load_dotenv` imports)
-- Added `CardSides`, `CardDefinition` interfaces + `listCards()` + `getCardDefinitions()` module-level cache to `web/src/lib/api.ts`; cache keyed by `card_key` using a module-level `Map`
-- Tests: `test_ux008.py` (6 backend: 200, list length, required fields, correct values, empty store, auth required); `ux008.test.tsx` (5 frontend: fetch path+auth header, required fields, Map keyed by card_key, name/side resolution, cache deduplication); 469 backend + 109 frontend tests pass
-- Files: `app/routers/cards.py`, `app/main.py`, `tests/test_ux008.py`, `web/src/lib/api.ts`, `web/src/__tests__/ux008.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: module-level `_cardCache: Map | null` in `api.ts` is reset by `vi.resetModules()` in `beforeEach` — this allows cache-deduplication tests without exported reset helpers; `vi.stubGlobal("fetch", mockFetch)` + dynamic imports give each test a fresh module instance
----
-
-## 2026-03-01 14:40 - US-UX-007
-- Updated `Games.tsx`: rows now show opponent email (or "Waiting..."), 8-char truncated game id (full UUID in `title` attr), and Win/Loss/Draw/Forfeit result labels for COMPLETE games; added `ResultBadge` helper component with color coding; destructured `user` from `useAuth` to determine current player index for result classification
-- Added `completion_reason?: string | null` and `forfeit_by_index?: number | null` to `GameResult` interface in `api.ts` (surfacing US-UX-003 backend fields in the frontend type)
-- Tests: `ux007.test.tsx` (8 tests: opponent email shown, "Waiting..." for lobby, truncated id / no full UUID, Win/Loss/Draw/Forfeit labels, cursor-pointer); updated `ux001.test.tsx` button name assertion to use truncated id; 104 frontend + 463 backend tests pass
-- Files: `web/src/routes/Games.tsx`, `web/src/lib/api.ts`, `web/src/__tests__/ux007.test.tsx`, `web/src/__tests__/ux001.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: to compute result label, find `myIndex` via `players.findIndex(p => p.player_id === myId)`; `forfeit_by_index === myIndex` → "Forfeit" (I lost), otherwise "Win" (opponent forfeited); truncate with `.slice(0, 8)` and keep full UUID in `title` for debugging
----
-
-## 2026-03-01 14:35 - US-UX-006
-- Added `showLeaveConfirm` state to `GameRoom.tsx`; changed ACTIVE "Leave Game" button from direct `handleLeave()` to `setShowLeaveConfirm(true)`; added inline forfeit confirmation dialog (role="dialog" aria-modal, escape key, Cancel + Forfeit & Leave buttons)
-- Tests: `ux006.test.tsx` (5 tests: dialog opens on Leave click, forfeit language in dialog, Cancel closes without calling leaveGame, Confirm calls leaveGame + navigates, WAITING has no Leave button); updated `routes.test.tsx` Leave test to click "Forfeit & Leave" in the new dialog; 95 frontend + 463 backend tests pass
-- Files: `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux006.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: since `@radix-ui/react-dialog` is not installed, used same inline `role="dialog"` pattern as the archetype modal; the confirm button has `data-confirm` attribute for reliable selector querying in tests; WAITING state requires no change (already has no Leave button per US-UX-005)
----
-
-
 ## Codebase Patterns
-- (add stable patterns here as they are discovered)
+- balance errors in validate_card_balance return list[str]; loader wraps them in CardLoadError with line number
+- Test fixtures that create cards with specific sides must now satisfy min(sides) ≤ 3
 
 ---
 Started: 2026-03-01
 ---
 
-## 2026-03-01 15:50 - US-UX-005
-- Added `email?: string | null` to `PlayerState` in `web/src/lib/api.ts` (surfacing US-UX-002 backend field in the frontend type)
-- Updated `GameRoom.tsx`: replaced static `<h1>Game {gameId}</h1>` with contextual title ("Waiting for opponent" / "Playing against <email>"); added "← Back to Games" ghost button in header (no API call, pure navigation); removed the "Leave Game" button from the COMPLETE section (the header back link covers post-game navigation)
-- Tests: `ux005.test.tsx` (7 tests: correct title for WAITING/ACTIVE, back button present in all states, no Leave in COMPLETE, Leave still present in ACTIVE); updated 4 assertions in `routes.test.tsx` from old `/game game-xxx/i` heading to `/waiting for opponent/i`; 90 frontend + 463 backend tests pass
-- Files: `web/src/lib/api.ts`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/routes.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: when title logic depends on game state, compute it just before the return (after early loading/error returns) so all derived state is available; the back-link is a `<Button variant="ghost">` with `navigate("/games")` — no leave API, so no forfeit for WAITING/COMPLETE navigation
+## 2026-03-01 - US-GM-001
+- Added weak-side validation to `validate_card_balance` in `app/rules/cards.py`: min(sides) must be ≤ 3
+- Fixed 43 cards in `cards.jsonl` that violated the rule (reduced lowest side to 3, added deficit to highest non-capped side); budget sums preserved
+- Updated 4 test fixtures in `test_cards_balance.py` that used min-side ≥ 4; documented weak-side rule in `CARDS_SPEC.md`
+- Tests run: `uv run pytest` — 490 passed
+- Files changed: `app/rules/cards.py`, `cards.jsonl`, `tests/test_gm001_weak_side.py`, `tests/test_cards_balance.py`, `CARDS_SPEC.md`
+- Learnings: T3 ultra cards (budget=32, cap=10) all converge to n=10, e=10, s=9, w=3 or similar; that's unavoidable with the strict sum+cap constraints. Tests that test ONLY budget/cap failures need sides with min≤3 to avoid dual-failure interference.
 ---
 
-## 2026-03-01 15:30 - US-UX-004
-- Added `ArchetypeNotSelectedError(InvalidMoveError)` to `app/rules/errors.py`; raised in `submit_move` before `apply_intent` when `player.archetype is None` → router maps to 422 with actionable detail
-- Replaced inline archetype selection prompt in `GameRoom.tsx` with a fixed `role="dialog" aria-modal="true"` overlay; added `!!myPlayer?.archetype` guard to `canPlace` and hand card `disabled` prop to block all move interactions until archetype chosen
-- Tests: `test_ux004.py` (6 backend tests: error class hierarchy, 422 on missing archetype, 422 detail is actionable, 200 after selection, second player also blocked); `ux004.test.tsx` (5 UI tests: modal shown/hidden, all 5 archetype options present, hand disabled without archetype, hand enabled after); 463 backend + 83 frontend tests pass; updated `moveGame`/`effectsGame` fixtures in `routes.test.tsx` and setup helpers in `test_error_responses.py`, `test_idempotency.py`, `test_api.py`, `test_auth_api.py` to select archetypes before move submission
-- Files: `app/rules/errors.py`, `app/services/game_service.py`, `web/src/routes/GameRoom.tsx`, `tests/test_ux004.py`, `web/src/__tests__/ux004.test.tsx`, `web/src/__tests__/routes.test.tsx`, `tests/test_error_responses.py`, `tests/test_idempotency.py`, `tests/test_api.py`, `tests/test_auth_api.py`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: pre-existing tests that submit moves without archetype selection need their setup helpers updated; `ArchetypeNotSelectedError` must extend `InvalidMoveError` (not `ValueError`) to be caught by the existing `except InvalidMoveError` → 422 path in the router
+## 2026-03-01 - US-GM-003
+- Added Plus rule as pre-step in `resolve_captures`: computes raw side-sums for adjacent opponent cells; if 2+ share the same sum, captures all matching cells immediately and enqueues them for BFS combo
+- Changed `resolve_captures` return type to `tuple[list[BoardCell | None], bool]`; updated all callers (reducer, test_captures rc wrapper, test_combo_captures direct calls)
+- Added `plus_triggered: bool = False` to `LastMoveInfo`; reducer passes it from resolve_captures result
+- Fixed pre-existing `test_presence.py` test that coincidentally produced equal Plus sums (changed placed.e from 5 to 4 to differentiate sums)
+- Tests run: `uv run pytest` — 502 passed; Files: `app/rules/captures.py`, `app/rules/reducer.py`, `app/models/game.py`, `tests/test_gm003_plus_rule.py`, `tests/test_captures.py`, `tests/test_combo_captures.py`, `tests/test_presence.py`
+- Learnings: Card sides are bounded 1-10 by CardSides validation — test cards exceeding 10 fail Pydantic validation. When adding pre-steps to BFS, watch for unintended Plus triggers in existing tests that use equal card values (sum matches coincidentally).
 ---
 
-## 2026-03-01 14:30 - US-UX-003
-- Added `completion_reason: str | None` and `forfeit_by_index: int | None` to `GameResult` model (backward-compatible, defaults to None)
-- Updated `compute_round_result` and `begin_sudden_death_round` (SD cap draw) to set `completion_reason="normal"`
-- Updated `leave_game` in `game_service.py` to set `completion_reason="forfeit"` and `forfeit_by_index=player_index` on forfeit
-- Tests: `test_ux003.py` (13 tests: model fields, compute_round_result normal reason, SD cap draw reason, forfeit API metadata); updated `test_scoring.py` equality assertions to include `completion_reason="normal"`; 457 total tests pass
-- Files: `app/models/game.py`, `app/rules/reducer.py`, `app/services/game_service.py`, `tests/test_ux003.py`, `tests/test_scoring.py`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: adding optional fields with `None` default to Pydantic models is safe backward-compat; existing tests that do `== GameResult(...)` exact equality need updating when new fields are added
+## 2026-03-02 - US-GM-004
+- Added `plus_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`
+- Added cyan "Plus!" callout in `ActiveGameView.tsx` rendered when `game.last_move?.plus_triggered === true`; callout is visually distinct from amber/purple capture feedback; has `aria-live="polite"` and dark mode classes
+- Added 6 tests in `tests/gm004.test.tsx`: Plus! shown on true; hidden on false; hidden when absent; coexists with capture feedback; has aria-live; has dark: classes
+- Tests run: `bun run test --run` — 157 passed
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/gm004.test.tsx`
+- Learnings: `plus_triggered` as optional (`?`) in the TS interface handles backward compat naturally; `=== true` check ensures undefined/absent field shows no callout
 ---
 
-## 2026-03-01 14:10 - US-UX-002
-- Added `email: str | None = None` to `PlayerState` model
-- Added `get_caller_email` dependency to `app/auth.py` (returns email from JWT, never raises)
-- Updated `game_service.create_game` and `join_game` to accept and store `email` param
-- Updated `routers/games.py` create_game and join_game to inject `CallerEmailDep` and forward email
-- Tests: `test_ux002.py` (7 tests: email stored on create/join, preserved through deck-deal, GET/list return emails, spectator blocking unchanged); 444 total tests pass
-- Files: `app/auth.py`, `app/models/game.py`, `app/routers/games.py`, `app/services/game_service.py`, `tests/test_ux002.py`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: `get_caller_email` is separate from `get_caller_id` and returns `None` (not 401) when header is absent — safe to add to existing endpoints without breaking legacy test fixtures that only override `get_caller_id`
+## 2026-03-02 - US-GM-005
+- Added `element: ElementType` (Literal["blood","holy","arcane","shadow","nature"]) to `CardDefinition` in `app/models/cards.py`; validation is Pydantic-native (missing/invalid element = load error)
+- Assigned element to all 65 cards in `cards.jsonl` using `ralph/card_elements.json` as sole source; created migration `supabase/migrations/004_add_element_to_cards.sql`; updated `card_to_row` in `scripts/seed_cards.py` and updated CARDS_SPEC.md
+- Updated 36 test fixtures (all `_make_card`/`make_card`/`_card` helpers across existing test files) to include `element="shadow"`; wrote 18 new tests in `tests/test_gm005_elemental_data.py`
+- Tests run: `uv run pytest` — 521 passed
+- Files changed: `app/models/cards.py`, `cards.jsonl`, `scripts/seed_cards.py`, `supabase/migrations/004_add_element_to_cards.sql`, `tests/test_gm005_elemental_data.py`, `tests/test_seed_cards.py`, `CARDS_SPEC.md`, + 34 test fixture files
+- Learnings: `element` as a required Pydantic `Literal` field is the cleanest validation approach — the model itself rejects bad values, no loader-level check needed beyond what Pydantic provides. All module-level CardDefinition constructions in tests will fail collection if element is missing — easier to catch than runtime-only failures.
 ---
 
-## 2026-03-01 13:46 - US-UX-001
-- Added `class="dark"` to `<html>` in `index.html` for dark mode default
-- Updated `Games.tsx` header to `flex-col sm:flex-row` for mobile-first stacking; added `cursor-pointer` to game list row buttons
-- Updated `GameRoom.tsx`: responsive board cell sizes (`w-16 sm:w-20`), mobile-friendly invite link layout, dark mode variants for board colors, mists feedback, combo indicator, and win/loss labels
-- Tests: added `ux001.test.tsx` (Red→Green on cursor-pointer); 78 unit tests + 437 backend tests all pass
-- Files: `web/index.html`, `web/src/routes/Games.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux001.test.tsx`, `ralph/prd.json`, `ralph/progress.txt`
-- Pattern: tailwind v4 + `darkMode: ["class"]` → `dark:` prefix works; add `dark` to `<html>` statically in `index.html`
+## 2026-03-02 - US-GM-006
+- Added `board_elements: list[str] | None = None` to `GameState`; added `elemental_triggered: bool = False` to `LastMoveInfo`
+- Generated `board_elements` (9 cells) deterministically in `join_game` via `Random(seed).choices([...], k=9)` when second player joins; computed `elemental_bonus = 1` in reducer when cell element matches placed card element, stacked onto `mists_modifier` before `resolve_captures`; set `elemental_triggered` in `LastMoveInfo`
+- 13 new tests in `tests/test_gm006_elemental.py`; 534 total passing
+- Files changed: `app/models/game.py`, `app/services/game_service.py`, `app/rules/reducer.py`, `tests/test_gm006_elemental.py`
+- Learnings: Elemental bonus stacks naturally into the existing `mists_modifier` parameter — no new param needed. Both `plus_triggered` and `elemental_triggered` follow the same optional-bool-with-default pattern in `LastMoveInfo` for backward compat. `Random(seed).choices(...)` and `Random(seed).randint(...)` in `join_game` are independent instances so no state sharing issues.
 ---
+
+## 2026-03-02 - US-GM-007
+- Added `board_elements: string[] | null` to `GameState` and `elemental_triggered?: boolean` to `LastMoveInfo` in `web/src/lib/api.ts`; added `element?: string` to `CardDefinition`
+- Updated `BoardGrid.tsx`: element symbol badges (🩸 ✦ ✧ ◆ ✿) on every cell (aria-label="element {name}"); emerald ring highlight on cells matching selected card's element; passes `boardElements` and `selectedCardElement` as optional props
+- Added Elemental! callout in `ActiveGameView.tsx` (gold/yellow, distinct from Plus! cyan and amber capture); shows element name ("Blood Elemental!"); updated `GameRoom.tsx` to compute `selectedCardElement` from selected card's def
+- 12 new tests in `gm007.test.tsx`: direct BoardGrid tests for labels and highlight; GameRoom-level tests for callout; 169 total passing
+- Files changed: `web/src/lib/api.ts`, `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm007.test.tsx`
+- Learnings: Direct component tests (rendering `<BoardGrid>` without full router) are cleaner for visual/structural tests; GameRoom-level tests for behavioral callouts. ring-emerald conflicts with ring-yellow are avoided with `!isLastMove` guard. IIFE in JSX works for inline computation but helper vars before return are cleaner.
+---
+
+## 2026-03-02 - US-GM-008
+- Updated `CLAUDE.md` Key Domain Concepts: added weak-side rule description, Plus rule entry, Elemental system entry (5 elements, match=+1, Plus/combo use raw values)
+- Rewrote `GAME_RULES_OVERVIEW.md`: fixed Mists from ±1 to ±2; fixed Devout to say "negate the −2"; added weak-side rule to Components/Cards; added full Plus Rule section with example; added full Elemental System section with thematic mapping; updated MVP Defaults to reflect all implemented systems; removed out-of-scope callouts for now-implemented features
+- `CARDS_SPEC.md`: already up-to-date from US-GM-001 and US-GM-005 (no changes needed)
+- `AGENTS.md`: verified commands unchanged (no changes needed)
+- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
+- Files changed: `CLAUDE.md`, `GAME_RULES_OVERVIEW.md`
+- Learnings: GAME_RULES_OVERVIEW.md had stale ±1 Mists values even after US-GM-002 updated the code — docs lag behind code changes unless explicitly refreshed. A dedicated docs story at sprint end is the right pattern.
+---
+
+## 2026-03-02 - US-GM-008 (second pass)
+- Added Plus rule and Elemental System sections to `GameRulesDialog.tsx` (previously only docs/GAME_RULES_OVERVIEW.md had been updated; the in-game dialog was missing these two sections)
+- Plus rule section explains sum-matching pre-capture with concrete example; Elemental section covers 5 elements, +1 bonus on cell match, and that Plus/combos use raw values
+- Tests run: `uv run pytest` — 534 passed; `bun run test --run` — 169 passed
+- Files changed: `web/src/routes/game-room/GameRulesDialog.tsx`, `ralph/prd.json`
+- Learnings: When a PRD story is expanded in a later commit (e.g. adding a UI copy requirement to an otherwise-docs story), the passes flag is correctly reset — always re-read the current acceptance criteria rather than relying on progress log entries from a prior pass.
+---
+
+## 2026-03-02 - US-GM-009
+- Exported `ELEMENT_SYMBOLS` from `BoardGrid.tsx`; imported it in `HandDrawer.tsx` and `CardInspectPreview.tsx` to keep element symbol mapping consistent across UI
+- Added element badge (absolute bottom-left, aria-label="element {name}") to each hand card tile in `HandDrawer.tsx`; graceful: badge only renders when `def?.element` is present
+- Added "Element: 🩸 Blood" row (or "Element: —" fallback) to `CardInspectPreview.tsx` between title and sides grid
+- Added 3 new tests to `ux014.test.tsx`: preview shows element for card_001 (blood); preview shows "Element: —" for card without element; hand tile shows element badge aria-label; 172 frontend tests + 534 backend tests all pass
+- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/HandDrawer.tsx`, `web/src/routes/game-room/CardInspectPreview.tsx`, `web/src/__tests__/ux014.test.tsx`, `ralph/prd.json`
+- Learnings: Exporting a `const` mapping from one component file so other components can reuse it avoids symbol drift; `aria-label="element {name}"` on element badges enables direct testing via `getByLabelText`.
+---
+
+## 2026-03-01 - US-GM-002
+- Changed `mists_modifier_from_roll` in `app/rules/reducer.py`: Fog (roll 1) now returns -2, Omen (roll 6) now returns +2
+- Updated `_mists_effect_label` to compare against ±2; updated Devout negation check to `mists_modifier == -2`
+- Updated UI strings in `GameRulesDialog.tsx` and `ActiveGameView.tsx` from ±1 to ±2; updated `CLAUDE.md` Mists entry
+- Tests run: `uv run pytest` — 490 passed; `bun run test --run` — 151 passed
+- Files changed: `app/rules/reducer.py`, `tests/test_mists.py`, `tests/test_presence.py`, `web/src/routes/game-room/GameRulesDialog.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `CLAUDE.md`
+- Learnings: Integration test scenarios for fog/omen still work without adjusting card values since -2 still suppresses the same marginal captures and +2 still enables ties-to-capture. Only the direct modifier-value assertions needed changing.
+---
+
+## 2026-03-03 08:38 - US-GM-010
+- Added `title` attribute to all three cell rendering branches in `BoardGrid.tsx`: empty cells show "Element: Blood" (capitalized); occupied cells show "Zombie (Tier 1) — Element: Blood" (card title + element); non-clickable empty cells also show element tooltip
+- Computed `elementTitle` once per cell from `boardElements[i]`, reused across button and div branches
+- Added 5 new tests in `gm007.test.tsx`: empty cell tooltip, occupied cell combined tooltip, non-clickable empty cell tooltip, no title when boardElements is null, clickable empty cell tooltip
+- Tests run: `bun run test --run` — 177 passed
+- Files changed: `web/src/routes/game-room/BoardGrid.tsx`, `web/src/__tests__/gm007.test.tsx`, `ralph/prd.json`
+- Learnings: The three cell branches (clickable empty, occupied with inspect, fallback div) each need their own `title` logic; computing `elementTitle` once at the top of the map callback avoids duplication. `getByTitle` works well for testing native tooltip `title` attributes.
+---
+
+## 2026-03-03 09:49 - US-GM-011
+- Added `created_at: str | None` to `GameState` (set in `create_game` via `datetime.now(UTC).isoformat()`); added `list_open_games(exclude_player_id)` to `GameStore` protocol + both implementations (memory + supabase)
+- Updated `GET /games` router to combine own games + open joinable games (WAITING, 1 player, caller not in it); sorted non-complete before complete, newest first (stable two-pass sort)
+- Frontend: `Games.tsx` shows "Open" badge (emerald) for games user is not a participant of; displays host email for open games; updated `GameState` TS interface with `created_at`
+- Updated 2 existing tests (`test_auth_api.py`) that assumed old behavior (caller only sees own games); added 9 backend tests + 5 frontend tests
+- Tests run: `uv run pytest` — 543 passed; `bun run test --run` — 182 passed
+- Files changed: `app/models/game.py`, `app/routers/games.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`, `web/src/__tests__/routes.test.tsx`, `web/src/__tests__/gm011.test.tsx`, `web/src/lib/api.ts`, `web/src/routes/Games.tsx`
+- Learnings: When adding open games to a list endpoint, existing tests that assert "caller only sees own games" need updating. Python stable sort (two passes) cleanly handles multi-key sorts where one key is descending — sort by secondary descending first, then by primary ascending. Frontend test game_ids must be ≤8 chars since `Games.tsx` uses `slice(0, 8)` for display.
+---
+
+## 2026-03-03 10:53 - US-GM-012
+- Converted game list rows in `Games.tsx` from `<button onClick={navigate}>` to `<Link to={...}>` (react-router-dom); added `block` class for display
+- Converted "Back to Games" in `GameRoom.tsx` from `<Button onClick={navigate}>` to `<Button asChild><Link to="/games">` preserving ghost/sm styling
+- Updated 4 test files: `ux005` (role="button" → role="link" for Back to Games × 3), `ux015` (role="button" → role="link" for game row), `ux001`/`ux007` (selector `button.cursor-pointer` → `a.cursor-pointer`)
+- Tests run: `bun run test --run` — 182 passed; `uv run pytest` — 543 passed
+- Files changed: `web/src/routes/Games.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/ux001.test.tsx`, `web/src/__tests__/ux005.test.tsx`, `web/src/__tests__/ux007.test.tsx`, `web/src/__tests__/ux015.test.tsx`
+- Learnings: `Button asChild` + `<Link>` via radix-ui Slot delegates rendering to the child anchor while preserving Button's variant/size classes and focus-visible ring. For game rows, plain `<Link>` with custom classes is simpler than wrapping in Button since the original wasn't using the Button component.
+---
+
+## 2026-03-03 12:01 - US-GM-013
+- Added `ActiveGameExistsError` + `_check_no_active_game` helper in `game_service.py`; called at top of `create_game` and `join_game`; router catches it → 409 with error message including existing game_id
+- Updated `createGame()` and `joinGame()` in `web/src/lib/api.ts` to parse error detail from response body (matching `placeCard` pattern); error flows to existing `setError` UI in Games.tsx and GameRoom.tsx
+- 10 new backend tests in `test_gm013_one_active_game.py`; 4 new frontend tests in `gm013.test.tsx`; updated 3 existing tests that assumed multiple games per user (`test_cannot_join_twice` 400→409, `test_starting_player_deterministic_from_seed` uses distinct users, `test_newest_first_within_status_group` uses distinct creators)
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 186 passed
+- Files changed: `app/services/game_service.py`, `app/routers/games.py`, `web/src/lib/api.ts`, `tests/test_gm013_one_active_game.py`, `web/src/__tests__/gm013.test.tsx`, `tests/test_api.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`
+- Learnings: One-active-game constraint cascades into many existing tests that create multiple games for the same user — these need different user identities or completed games between creates. The service-layer check uses existing `list_games_for_player` so no new store method is needed.
+---
+
+## 2026-03-03 - US-GM-015
+- Created `ActionPanel` component: always-visible panel showing turn label ("Your turn"/"Opponent's turn"), step text ("Select a card", "Choose a cell", "Choose a direction for your power"), selected card summary with Cancel button, and archetype power controls (checkbox + direction buttons for skulker/presence)
+- Moved power toggle/direction controls from `ActiveGameView` into `ActionPanel`; removed redundant step text from `HandPanel`; removed duplicate turn text from turn bar (now lives in ActionPanel)
+- 8 new tests in `gm015.test.tsx`: step text, opponent's turn, selected card summary, cancel deselect, direction gating, choose-cell after direction, disabled hand on opponent turn, hidden power when used
+- Tests run: `bun run test --run` — 199 passed; `uv run pytest` — 553 passed
+- Files changed: `web/src/routes/game-room/ActionPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/game-room/HandPanel.tsx`, `web/src/__tests__/gm015.test.tsx` (new)
+- Learnings: Removing "Your turn"/"Opponent's turn" from the turn bar breaks many existing tests that use `getByText(/your turn/i)` as a wait condition; keeping the turn label in the ActionPanel preserves backward compat. "Choose your archetype" as step text conflicts with the ArchetypeModal heading — use distinct wording. Hand card buttons and inspect buttons both match `/card name/i`; use `{ pressed: false }` to target only the selection button.
+---
+
+## 2026-03-03 13:07 - US-GM-014
+- Created `HandPanel` component as in-flow replacement for fixed-overlay `HandDrawer`; board and hand now render simultaneously without occlusion
+- Rewrote `ActiveGameView` with responsive two-column layout: board+hand (left) + secondary sidebar (right on lg+); mobile uses collapsible "Info & Actions" panel for secondary content (last move callouts, archetypes, leave button)
+- Removed `drawerOpen`, `useMeasuredHeight`, `drawerRef`, `drawerHeight` state and props from `GameRoom.tsx`; deleted `useMeasuredHeight` import
+- Updated `routes.test.tsx` score assertion (text changed from "Score — You: X | Opponent: Y" to compact "You: X | Opp: Y")
+- 5 new tests in `gm014.test.tsx`: board+hand both rendered; no drawer toggle; hand shows all cards; hand not inside fixed element; secondary info region present
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 191 passed
+- Files changed: `web/src/routes/game-room/HandPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm014.test.tsx` (new), `web/src/__tests__/routes.test.tsx`
+- Learnings: The fixed-bottom HandDrawer + useMeasuredHeight padding hack was the root of the "UI covers board" problem. Moving to in-flow components eliminates the entire class of layout bugs. Secondary content (callouts, archetypes, leave) is non-critical during active play and fits naturally in a sidebar/drawer that doesn't compete with the board+hand.
+---
+
+## 2026-03-03 - US-GM-016
+- Added Rules button entrypoint to secondary content in `ActiveGameView.tsx`; passed `onShowRules` callback from `GameRoom.tsx` so Rules dialog can be opened from both the header bar and the sidebar/mobile drawer
+- Desktop sidebar already had `overflow-y-auto` for independent scrolling from US-GM-014; mobile bottom drawer with peek handle/toggle already existed — this story completed the content hierarchy by adding the Rules entrypoint
+- 8 new tests in `gm016.test.tsx`: sidebar contains Rules button; sidebar contains Leave button; archetypes for both players present; last move callout in sidebar; independent scrolling class on sidebar; mobile drawer toggle exists; drawer opens on click; drawer closes on second click
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 207 passed
+- Files changed: `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/__tests__/gm016.test.tsx` (new)
+- Learnings: US-GM-014 laid most of the groundwork for the sidebar/drawer layout; US-GM-016 was primarily about ensuring all secondary content (especially Rules) was accessible from the sidebar rather than only the header. `querySelector("button")` only returns the first match — use `querySelectorAll` and iterate when testing for a specific button among several.
+---
+

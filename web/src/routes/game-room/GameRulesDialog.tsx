@@ -71,13 +71,41 @@ export function GameRulesDialog({
             <section className="space-y-2">
               <h3 className="font-semibold text-base">The Mists</h3>
               <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-                <li>Roll 1: Fog. Your placed card is -1 in fights this turn.</li>
-                <li>Roll 6: Omen. Your placed card is +1 in fights this turn.</li>
+                <li>Roll 1: Fog. Your placed card is -2 in fights this turn.</li>
+                <li>Roll 6: Omen. Your placed card is +2 in fights this turn.</li>
                 <li>Roll 2-5: No effect.</li>
               </ul>
               <p className="text-muted-foreground">
                 This bonus or penalty is only for the card you just placed, and only for that turn.
               </p>
+            </section>
+
+            <section className="space-y-2">
+              <h3 className="font-semibold text-base">Plus Rule</h3>
+              <p className="text-muted-foreground">
+                A hidden capture that rewards knowing your cards' numbers.
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>Before normal fights, look at each adjacent enemy card.</li>
+                <li>Add your touching side to their touching side (raw printed numbers only — Mists and Elemental do not apply).</li>
+                <li>If 2 or more of those sums are equal, all matching enemies are captured immediately — even if your side is lower.</li>
+                <li>Plus-captured cards then trigger normal combo chains.</li>
+              </ul>
+              <p className="text-muted-foreground text-xs">
+                Example: you place a card, N=6 faces an enemy with S=7 (sum 13), and W=3 faces an enemy with E=10 (sum 13). Both sums match → Plus fires, both captured.
+              </p>
+            </section>
+
+            <section className="space-y-2">
+              <h3 className="font-semibold text-base">Elemental System</h3>
+              <p className="text-muted-foreground">
+                Every card and every board cell has an element: Blood 🩸, Holy ✦, Arcane ✧, Shadow ◆, or Nature ✿.
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+                <li>If your card's element matches the cell you place it on, your card gets +1 on all its comparisons for that placement.</li>
+                <li>This bonus stacks with the Mists modifier.</li>
+                <li>Combo chain captures and Plus rule sums always use raw printed values — Elemental does not apply.</li>
+              </ul>
             </section>
 
             <section className="space-y-3">

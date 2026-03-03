@@ -4,7 +4,7 @@ Used in tests and local development; no external dependencies.
 """
 
 from app.models.cards import CardDefinition
-from app.models.game import GameState
+from app.models.game import GameState, GameStatus
 from app.store import ConflictError, DuplicateEventError, GameEvent
 
 
@@ -29,6 +29,15 @@ class MemoryGameStore:
             state
             for state in self._states.values()
             if any(p.player_id == player_id for p in state.players)
+        ]
+
+    def list_open_games(self, exclude_player_id: str) -> list[GameState]:
+        return [
+            state
+            for state in self._states.values()
+            if state.status == GameStatus.WAITING
+            and len(state.players) == 1
+            and not any(p.player_id == exclude_player_id for p in state.players)
         ]
 
     def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:

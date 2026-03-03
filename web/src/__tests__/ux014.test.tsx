@@ -57,6 +57,7 @@ const CARD_DEFS = new Map<string, CardDefinition>([
       name: "Barovia Guard",
       version: "v1",
       sides: { n: 4, e: 5, s: 3, w: 2 },
+      element: "blood",
     },
   ],
   [
@@ -238,5 +239,46 @@ describe("US-UX-014: mobile card inspect — tap-to-preview", () => {
     const dialog = screen.getByRole("dialog", { name: /card preview/i });
     // The dialog content box should have dark: classes
     expect(dialog.innerHTML).toMatch(/dark:/);
+  });
+
+  it("preview dialog shows element when element is present on card def", async () => {
+    vi.mocked(getGame).mockResolvedValue(makeActiveGame());
+    renderGameRoom();
+
+    await screen.findByText(/your turn/i);
+
+    // card_001 (Barovia Guard) has element: "blood"
+    await userEvent.click(screen.getByRole("button", { name: /inspect barovia guard/i }));
+
+    const dialog = screen.getByRole("dialog", { name: /card preview/i });
+    expect(dialog.textContent).toMatch(/blood/i);
+  });
+
+  it("preview dialog shows fallback dash when element is absent", async () => {
+    vi.mocked(getGame).mockResolvedValue(makeActiveGame());
+    renderGameRoom();
+
+    await screen.findByText(/your turn/i);
+
+    // card_002 (Night Hag) has no element
+    const boardCells = screen.getByLabelText("game board").children;
+    await userEvent.click(boardCells[0] as HTMLElement);
+
+    await waitFor(() => {
+      expect(screen.getByRole("dialog", { name: /card preview/i })).toBeInTheDocument();
+    });
+    const dialog = screen.getByRole("dialog", { name: /card preview/i });
+    expect(dialog.textContent).toContain("Element: —");
+  });
+
+  it("hand card tile shows element badge when element is present", async () => {
+    vi.mocked(getGame).mockResolvedValue(makeActiveGame());
+    renderGameRoom();
+
+    await screen.findByText(/your turn/i);
+
+    // card_001 (Barovia Guard) has element: "blood", symbol 🩸
+    const elementBadge = screen.getByLabelText("element blood");
+    expect(elementBadge).toBeInTheDocument();
   });
 });

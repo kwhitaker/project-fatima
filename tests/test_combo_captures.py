@@ -22,6 +22,7 @@ def make_card(key: str, n: int, e: int, s: int, w: int) -> CardDefinition:
         is_named=False,
         sides=CardSides(n=n, e=e, s=s, w=w),
         set="test",
+        element="shadow",
     )
 
 
@@ -43,7 +44,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -75,7 +76,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c, "d": card_d}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -99,7 +100,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -127,7 +128,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -158,7 +159,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -184,7 +185,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "own": card_own}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -217,7 +218,7 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c, "d": card_d}
 
-        result = resolve_captures(
+        result, _ = resolve_captures(
             board,
             placed_index=0,
             placed_card=card_a,
@@ -241,10 +242,10 @@ class TestComboCaptures:
 
         lookup = {"a": card_a, "b": card_b, "c": card_c}
 
-        result1 = resolve_captures(
+        result1, _ = resolve_captures(
             board, placed_index=0, placed_card=card_a, placed_owner=0, card_lookup=lookup
         )
-        result2 = resolve_captures(
+        result2, _ = resolve_captures(
             board, placed_index=0, placed_card=card_a, placed_owner=0, card_lookup=lookup
         )
 

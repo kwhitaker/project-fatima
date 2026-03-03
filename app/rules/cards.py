@@ -62,7 +62,8 @@ STAT_BUDGETS: dict[tuple[int, str], tuple[int, int]] = {
 
 
 def validate_card_balance(card: CardDefinition) -> list[str]:
-    """Check a card's sides against (tier, bucket) sum budget and per-side cap.
+    """Check a card's sides against (tier, bucket) sum budget, per-side cap,
+    and weak-side rule (min side must be ≤ 3).
 
     Returns a list of human-readable error strings (empty list = passes).
     """
@@ -84,6 +85,13 @@ def validate_card_balance(card: CardDefinition) -> list[str]:
             messages.append(
                 f"side '{name}' value {val} exceeds cap {side_cap} for tier {card.tier} {bucket}"
             )
+
+    min_side = min(side_values)
+    if min_side > 3:
+        messages.append(
+            f"weak-side violation: min side {min_side} must be ≤ 3 "
+            f"(all four sides are ≥ 4; reduce at least one side to 3 or lower)"
+        )
 
     return messages
 

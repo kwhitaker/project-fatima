@@ -1,218 +1,280 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/ui-ux-polish",
-  "description": "Gameplay UX polish: dark-mode-first, mobile-first UI, clearer lobby/game list rows, stronger in-game card rendering (names + side values), unskippable archetype selection, leave/forfeit confirmation, and better capture feedback. Includes small API extensions (player email, completion reason, cards endpoint) to keep the UI snapshot-first.",
+  "branchName": "ralph/game-mechanics-depth",
+  "description": "Game mechanics depth pass: four new systems to address deck power imbalance and add strategic depth. (1) Weak-side card rule forces every card to have at least one exploitable low side. (2) Mists intensity buff raises the randomness modifier from ±1 to ±2 to make the roll matter. (3) Plus rule (from Triple Triad) creates a side-value-matching capture that rewards card knowledge and makes filler cards strategically viable. (4) Elemental system assigns elements to cards and board cells, adding a positional layer (cell element match = +1 bonus). Includes backend rules engine changes, API updates, DB snapshot field additions, UI integration, and full documentation refresh.",
   "userStories": [
     {
-      "id": "US-UX-001",
-      "title": "Dark mode default + mobile-first layout baseline",
-      "description": "As a player, I want the UI to feel good on mobile and in dark mode so the game is comfortable to play.",
+      "id": "US-GM-001",
+      "title": "Weak-side card rule: every card must have at least one side ≤ 3",
+      "description": "As a game designer, I want every card — including ultra/very-rare — to have at least one exploitable low side so that filler cards can threaten powerful ones on at least one edge, breaking the race-to-high-stats dynamic.",
       "acceptanceCriteria": [
-        "App renders in dark mode by default (no manual toggle required)",
-        "Update /games and /g/:gameId layouts to be mobile-first (spacing, stacking, widths)",
-        "Clickable elements (buttons, cards, board cells) show correct hover/disabled states and cursors",
-        "Existing unit/e2e tests still pass (update expectations only when required)"
+        "Add a weak-side validation rule to `validate_card_balance` in `app/rules/cards.py`: reject any card where all four sides are ≥ 4 (i.e., min(sides) must be ≤ 3)",
+        "Audit all cards in `cards.jsonl`; for any card that violates the rule, reduce one side to ≤ 3 (prefer the thematically weakest direction; keep total sum within existing budget bounds where possible)",
+        "Update `CARDS_SPEC.md` to document the weak-side requirement under validation rules",
+        "Add or update unit tests in `tests/` covering: valid card with one side ≤ 3 passes; card with all sides ≥ 4 fails validation; existing card loader still rejects malformed cards",
+        "`uv run pytest` passes with no regressions"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Keep it incremental: adjust tokens + layout primitives first, then refine per-screen."
+      "notes": "Do not change tier/rarity budgets — only add the min-side floor. When adjusting cards.jsonl, prefer reducing the side that is already the card's lowest. Ultra cards likely violate this (avg side 8.0) and will need the biggest adjustment."
     },
     {
-      "id": "US-UX-002",
-      "title": "API: expose participant emails in GameState",
-      "description": "As a UI client, I want player display identities (email) so the lobby and game room can say who I'm playing.",
+      "id": "US-GM-002",
+      "title": "Mists intensity buff: change modifier from ±1 to ±2",
+      "description": "As a player, I want the Mists of Barovia roll to feel impactful and risky so that each placement carries genuine tension. The ±1 modifier rarely flips outcomes given the stat spread; doubling it to ±2 makes Fog genuinely threatening and Omen genuinely exciting.",
       "acceptanceCriteria": [
-        "JWT validation exposes caller email in addition to user_id (sub)",
-        "GameState includes optional player email fields for participants",
-        "POST /games and POST /games/:gameId/join record the caller email into the snapshot",
-        "GET /games and GET /games/:gameId return these email fields",
-        "Do not weaken spectator blocking: non-participants still cannot read ACTIVE/COMPLETE snapshots"
+        "In `app/rules/reducer.py`, change Fog (roll 1) modifier from -1 to -2 and Omen (roll 6) modifier from +1 to +2",
+        "Devout archetype behavior unchanged: it still negates Fog entirely (modifier → 0 regardless of magnitude); update any docstring/comment that says '-1' to say '-2'",
+        "Caster archetype behavior unchanged: it still rerolls once; the new ±2 magnitude increases its value naturally",
+        "Update `CLAUDE.md` Key Domain Concepts section: Mists now reads 'Fog (−2 all comparisons)' and 'Omen (+2)'",
+        "Update all backend tests that assert mists modifier values (look for hardcoded 1/-1); `uv run pytest` passes",
+        "Update any UI text/tooltip in `web/src/` that describes the Mists effect as ±1 to say ±2",
+        "`bun run test --run` passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Prefer storing email in snapshot so listGames can render without extra DB joins."
+      "notes": "This is a targeted one-number change in the reducer; the main work is finding and updating all test assertions and any UI strings that mention the old value."
     },
     {
-      "id": "US-UX-003",
-      "title": "API: record completion reason (normal vs forfeit) for result labels",
-      "description": "As a player, I want completed games to show Win/Loss/Forfeit accurately.",
+      "id": "US-GM-003",
+      "title": "Plus rule — backend: side-sum matching capture mechanic",
+      "description": "As a player, I want a Plus capture rule so that specific side value combinations create unexpected flips, rewarding card knowledge and making lower-powered cards strategically interesting. Plus rule: when placing a card, if 2 or more adjacent opponent-owned cards each have (placed card's attacking side value + that neighbor's defending side value) equal to the same sum, all matching neighbors are captured — even if the placed card's side is lower.",
       "acceptanceCriteria": [
-        "GameState exposes enough result metadata to distinguish normal wins from forfeits",
-        "Leaving an ACTIVE game sets completion metadata (who forfeited) in the snapshot",
-        "Normal (non-forfeit) completions keep existing win/lose/draw behavior",
-        "Add/adjust tests to cover the new result metadata"
+        "Add Plus rule as a pre-step in `resolve_captures` in `app/rules/captures.py`: before standard comparison captures, compute the side-sum for each adjacent opponent-owned card; if 2+ share the same sum, capture all matching cards immediately (flip ownership), then enqueue each for the standard BFS combo chain",
+        "Plus uses raw printed side values only — Mists modifier and elemental bonus (from US-GM-006) do NOT apply to Plus sum calculation",
+        "After Plus captures are resolved, standard comparison captures still run for any remaining adjacent opponent cards not yet captured by Plus",
+        "Plus-captured cards enter the BFS combo queue with zero modifiers (same as normal combo behavior)",
+        "Add `plus_triggered: bool` field to `LastMoveInfo` in `app/models/game.py`; set to `True` when Plus fires, `False` otherwise; default to `False` for backward compat (existing snapshots without this field should deserialize safely)",
+        "New tests in `tests/test_gm003_plus_rule.py`: Plus triggers when 2+ sums match; no trigger with only 1 matching pair; Plus+combo chain propagates correctly; Plus and standard captures can coexist in same placement; Plus does not apply Mists/elemental to sum; `plus_triggered` is False when Plus does not fire",
+        "`uv run pytest` passes with no regressions"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Keep backwards-compatible JSON fields where possible; the web UI will use the new metadata."
+      "notes": "Plus rule fires based on raw printed values. The 'sum' is: placed_card_side_value + neighbor_facing_side_value. Example: placing a card with N=6; cell 1 has S=7 → sum=13; cell 3 has E=10 (placing card's W=3) → W+E=13 → Plus triggers, both captured. Standard > comparison then still runs for any unfired neighbors."
     },
     {
-      "id": "US-UX-004",
-      "title": "Archetype selection is an unskippable modal (and moves are blocked until chosen)",
-      "description": "As a player, I must choose an archetype when the match starts so the game loop is consistent.",
+      "id": "US-GM-004",
+      "title": "Plus rule — UI: callout and capture feedback",
+      "description": "As a player, I want clear visual feedback when the Plus rule fires so I understand the special capture and can learn to play toward it.",
       "acceptanceCriteria": [
-        "When the game is ACTIVE and the caller has no archetype, show a blocking modal dialog to choose one",
-        "Disable move interactions (hand selection and board placement) until archetype is selected",
-        "Backend rejects move submission for a player with no archetype (422 with actionable detail)",
-        "Add/adjust tests covering the blocking behavior (API + UI)"
+        "When `game.last_move.plus_triggered === true`, show a 'Plus!' callout in the capture feedback area (same region as existing amber/purple capture feedback from US-UX-010)",
+        "Plus! callout is visually distinct from standard capture feedback (use a different color, e.g. cyan/teal, and the word 'Plus!')",
+        "If Plus triggers AND there are standard captures in addition, show both indicators",
+        "Callout works in dark mode and on mobile",
+        "Update `web/src/lib/api.ts` `LastMoveInfo` interface to include `plus_triggered: boolean`",
+        "Add/update frontend tests covering: Plus! callout shown when plus_triggered=true; no callout when plus_triggered=false; Plus! and capture count can coexist",
+        "`bun run test --run` passes"
       ],
       "priority": 4,
       "passes": true,
-      "notes": "Do not rely on UI-only gating; enforce on the backend too."
+      "notes": "Depends on US-GM-003. Reuse the existing capture feedback pattern established in US-UX-010; Plus! is an additive indicator, not a replacement."
     },
     {
-      "id": "US-UX-005",
-      "title": "Game room header UX: opponent title + back link; remove Leave after completion",
-      "description": "As a player, I want clear navigation and context while playing.",
+      "id": "US-GM-005",
+      "title": "Elemental system — card data and model",
+      "description": "As a game designer, I want each card to carry an element so the elemental board system has something to match against. Elements are Barovia-themed and derived from each card's existing tags.",
       "acceptanceCriteria": [
-        "Game title reads: Playing against <opponent email> (or Waiting for opponent)",
-        "Add a non-forfeit navigation link back to /games from /g/:gameId",
-        "After game completion, remove the Leave Game button (keep navigation back to /games)",
-        "Buttons show proper hover/disabled states and cursors"
+        "Add `element: str` field to `CardDefinition` in `app/models/cards.py`; valid values are exactly: 'blood', 'holy', 'arcane', 'shadow', 'nature'",
+        "Update `app/rules/cards.py` card loader to validate that `element` is one of the five valid values; missing or invalid element is a load error",
+        "Assign an element to every card in `cards.jsonl` using `ralph/card_elements.json` as the SOLE authoritative source — do not guess from tags",
+        "Update `CARDS_SPEC.md`: document the element field, the five valid values, and the thematic assignment guidelines",
+        "Add `element` column (`text NOT NULL`) to the `cards` DB table: create `supabase/migrations/004_add_element_to_cards.sql` with `ALTER TABLE public.cards ADD COLUMN IF NOT EXISTS element text NOT NULL DEFAULT 'shadow';` followed by a comment explaining the default is a placeholder that gets overwritten by the seed script",
+        "Update `card_to_row` in `scripts/seed_cards.py` to include `element: card.element` in the returned dict",
+        "Update `tests/test_seed_cards.py`: add `'element'` to the expected columns set in `test_all_expected_columns_present`; add `element` field to both `_VALID_LINE` and `_VALID_LINE_2` fixture strings (use `'element':'blood'` for zombie and skeleton); add a test asserting `element` is present in the upserted row",
+        "Add unit tests in the main test suite: card with valid element loads; card with invalid element fails; card missing element fails",
+        "`uv run pytest` passes with no regressions"
       ],
       "priority": 5,
       "passes": true,
-      "notes": "Leaving a completed game should just be navigation; no extra API call needed."
+      "notes": "cards.jsonl is JSON Lines — add 'element' key to each object using ralph/card_elements.json exclusively. The DB cards table needs a new migration (004) to add the element column — the seed script upserts element as a flat column AND inside the definition JSONB. test_seed_cards.py fixture strings and column assertion must be updated or tests will fail as soon as CardDefinition requires element."
     },
     {
-      "id": "US-UX-006",
-      "title": "Leaving ACTIVE games requires confirmation (forfeit warning dialog)",
-      "description": "As a player, I want a clear warning before forfeiting so I don't misclick.",
+      "id": "US-GM-006",
+      "title": "Elemental system — game state, rules engine, and API",
+      "description": "As a player, I want the board to have elemental cells so that where I play matters strategically. Placing a card on a matching element cell gives +1 to all its sides for that placement's initial comparisons.",
       "acceptanceCriteria": [
-        "In ACTIVE games, clicking Leave shows a confirmation dialog explaining it will forfeit",
-        "Cancel keeps the player in the game",
-        "Confirm triggers the leave/forfeit call and returns to /games",
-        "WAITING lobby leave remains fast (no forfeit language)"
+        "Add `board_elements: list[str] | None` to `GameState` in `app/models/game.py` (None for backward compat with old snapshots)",
+        "In game creation (`services/` or equivalent), generate `board_elements` as a list of 9 elements (one per cell) using `random.Random(seed).choices(['blood','holy','arcane','shadow','nature'], k=9)` — deterministic from the game seed",
+        "In `app/rules/reducer.py`, before calling `resolve_captures`, compute `elemental_bonus = 1 if board_elements[cell_index] == placed_card.element else 0` (treat missing board_elements as 0)",
+        "Pass the combined modifier `mists_modifier + elemental_bonus` to `resolve_captures` as the existing modifier parameter (no new parameter needed — it stacks naturally)",
+        "Elemental bonus applies only to the placed card's initial comparisons; the BFS combo chain receives zero elemental bonus (same as Mists — combos use raw stats)",
+        "Elemental bonus does NOT apply to Plus rule sum calculations (Plus always uses raw printed values)",
+        "Backward compatibility: if `board_elements` is None or absent from a persisted snapshot, elemental bonus is 0 for all placements",
+        "`GET /games/:gameId` response includes `board_elements` (it is already part of GameState JSONB — verify the field serializes correctly)",
+        "Add `elemental_triggered: bool` field to `LastMoveInfo` in `app/models/game.py`; set to `True` when an elemental bonus was applied (card element matched cell element), `False` otherwise; default `False` for backward compat with old snapshots",
+        "New tests in `tests/test_gm006_elemental.py`: match gives +1 bonus and can flip a capture; mismatch gives no bonus; combo chain has no elemental bonus; Plus sums ignore elemental; old snapshot without board_elements works; board_elements present in GET response; elemental_triggered is True on match, False on mismatch",
+        "`uv run pytest` passes with no regressions"
       ],
       "priority": 6,
       "passes": true,
-      "notes": "Prefer a shadcn/ui Dialog so keyboard focus and escape behavior are correct by default."
+      "notes": "Depends on US-GM-005 for element field on CardDefinition. board_elements is stored in the JSONB snapshot — no DB schema migration needed. Generation happens once at game creation and is deterministic. The modifier stacking (mists + elemental) uses the existing single modifier parameter already passed to resolve_captures. elemental_triggered in last_move follows the same additive pattern as plus_triggered."
     },
     {
-      "id": "US-UX-007",
-      "title": "Games list UX: opponent + truncated id + Win/Loss/Forfeit labels",
-      "description": "As a player, I want the games list to be scannable so I can quickly resume matches.",
+      "id": "US-GM-007",
+      "title": "Elemental system — UI: board cell elements and match highlighting",
+      "description": "As a player, I want to see the element of each board cell and get a visual cue when my selected card matches a cell's element, so I can plan elemental bonus plays.",
       "acceptanceCriteria": [
-        "Each row shows opponent email (or Waiting...) plus a truncated game id",
-        "Rows show status and, when COMPLETE, a result label for the current viewer: Win/Loss/Forfeit/Draw",
-        "Avoid showing the full UUID by default (still accessible via copy or secondary text if desired)",
-        "Row and button interactions have clear hover/disabled feedback and correct cursors"
+        "Each board cell displays a small element label or icon. Use short themed labels: Blood (🩸), Holy (✦), Arcane (✧), Shadow (◆), Nature (✿) — or simple colored text tags if emoji are problematic in the font stack. Empty cells should still show their element.",
+        "When a hand card is selected, cells whose element matches the selected card's element are visually highlighted (e.g., a distinct ring/glow color, separate from the standard 'can place here' indicator)",
+        "When no card is selected, no highlight is shown (element labels still visible but no glow)",
+        "Update `web/src/lib/api.ts` `GameState` interface to include `board_elements: string[] | null`",
+        "Update `web/src/lib/api.ts` `LastMoveInfo` interface to include `elemental_triggered: boolean`",
+        "When `game.last_move.elemental_triggered === true`, show a small 'Elemental!' callout alongside the existing capture feedback (use a gold/amber color distinct from Plus! cyan and standard amber); include which element fired (e.g. 'Blood Elemental!')",
+        "Element display works in dark mode and on mobile without cluttering the board",
+        "Add frontend tests: element label renders on empty cell; element label renders on occupied cell; selected card highlights matching cells; no highlight when no card selected; non-matching cells not highlighted; Elemental! callout shown when elemental_triggered=true; no callout when elemental_triggered=false",
+        "`bun run test --run` passes"
       ],
       "priority": 7,
       "passes": true,
-      "notes": "Truncation target: 8 chars is fine (GitHub-ish), but keep full id available somewhere for debugging."
+      "notes": "Depends on US-GM-006. board_elements index maps directly to cell_index (0-8, row-major). BoardGrid already receives board state — add board_elements and selectedCardElement as props. Keep element indicators small so they don't compete with card name/stat display."
     },
     {
-      "id": "US-UX-008",
-      "title": "API: add GET /cards for UI card rendering",
-      "description": "As a UI client, I want card definitions (name + side values) so gameplay is readable.",
+      "id": "US-GM-008",
+      "title": "Game rules documentation + Rules dialog refresh",
+      "description": "As a developer or player reading the repo (or the in-game Rules dialog), I want all four new mechanics documented accurately so the rules are unambiguous and the game is self-explanatory.",
       "acceptanceCriteria": [
-        "Add GET /cards endpoint returning card_key, name/version (display), and sides n/e/s/w",
-        "Frontend adds a small card-definition fetch/cache layer",
-        "Hand and board rendering can resolve card_key -> display fields",
-        "Add/adjust tests for the new endpoint"
+        "Update `CLAUDE.md` Key Domain Concepts section: Mists now shows Fog (−2) and Omen (+2); add a 'Plus rule' entry with the sum-matching definition; add an 'Elemental' entry with the 5 elements, match=+1 rule, and note that Plus/combo ignore it",
+        "Update `CARDS_SPEC.md`: add weak-side rule (min side ≤ 3 required); add element field documentation with valid values and thematic mapping; update any budget/validation table that is now stale",
+        "If a standalone `GAME_RULES_OVERVIEW.md` exists, update it; if not, create a concise one in the repo root covering the full rule set (board, capture, Plus, Mists, Elemental, archetypes, Sudden Death) — 1-2 pages maximum",
+        "Update the in-game rules dialog in `web/src/routes/game-room/GameRulesDialog.tsx` to include concise player-facing sections for: Plus rule (sum-matching capture) and Elemental (cell elements + match = +1 to placed card's comparisons; note Plus/combos ignore it)",
+        "Update `AGENTS.md` if any commands changed (they likely have not, but verify)",
+        "All four mechanics are described with enough precision that a new developer could implement them from the docs alone",
+        "This story is primarily docs + UI copy; no backend/gameplay logic changes required"
       ],
       "priority": 8,
       "passes": true,
-      "notes": "Use the server's CardStore as the source so UI stays snapshot-first and deterministic."
+      "notes": "Do this last so the docs accurately reflect the final implemented behavior. Cross-check the implemented code against what the docs say — fix any discrepancies found."
     },
     {
-      "id": "US-UX-009",
-      "title": "Card visuals: render name + side values on board and in hand (with hover enlargement)",
-      "description": "As a player, I need to see card stats clearly so I can make decisions.",
+      "id": "US-GM-009",
+      "title": "Card elements shown in hand drawer + preview",
+      "description": "As a player, I want to see a card's element in the hand drawer and in the card preview so I can plan Elemental plays without memorizing elements.",
       "acceptanceCriteria": [
-        "Cards render display name (not card_key) plus numeric side values (N/E/S/W) in both hand and board",
-        "Hovering a hand card improves readability (background change + slight scale/enlarge)",
-        "Selection state remains clear (selected vs unselected, disabled vs enabled)",
-        "Mobile-first sizing keeps cards legible without horizontal scrolling"
+        "In `web/src/routes/game-room/HandDrawer.tsx`, display the card's element on each card tile (small icon/label consistent with the board's element symbols)",
+        "In `web/src/routes/game-room/CardInspectPreview.tsx`, display the card's element alongside the card name and side values",
+        "Graceful fallback: if a card definition is missing `element`, show 'Element: —' (or omit the element row) without crashing",
+        "Add/update frontend tests (extend `web/src/__tests__/ux014.test.tsx`) to assert the preview dialog shows the element for a card with `element` present",
+        "`bun run test --run` passes"
       ],
       "priority": 9,
       "passes": true,
-      "notes": "Keep implementation lightweight (Tailwind + existing shadcn primitives)."
+      "notes": "This is UI copy-only; gameplay already uses elements. Reuse the existing element symbols mapping used by the board so the UI language is consistent."
     },
     {
-      "id": "US-UX-010",
-      "title": "Capture feedback: clear indication of flips/combos after a move",
-      "description": "As a player, I want immediate feedback when captures occur so I understand what happened.",
+      "id": "US-GM-010",
+      "title": "Board cell hover tooltip shows cell element",
+      "description": "As a player, I want hovering a board cell to show that cell's element so I can learn the board faster and confirm Elemental opportunities.",
       "acceptanceCriteria": [
-        "When captures occur, show a clear per-move indicator (count and/or which cards flipped)",
-        "Combos feel distinct from single flips (reuse capturedCells diff, no client-side rules)",
-        "Effects work in dark mode and remain readable on mobile",
-        "Buttons and interactive elements have consistent hover/disabled/cursor feedback"
+        "In `web/src/routes/game-room/BoardGrid.tsx`, every board cell includes a hover tooltip/title that indicates the cell's element (e.g. 'Element: Blood')",
+        "Occupied cells must still surface the card info tooltip; include both card info and cell element in the tooltip text",
+        "Empty cells must show the element tooltip even when they are not clickable",
+        "Add/update frontend tests (extend `web/src/__tests__/gm007.test.tsx`) to assert a cell renders with the expected element tooltip/title when `boardElements` is provided",
+        "`bun run test --run` passes"
       ],
       "priority": 10,
       "passes": true,
-      "notes": "Prefer using the existing board diff logic; only add new snapshot fields if truly needed."
+      "notes": "Prefer a simple `title` attribute for now (no new tooltip dependency)."
     },
     {
-      "id": "US-UX-011",
-      "title": "API: enrich last_move snapshot details (who/what/where)",
-      "description": "As a UI client, I want authoritative last-move details so I can highlight and describe the last action without guessing.",
+      "id": "US-GM-011",
+      "title": "Games list shows open games and sorts newest-first",
+      "description": "As a player, I want the Games list to show open (joinable) games without needing an invite link, and to be sorted from most recent to oldest so it is easy to find the game I just created.",
       "acceptanceCriteria": [
-        "GameState.last_move includes: player_index (0/1), card_key, and cell_index (0-8) in addition to mists_roll and mists_effect",
-        "Move submission updates these fields for every successful placement",
-        "Sudden Death and archetype usage do not break last_move population",
-        "Add/adjust tests to assert the new last_move fields are present and correct"
+        "Backend: update `GET /games` to return both: (a) the caller's games AND (b) open joinable games (WAITING with exactly 1 player) that the caller is not already in",
+        "Backend: order the combined list so open joinable games appear before completed games, and overall sort is most recent -> oldest by creation time",
+        "Backend: do not leak private games; only include joinable WAITING lobbies with one player for the 'open games' portion",
+        "Frontend: update `web/src/routes/Games.tsx` to render the open games in the list (they should appear before completed games), and ensure the list is newest-first",
+        "Frontend: open games show the host email (or 'Waiting...' fallback) and a clear status badge",
+        "Add/update tests: backend tests cover open-games inclusion/exclusion + ordering; frontend tests cover ordering and open-game rendering",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
       ],
       "priority": 11,
       "passes": true,
-      "notes": "Keep this snapshot-first; do not add client-side rules."
+      "notes": "We intentionally avoid auto-joining from the list: clicking navigates to the game room; joining still requires an explicit action. If creation timestamps are not currently available in the API, add what is needed to sort deterministically by creation time."
     },
     {
-      "id": "US-UX-012",
-      "title": "Last move highlight + text callout in game room",
-      "description": "As a player, I want to quickly understand what just happened.",
+      "id": "US-GM-012",
+      "title": "Use anchors for route navigation",
+      "description": "As a user (and for accessibility), I want navigation-only UI controls to be anchors/links so they behave like standard navigation (open in new tab, copy link, etc.).",
       "acceptanceCriteria": [
-        "Game room highlights the last placed cell for a short period after updates",
-        "Show a short callout line using snapshot data (e.g., 'Opponent played <Name>')",
-        "Works on mobile and in dark mode",
-        "No client-side inference: all details come from snapshot/definitions"
+        "In `web/src/routes/Games.tsx`, the game list rows use a routable link (`<a>`/`<Link>`) instead of a `<button>` calling `navigate()`",
+        "In `web/src/routes/GameRoom.tsx`, 'Back to Games' uses a link instead of a `<button>` calling `navigate()`",
+        "Styling and focus-visible rings are preserved (use `Button` `asChild` if needed)",
+        "Update frontend tests that currently expect `role=button` for those navigation rows/controls",
+        "`bun run test --run` passes"
       ],
       "priority": 12,
       "passes": true,
-      "notes": "Requires US-UX-011 and US-UX-008/US-UX-009 for names."
+      "notes": "Only convert elements whose sole purpose is route navigation; keep real actions as `<button>`."
     },
     {
-      "id": "US-UX-013",
-      "title": "Realtime status indicator + manual refresh/resync",
-      "description": "As a player, I want to know if live updates are working and be able to resync when they aren't.",
+      "id": "US-GM-013",
+      "title": "Limit users to one non-complete game at a time",
+      "description": "As a player, I want the app to prevent me from having multiple in-progress games at once so I don't accidentally start many lobbies or juggle concurrent matches.",
       "acceptanceCriteria": [
-        "Show a small connection state indicator (Live / Reconnecting) in the game room",
-        "Provide a manual Refresh action that refetches GET /games/:gameId",
-        "When realtime disconnects, keep the existing interval refetch fallback and surface the state",
-        "Update/extend tests where practical (at least unit-level state rendering)"
+        "Backend: block creating a new game if the caller already has any non-complete game (status=WAITING or ACTIVE); return 409 with a clear message",
+        "Backend: block joining an open game if the caller already has any non-complete game; return 409 with a clear message",
+        "Backend: error message includes the existing game id when available so the UI can guide the user back",
+        "Frontend: surface the error when creating from `web/src/routes/Games.tsx` and when joining from the waiting screen; copy should explain they must finish/forfeit the existing game",
+        "Add/update backend tests covering create/join blocking behavior",
+        "Add/update frontend tests covering the error display",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
       ],
       "priority": 13,
       "passes": true,
-      "notes": "Keep it minimal; no complicated reconnection logic beyond what exists."
+      "notes": "Definition of 'active' for this constraint is 'non-complete': both WAITING and ACTIVE count; COMPLETE does not."
     },
     {
-      "id": "US-UX-014",
-      "title": "Mobile card inspect: tap-to-preview for hand and board",
-      "description": "As a mobile player, I need a way to inspect cards since hover effects don't exist on touch.",
+      "id": "US-GM-014",
+      "title": "Game room layout redesign (board + hand always visible)",
+      "description": "As a player, I want the board and my hand visible at the same time so I can play without the UI covering the play area or forcing extra open/close steps.",
       "acceptanceCriteria": [
-        "Tapping a card (hand or board) opens a readable preview (dialog/sheet) with name + N/E/S/W",
-        "Preview is accessible (focus trap, close button, escape key)",
-        "Does not interfere with move placement UX (placing still requires explicit selection + cell tap)",
-        "Works well in dark mode"
+        "In the active game UI, the board and the player's hand are both visible simultaneously (no fixed overlay hand drawer blocking the board)",
+        "Replace the fixed-bottom `HandDrawer` pattern with an in-flow hand panel (e.g. `HandPanel`) rendered alongside the board in `web/src/routes/game-room/ActiveGameView.tsx`",
+        "Implement a desktop/tablet layout that provides a secondary sidebar region for non-critical info/actions (e.g. rules/leave/archetype details/last-move feed)",
+        "Mobile layout remains playable: board stays visible; hand remains accessible (horizontal hand strip or compact panel); secondary sidebar content becomes a bottom drawer or collapsible panel",
+        "Remove `drawerOpen` + `useMeasuredHeight` padding workaround from `web/src/routes/GameRoom.tsx` as part of the new layout",
+        "Update/add frontend tests asserting the board and hand render at the same time in active games and the old drawer toggle affordance is removed",
+        "`bun run test --run` passes"
       ],
       "priority": 14,
       "passes": true,
-      "notes": "Use shadcn Dialog/Sheet; keep the component reusable."
+      "notes": "Primary goal is interaction flow and visibility. Keep the redesign scoped to the game room views; avoid broad design-system changes."
     },
     {
-      "id": "US-UX-015",
-      "title": "Accessibility and interaction polish pass",
-      "description": "As a player, I want the UI to be usable with keyboard and readable with good contrast.",
+      "id": "US-GM-015",
+      "title": "Guided action flow (select card -> optional power -> place)",
+      "description": "As a player, I want a clear, guided flow during my turn so I never have to guess what to do next or close UI panels just to complete a move.",
       "acceptanceCriteria": [
-        "Interactive elements have visible focus styles (keyboard navigation works across key screens)",
-        "Color/contrast remains readable in dark mode (text and status indicators)",
-        "Hand/board interactions are operable without a mouse where feasible",
-        "Update/add a small unit test to prevent regression (e.g., presence of focusable controls)"
+        "Add a compact, always-visible 'action panel' near the hand (or integrated into the hand panel) that shows the current step (e.g. 'Select a card', 'Choose a cell')",
+        "When a card is selected, show a selected-card summary with a clear 'Cancel' control that deselects the card",
+        "Move the archetype power controls into the action panel so the player can toggle power and (if required) choose the direction without switching contexts",
+        "If an archetype power requires a direction (skulker/presence), the UI clearly indicates direction selection is required and disables placement affordances until selected",
+        "When it is not the player's turn, the action panel indicates 'Opponent's turn' and hand interactions are disabled",
+        "Add/update frontend tests to cover the step text and required-direction gating behavior",
+        "`bun run test --run` passes"
       ],
       "priority": 15,
       "passes": true,
-      "notes": "Keep this as a bounded pass; avoid redesigning everything."
+      "notes": "Keep the reducer/gameplay unchanged; this is a UX/clarity pass that reuses existing state (`selectedCard`, `usePower`, `powerSide`, `movePending`, `current_player_index`)."
+    },
+    {
+      "id": "US-GM-016",
+      "title": "Secondary sidebar (desktop) + bottom drawer (mobile)",
+      "description": "As a player, I want secondary info/actions (rules, leave/forfeit, archetypes, last move) visible but clearly secondary so they don't compete with the board and hand.",
+      "acceptanceCriteria": [
+        "In active games, render a visible secondary region that contains: Rules entrypoint, Leave/forfeit entrypoint, archetype info (both players), and a small recent-events area (last move + special callouts)",
+        "Desktop/tablet: secondary region is a right sidebar that stays visible and scrolls independently from the board/hand region",
+        "Mobile: secondary region collapses into a bottom drawer with a visible 'peek' handle/tab; expanding it is explicit and does not change gameplay state",
+        "The primary play region (board + hand/action panel) remains visible and usable without opening the secondary drawer",
+        "Add/update frontend tests covering the presence of the sidebar content and mobile drawer open/close",
+        "`bun run test --run` passes"
+      ],
+      "priority": 16,
+      "passes": true,
+      "notes": "This is about hierarchy and layout. Keep the copy tight; avoid adding new routes. Prefer using existing components (`ForfeitDialog`, `GameRulesDialog`, `ArchetypePowerAside`) within the new sidebar/drawer."
     }
   ]
 }

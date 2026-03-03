@@ -9,6 +9,16 @@ We use [mise](https://mise.jdx.dev) to manage runtime/tool versions for consiste
 - Install mise: https://mise.jdx.dev/installing-mise.html
 - After cloning, enable mise for your shell and install pinned tools (if configured): `mise install`
 
+## Seed data
+
+Seed `cards.jsonl` into the Supabase `public.cards` table (requires `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` in your environment; if you omit the path it defaults to `./cards.jsonl`):
+
+```bash
+uv run python scripts/seed_cards.py cards.jsonl
+```
+
+More Supabase setup details: `docs/supabase_dev_setup.md`.
+
 ## Ralph (autonomous agent loop)
 
 This repo includes a Ralph-style autonomous loop runner under `ralph/` that iterates through one user story at a time.

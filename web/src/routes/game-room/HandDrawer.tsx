@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
+import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 
@@ -161,6 +162,14 @@ export function HandDrawer({
                             </div>
                             <span>{def ? def.sides.s : ""}</span>
                           </div>
+                          {def?.element && (
+                            <span
+                              className="absolute bottom-0 left-0 text-[9px] leading-none p-px opacity-70 select-none pointer-events-none"
+                              aria-label={`element ${def.element}`}
+                            >
+                              {ELEMENT_SYMBOLS[def.element] ?? def.element}
+                            </span>
+                          )}
                         </button>
                         <button
                           aria-label={`inspect ${displayName}`}

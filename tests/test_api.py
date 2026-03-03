@@ -28,6 +28,7 @@ def _make_card(idx: int) -> CardDefinition:
         is_named=False,
         sides=CardSides(n=4, e=4, s=4, w=4),
         set="test",
+        element="shadow",
     )
 
 
@@ -241,9 +242,9 @@ def test_409_on_stale_state_version(client: TestClient) -> None:
 def test_cannot_join_twice(client: TestClient) -> None:
     resp = _alice(client, "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
-    # Alice tries to join her own game again
+    # Alice tries to join her own game again — blocked by active-game constraint (409)
     resp = _alice(client, "post", f"/games/{game_id}/join", json={})
-    assert resp.status_code == 400
+    assert resp.status_code == 409
 
 
 def test_archetype_unknown_player_returns_403(client: TestClient) -> None:

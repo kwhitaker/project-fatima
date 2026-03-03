@@ -173,7 +173,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "The `layout` prop on motion.div is key for the smooth gap-closing when a card leaves the hand — it automatically animates position changes. `AnimatePresence` requires a stable `key` on each child — use `card_key` which is already unique. The dim effect on non-selected cards is subtle but important for directing attention. Keep the existing preview/inspect button (ⓘ) functional — it should still work on the motion-wrapped card."
     },
     {

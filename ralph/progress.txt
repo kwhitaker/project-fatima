@@ -105,6 +105,17 @@ Started: 2026-03-03
 - Learnings: Backend already returns character_key in /api/cards — just needed to add it to the frontend type. JSON static import works cleanly with Vite+TS (resolveJsonModule already enabled). Multi-emoji strings (🌕🐺) render fine at text-2xl; no overflow handling needed at current card sizes.
 ---
 
+## 2026-03-03 13:57 - US-UXP-010
+- Replaced static `<button>` with `motion.button` for hand cards in HandPanel.tsx and HandDrawer.tsx
+- Selected card animates to lifted state (scale 1.1, y: -8) with primary-color boxShadow glow; non-selected cards dim to opacity 0.7
+- Added AnimatePresence for card exit animations (scale to 0 + fade) and layout prop for smooth gap-closing when cards leave the hand
+- Added whileHover (scale 1.05, y: -4) for card preview lift; removed CSS transition-transform/hover:scale classes (now handled by motion)
+- Updated ux009 test to reflect motion-based hover (no longer checks for CSS hover:scale class)
+- Tests: 284 frontend passed, 553 backend passed
+- Files changed: HandPanel.tsx, HandDrawer.tsx, uxp010.test.tsx (new), ux009.test.tsx (updated)
+- Learnings: motion.div wrapper with `animate` prop handles selection state cleanly — conditional object for selected/hasSelection/default avoids class-based approach. `layout` prop on motion.div enables automatic position transitions when siblings are removed via AnimatePresence.
+---
+
 ## 2026-03-03 13:53 - US-UXP-009
 - Replaced CSS card-captured/card-flip animations with Motion-powered sequential capture chain in BoardGrid.tsx: captured cards flip (scaleX 1→0→1 with brightness flash) one by one with staggered delay (0.35s base + 0.3s per card)
 - Placed card pulses (scale overshoot to 1.08) when captures exist, drawing attention to the source

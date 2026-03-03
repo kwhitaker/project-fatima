@@ -149,3 +149,14 @@ Started: 2026-03-03
 - Learnings: AnimatePresence with conditional `{open && (...)}` replaces `if (!open) return null` pattern cleanly. All durations kept at 0.15s for snappy feel. Existing tests that assert immediate DOM removal after close need `waitFor` when AnimatePresence is introduced.
 ---
 
+## 2026-03-03 15:10 - US-UXP-016
+- Replaced Presence archetype with Intimidate: after placing a card, choose one adjacent opponent card whose facing side is replaced with min(n,e,s,w) for this comparison only
+- Backend: renamed PRESENCE→INTIMIDATE enum, replaced `presence_boost_direction` (str) with `intimidate_target_cell` (int 0-8) across PlacementIntent, MoveRequest, game_service, captures.py
+- Reducer validates target cell is adjacent to placement, contains opponent card, and is not empty/own
+- captures.py: substitutes neighbor's facing side with its min printed side when neighbor_index matches intimidate target
+- Frontend: updated Archetype type, archetypesCopy, replaced N/E/S/W direction picker with two-step cell picker (click empty cell → click adjacent opponent card), added intimidatePendingCell state
+- Tests: 556 backend passed, 310 frontend passed; 15 new test_intimidate.py tests covering debuff, validation, once-per-game
+- Files changed: game.py, reducer.py, captures.py, games.py, game_service.py, test_intimidate.py (new), test_presence.py (deleted), test_combo_captures.py, api.ts, GameRoom.tsx, ActionPanel.tsx, ActiveGameView.tsx, HandDrawer.tsx, ArchetypeModal.tsx, GameRulesDialog.tsx, archetypesCopy.ts, routes.test.tsx, ux004.test.tsx, CLAUDE.md, GAME_RULES_OVERVIEW.md
+- Learnings: Be careful with Plus rule in tests — equal sums across adjacent cells trigger Plus captures before standard comparisons, masking the intended test scenario. Use distinct sums in non-Plus tests.
+---
+

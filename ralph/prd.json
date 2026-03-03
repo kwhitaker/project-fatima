@@ -246,7 +246,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 14,
-      "passes": false,
+      "passes": true,
       "notes": "Skulker buffs YOUR card (+2 to one side). Intimidate debuffs THEIR card (forces weakest side). Different decision space: Skulker is predictable (you know your stats), Intimidate is tactical (you need to know the opponent's card stats and pick the best target). The debuff is ephemeral — only affects this one comparison, does not permanently modify the card. If no valid adjacent opponent card exists, Intimidate cannot be used on that placement."
     },
     {

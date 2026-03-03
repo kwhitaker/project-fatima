@@ -49,3 +49,13 @@ Started: 2026-03-03
 - Learnings: Press Start 2P is very small; 14px minimum for buttons works. VT323 at 18px base font-size provides good readability. Using CSS h1-h6 rule covers dialog titles automatically without touching component code.
 ---
 
+## 2026-03-03 13:20 - US-UXP-005
+- Set `--radius: 0px` in `:root` to eliminate all border-radius globally from shadcn/ui
+- Replaced all hardcoded `rounded-*` Tailwind classes with `rounded-none` across 14 files (kept `rounded-full` only on the tiny realtime status dot)
+- Added chunky borders: `border-[3px]` on board cells, `border-2` on hand cards, buttons, dialog frames, game list items, form inputs, drawer, archetype asides
+- Button component updated: all variants get `border-2` with appropriate border-color per variant (ghost/link use `border-transparent`)
+- Tests: 218 frontend passed
+- Files changed: index.css, button.tsx, BoardGrid.tsx, HandPanel.tsx, HandDrawer.tsx, ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, ArchetypePowerAside.tsx, Games.tsx, Login.tsx, ResetPassword.tsx, GameRoom.tsx
+- Learnings: `--radius: 0px` handles shadcn components automatically but app code had 19 hardcoded `rounded-*` instances. The `border-2` addition on buttons required setting border-color per variant to avoid ghost/link variants showing unexpected borders.
+---
+

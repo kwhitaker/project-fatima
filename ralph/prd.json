@@ -83,7 +83,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "The `--radius` CSS variable controls all shadcn/ui component border-radius globally, so setting it to 0 handles Button, Dialog, Card, etc. automatically. The manual work is finding hardcoded Tailwind `rounded-*` classes in app code (not in shadcn component files). The chunky border addition is the extra step that makes it feel retro rather than just 'sharp modern'. Files with `rounded` classes: ActionPanel, ActiveGameView, BoardGrid, CardInspectPreview, GameRulesDialog, HandDrawer, HandPanel, GameRoom, Games, ArchetypeModal, ArchetypePowerAside, ForfeitDialog, CompleteGameView, Login, ResetPassword, button.tsx."
     },
     {

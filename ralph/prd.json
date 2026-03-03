@@ -232,6 +232,173 @@
       "notes": "The authoritative emoji mapping is `ralph/card_emojis.json`, keyed by `character_key` (not `card_key`). Cards share character_key across tiers (e.g. all 3 Strahd tiers → `character_key: strahd_von_zarovich` → 🧛). The CardDefinition type doesn't currently include `character_key` — it may need to be added to the API response or the mapping could use `card_key` with a prefix-strip helper. Check what fields the `/api/cards` endpoint returns. Multi-emoji strings range from 1 glyph (most cards) to 2 glyphs (werewolf, party members, Izek, Decibelus). The longest are 2 emoji wide — test that these fit at the smallest card size (hand panel ~w-20). Emoji render at native OS size so `font-size` controls their scale directly."
     },
     {
+      "id": "US-UXP-016",
+      "title": "Presence → Intimidate archetype overhaul",
+      "description": "As a player, I want the Presence archetype replaced with Intimidate — after placing a card, choose one adjacent opponent card whose facing side is replaced with its lowest side value for this comparison only (once per game) — so there's a meaningful tactical debuff archetype distinct from Skulker's self-buff.",
+      "acceptanceCriteria": [
+        "In `app/rules/archetypes.py`: remove `apply_presence_boost`, add Intimidate logic that substitutes the target neighbor's facing side with `min(n,e,s,w)` for this comparison only",
+        "In `app/models/game.py`: replace `presence_boost_direction` on `PlacementIntent` with `intimidate_target_cell` (int, 0-8) indicating which adjacent opponent card to debuff",
+        "In `app/rules/captures.py`: in `resolve_captures`, when Intimidate is active on a neighbor, substitute that neighbor's facing side with its lowest printed side value for the comparison",
+        "In `app/rules/reducer.py`: wire up the new intent field, validate target cell is adjacent to placement cell and contains an opponent-owned card",
+        "Rename `tests/test_presence.py` → `tests/test_intimidate.py` and rewrite tests to cover: valid intimidate (debuffs facing side), invalid target (not adjacent, empty cell, own card), interaction with Mists and Elemental modifiers",
+        "Frontend: update `archetypesCopy.ts` description, change `ActionPanel.tsx` + `HandDrawer.tsx` from N/E/S/W direction picker to adjacent-cell picker for Intimidate",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": "Skulker buffs YOUR card (+2 to one side). Intimidate debuffs THEIR card (forces weakest side). Different decision space: Skulker is predictable (you know your stats), Intimidate is tactical (you need to know the opponent's card stats and pick the best target). The debuff is ephemeral — only affects this one comparison, does not permanently modify the card. If no valid adjacent opponent card exists, Intimidate cannot be used on that placement."
+    },
+    {
+      "id": "US-UXP-017",
+      "title": "Castlevania theme audit — buttons & interactive elements",
+      "description": "As a player, I want buttons and interactive elements to actually use the Castlevania color palette prominently — blood-red primaries, gold accents, visible borders in dark mode — so the gothic theme is surfaced in the UI, not just defined in CSS variables.",
+      "acceptanceCriteria": [
+        "Promote key action buttons from `outline` → `default` variant where they represent primary/important actions (archetype selection, direction buttons in power picker)",
+        "Make `outline` variant more visible in dark mode: lighter border color and subtle bg tint so it reads against the dark background",
+        "Make `ghost` buttons more visible: subtle text color using accent (gold) instead of default foreground",
+        "Add hover states with accent color (gold) glow/border for interactive elements",
+        "Audit non-button interactive elements: board cells (hover state), hand cards (border/glow), game list items (hover), inputs/selects — ensure they use the palette",
+        "Ensure blood-red and dull-gold colors are visible and prominent in the dark UI",
+        "`bun run test --run` passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": "44% of buttons use `outline` variant (transparent bg, barely-visible border in dark mode). Only 25% use `default` (the red one). The Castlevania palette is defined in CSS variables but not surfaced in interactive elements. This is a CSS + TSX audit story — touch button.tsx variants and component-level className overrides."
+    },
+    {
+      "id": "US-UXP-018",
+      "title": "Login page branding (title + vampire emoji)",
+      "description": "As a player, I want the login page to show the Yugi-Strahd brand — a large vampire emoji as visual centerpiece, the title in Press Start 2P font, and an optional tagline — so the first screen I see establishes the game's identity.",
+      "acceptanceCriteria": [
+        "Add large vampire emoji (🧛) as visual centerpiece above the login form",
+        "Add 'Yugi-Strahd' title in Press Start 2P font below the emoji",
+        "Optional tagline in VT323: 'A Curse of Strahd Card Game'",
+        "Maintain existing form functionality (sign in / sign up / forgot password modes)",
+        "`bun run test --run` passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": "Simple frontend-only branding change to Login.tsx. The fonts (Press Start 2P, VT323) are already loaded from US-UXP-004. Keep the form functional — this is additive visual branding above the existing form."
+    },
+    {
+      "id": "US-UXP-019",
+      "title": "Card placement animation punch-up",
+      "description": "As a player, I want card placement to feel impactful — a brief slam overshoot, radial impact ripple, micro-shake, and Mists visual feedback — so placing a card feels like a decisive move, not a quiet pop.",
+      "acceptanceCriteria": [
+        "Add a 'slam' effect: card scales slightly past 1 (to ~1.08) then settles back with a spring overshoot",
+        "Add a radial 'impact' ripple emanating from the placed card (CSS pseudo-element or motion.div, fading outward)",
+        "Brief board-grid micro-shake on placement (translateX oscillation, 2-3 frames, subtle)",
+        "Mists feedback visual: on Fog roll, card briefly tints blue; on Omen, card briefly glows gold — before the comparison resolves",
+        "`bun run test --run` passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": "Builds on the existing Motion-powered placement animation from US-UXP-008. The slam is a spring overshoot (scale to 1.08 then settle to 1). The ripple can be a CSS pseudo-element with scale+opacity animation. The micro-shake is a quick translateX oscillation on the board grid container. Mists tints are brief color overlays keyed to the last_move.mists_roll value."
+    },
+    {
+      "id": "US-UXP-020",
+      "title": "Capture & combo animation punch-up",
+      "description": "As a player, I want capture and combo animations to escalate in intensity — bigger flashes, combo counter overlays, chain lines, and ownership color wipes — so multi-captures feel dramatically different from single captures.",
+      "acceptanceCriteria": [
+        "Each successive combo capture should escalate: slightly bigger brightness flash, optional particle burst, increasing intensity",
+        "Add a brief 'ownership transfer' color wipe during the scaleX=0 midpoint (card bg transitions from opponent color to your color)",
+        "Combo counter overlay: floating '+2', '+3' numbers that pop up and fade on successive captures",
+        "Chain line: brief flash of a connecting line/pulse between the capturing card and captured card",
+        "Emit custom events at each capture step as sound hook points (for US-UXP-015 later)",
+        "`bun run test --run` passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": "Builds on US-UXP-009's sequential capture chain. The escalation should be subtle but noticeable — brightness flash scales up by ~10% per step in the chain. The combo counter is a floating motion.div with AnimatePresence. Chain lines can be SVG or absolutely-positioned divs connecting cell centers. The custom events (dispatchEvent) will be consumed by US-UXP-015's sound module later."
+    },
+    {
+      "id": "US-UXP-021",
+      "title": "Victory animation",
+      "description": "As a player, I want a dramatic full-screen victory animation — gothic 8-bit themed with bat swarms, blood-red and gold confetti, and 'VICTORY' in pixel font — so winning feels like a triumphant moment.",
+      "acceptanceCriteria": [
+        "Full-screen overlay with gothic/8-bit victory theme",
+        "'VICTORY' text in Press Start 2P, large, with stepped scale-in animation",
+        "Bat swarm particle effect (small bat emoji or pixel bat sprites flying across screen)",
+        "Blood-red and gold color burst/confetti (pixel-style, stepped animations — not smooth)",
+        "Cards you own on the board briefly glow/pulse in sequence",
+        "Auto-dismiss after ~3s or on click",
+        "`bun run test --run` passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": "Show in CompleteGameView.tsx when the current player won. The bat swarm can be a set of motion.divs with randomized flight paths (translateX/Y keyframes). Use stepped timing functions for the pixel aesthetic. The card glow sequence should happen before or alongside the overlay. Keep it fun but not so long that it delays starting a new game."
+    },
+    {
+      "id": "US-UXP-022",
+      "title": "Defeat animation",
+      "description": "As a player, I want a solemn defeat screen — dark fog overlay, slow 'DEFEAT' fade-in, screen desaturation, and drifting mist particles — so losing feels atmospheric and gothic rather than just a status message.",
+      "acceptanceCriteria": [
+        "Full-screen dark overlay with fog/mist effect",
+        "'DEFEAT' text in Press Start 2P with a slow fade-in (solemn, not punchy)",
+        "Screen desaturates briefly (CSS filter: grayscale)",
+        "Pixel-art fog/mist particles drift across the screen",
+        "Subtle red vignette effect at screen edges",
+        "Auto-dismiss after ~3s or on click",
+        "`bun run test --run` passes"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": "Show in CompleteGameView.tsx when the current player lost. Contrast with victory: defeat is slow and solemn, victory is fast and punchy. The desaturation can be applied to the game board behind the overlay via CSS filter. The fog particles are small semi-transparent divs drifting horizontally. The vignette is a radial-gradient overlay (transparent center → dark red edges)."
+    },
+    {
+      "id": "US-UXP-023",
+      "title": "Auto-complete statistically decided games",
+      "description": "As a player, I want the game to end early when the outcome is mathematically decided — if one player owns enough cards that the opponent cannot win even by capturing every remaining cell — so we don't have to play out inevitable games.",
+      "acceptanceCriteria": [
+        "In `app/rules/reducer.py`: after each placement + capture resolution, check if the game is decided. Condition: `player_cells >= 5 + remaining_empty_cells` (leader owns enough that opponent can't reach majority even with all remaining cells)",
+        "If decided, set status=COMPLETE with the winner, add `early_finish: true` flag in the result",
+        "In `app/models/game.py`: add `early_finish` bool to `GameResult` (default False)",
+        "Handle Sudden Death interaction: early finish check applies within SD rounds too",
+        "Frontend `CompleteGameView.tsx`: if `early_finish`, show appropriate message ('Inevitable victory' / 'The darkness claims this match')",
+        "Remaining empty cells should visually indicate they won't be played",
+        "`uv run pytest` passes",
+        "`bun run test --run` passes"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": "The math: on a 3x3 board (9 cells), you need 5+ to win. If you own 6 cells and there are 2 empty cells left, the opponent can't reach 5 even if they get both remaining cells (they'd have at most 3). Formula: `my_cells >= 5 + empty_cells` means I've clinched. This should trigger immediately after capture resolution in the reducer, before advancing the turn."
+    },
+    {
+      "id": "US-UXP-024",
+      "title": "Unified dev command via mise",
+      "description": "As a developer, I want `mise run dev` to start both the FastAPI backend and Vite frontend concurrently — plus `mise run test`, `mise run lint`, `mise run format` — so I have a single command to spin up the full dev environment.",
+      "acceptanceCriteria": [
+        "Create `.mise.toml` with `[tools]` section specifying `bun = 'latest'`",
+        "Add `dev` task that runs `dev:api` and `dev:ui` concurrently",
+        "Add `dev:api` task: `uv run uvicorn app.main:app --reload`",
+        "Add `dev:ui` task: `bun run dev` with `dir = 'web'`",
+        "Add `test` task that runs backend pytest and frontend vitest",
+        "Add `lint` and `format` tasks using ruff",
+        "Verify `mise run dev` starts both servers",
+        "Document in README.md"
+      ],
+      "priority": 22,
+      "passes": false,
+      "notes": "mise is a polyglot dev tool manager (successor to rtx/asdf). The `.mise.toml` format supports concurrent task execution natively. If mise is not installed, the individual commands still work — this is additive DX, not a hard dependency. Keep the toml simple and well-commented."
+    },
+    {
+      "id": "US-UXP-025",
+      "title": "Dev interaction playground",
+      "description": "As a developer, I want a `/dev/playground` route (dev-only) that renders mock game states triggering every animation and visual effect — card placement, captures, combos, Plus, Elemental, Mists, victory, defeat — so I can rapidly iterate on visual effects without needing a real game.",
+      "acceptanceCriteria": [
+        "New route `/dev/playground` only rendered when `import.meta.env.DEV` is true",
+        "Renders buttons for each scenario: card placement animation, single capture, combo chain (3+ captures), Plus trigger, Elemental trigger, Mists effects (Fog + Omen), victory screen, defeat screen",
+        "Each button triggers the animation sequence with hardcoded mock game state data",
+        "Mock data should exercise edge cases: max combo chain, Plus + Elemental on same move, Fog on placement",
+        "Page is not accessible in production builds",
+        "`bun run test --run` passes"
+      ],
+      "priority": 23,
+      "passes": false,
+      "notes": "This is a development tool, not user-facing. Use `import.meta.env.DEV` guard so the route and its code are tree-shaken from production builds. The mock data can be inline constants — no need for a proper fixture system. Each scenario button should render the relevant game component (BoardGrid, CompleteGameView, etc.) with the mock state, then auto-reset after the animation completes. Useful for rapid iteration on US-UXP-019 through US-UXP-022."
+    },
+    {
       "id": "US-UXP-014",
       "title": "Auto-generate frontend TypeScript types from backend OpenAPI schema",
       "description": "As a developer, I want frontend TypeScript types to be auto-generated from the FastAPI OpenAPI schema so that backend and frontend types stay in sync automatically without manual maintenance.",
@@ -246,7 +413,7 @@
         "`bun run test --run` passes",
         "`uv run pyright` passes (no backend changes expected, but verify)"
       ],
-      "priority": 14,
+      "priority": 24,
       "passes": false,
       "notes": "This is a DX story, not user-facing UX. FastAPI auto-generates an OpenAPI 3.1 schema at `/openapi.json` from Pydantic models. `openapi-typescript` reads this and outputs TS types. The generated types will use the OpenAPI naming (which matches Python snake_case since FastAPI preserves Pydantic field names). Key gotcha: the backend must be running when the typegen script executes (it fetches from localhost). An alternative is to first dump the schema to a JSON file (`python -c 'from app.main import app; import json; print(json.dumps(app.openapi()))' > openapi.json`) and then point openapi-typescript at the file — this avoids needing the server running. Either approach is fine. The re-export pattern keeps the migration non-breaking: `export type { GameState } from './api-types.generated'` in api.ts."
     },
@@ -264,7 +431,7 @@
         "Sounds must not block or delay game actions — fire-and-forget, never awaited in the game flow",
         "`bun run test --run` passes"
       ],
-      "priority": 15,
+      "priority": 25,
       "passes": false,
       "notes": "Web Audio API is available in all modern browsers with zero dependencies. The key pattern: create an OscillatorNode with the desired waveform (square/sawtooth for 8-bit feel), connect through a GainNode for volume envelope, schedule start/stop times, and let the nodes garbage-collect. Browser autoplay policy requires AudioContext to be created inside a user gesture handler — the `initAudio()` call should happen on the first click/tap anywhere in the app (add a one-time event listener). Square wave oscillators naturally sound 8-bit. For the combo arpeggio, schedule multiple oscillators at staggered `startTime` offsets. Keep all gains low (~0.1-0.15) so sounds are atmospheric, not jarring. The mute toggle can be a simple speaker icon (🔊/🔇) — no need for a volume slider."
     }

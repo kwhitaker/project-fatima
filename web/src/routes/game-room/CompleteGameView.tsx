@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import type { CardDefinition, GameState } from "@/lib/api";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { VictoryOverlay } from "@/routes/game-room/VictoryOverlay";
+import { DefeatOverlay } from "@/routes/game-room/DefeatOverlay";
 
 export function CompleteGameView({
   game,
@@ -19,8 +20,14 @@ export function CompleteGameView({
   onPreviewCard: (cardKey: string, def?: CardDefinition) => void;
 }) {
   const isWinner = game.result?.winner === myIndex && !game.result?.is_draw;
+  const isLoser =
+    game.result?.winner !== undefined &&
+    game.result.winner !== myIndex &&
+    !game.result.is_draw;
   const [showVictory, setShowVictory] = useState(isWinner);
+  const [showDefeat, setShowDefeat] = useState(isLoser);
   const dismissVictory = useCallback(() => setShowVictory(false), []);
+  const dismissDefeat = useCallback(() => setShowDefeat(false), []);
 
   // Cells owned by the winner for sequential victory glow
   const victoryCells = useMemo(() => {
@@ -33,6 +40,7 @@ export function CompleteGameView({
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
       {showVictory && <VictoryOverlay onDismiss={dismissVictory} />}
+      {showDefeat && <DefeatOverlay onDismiss={dismissDefeat} />}
       <div className="mt-4 space-y-4">
         {/* Result banner */}
         <div className="p-4 rounded border">

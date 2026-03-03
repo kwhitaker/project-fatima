@@ -43,18 +43,11 @@ export function ActiveGameView({
 }) {
   const {
     selectedCard,
-    onSelectCard,
     selectedCardElement,
     movePending,
     usePower,
-    onUsePowerChange,
     powerSide,
-    onPowerSideToggle,
     intimidatePendingCell,
-    onCancelIntimidatePending,
-    archetypePending,
-    archetypeError,
-    onSelectArchetype,
     onPreviewCard,
     leaving,
     onOpenLeaveConfirm,
@@ -89,7 +82,9 @@ export function ActiveGameView({
   // Sound: Plus trigger
   const prevPlusRef = useRef<string | null>(null);
   useEffect(() => {
-    const key = game.last_move?.plus_triggered ? `${game.last_move.cell_index}` : null;
+    const key = game.last_move?.plus_triggered
+      ? `${game.last_move.cell_index}`
+      : null;
     if (key && key !== prevPlusRef.current) {
       playPlus();
     }
@@ -99,7 +94,9 @@ export function ActiveGameView({
   // Sound: Elemental trigger
   const prevElemRef = useRef<string | null>(null);
   useEffect(() => {
-    const key = game.last_move?.elemental_triggered ? `${game.last_move.cell_index}` : null;
+    const key = game.last_move?.elemental_triggered
+      ? `${game.last_move.cell_index}`
+      : null;
     if (key && key !== prevElemRef.current) {
       playElemental();
     }
@@ -122,9 +119,11 @@ export function ActiveGameView({
             exit={{ opacity: 0, x: 20 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
-            {game.last_move.player_index === myIndex ? "You" : "Opponent"} played{" "}
+            {game.last_move.player_index === myIndex ? "You" : "Opponent"}{" "}
+            played{" "}
             <span className="font-medium">
-              {cardDefs.get(game.last_move.card_key)?.name ?? game.last_move.card_key}
+              {cardDefs.get(game.last_move.card_key)?.name ??
+                game.last_move.card_key}
             </span>
           </motion.div>
         )}
@@ -142,7 +141,7 @@ export function ActiveGameView({
               game.last_move.mists_effect === "omen" &&
                 "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
               game.last_move.mists_effect === "none" &&
-                "bg-muted border-border text-muted-foreground"
+                "bg-muted border-border text-muted-foreground",
             )}
             aria-label="mists feedback"
             initial={{ opacity: 0, x: 20 }}
@@ -150,9 +149,13 @@ export function ActiveGameView({
             exit={{ opacity: 0, x: 20 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
           >
-            <span className="font-medium">Mists (roll: {game.last_move.mists_roll})</span>
-            {game.last_move.mists_effect === "fog" && " — Fog: −2 to comparisons"}
-            {game.last_move.mists_effect === "omen" && " — Omen: +2 to comparisons"}
+            <span className="font-medium">
+              Mists (roll: {game.last_move.mists_roll})
+            </span>
+            {game.last_move.mists_effect === "fog" &&
+              " — Fog: −2 to comparisons"}
+            {game.last_move.mists_effect === "omen" &&
+              " — Omen: +2 to comparisons"}
           </motion.div>
         )}
       </AnimatePresence>
@@ -166,7 +169,7 @@ export function ActiveGameView({
               "text-sm font-heading font-semibold p-2 rounded border",
               capturedCells.size === 1
                 ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
-                : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
+                : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300",
             )}
             aria-live="polite"
             aria-label="capture feedback"
@@ -202,25 +205,28 @@ export function ActiveGameView({
 
       {/* Elemental! callout */}
       <AnimatePresence>
-        {game.last_move != null && game.last_move.elemental_triggered === true && (
-          <motion.div
-            key="elemental-feedback"
-            className="text-sm font-heading font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
-            aria-live="polite"
-            aria-label="elemental feedback"
-            initial={{ scale: 1.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 500, damping: 25 }}
-          >
-            {(() => {
-              const elemKey = boardElements?.[game.last_move!.cell_index];
-              return elemKey
-                ? elemKey.charAt(0).toUpperCase() + elemKey.slice(1) + " Elemental!"
-                : "Elemental!";
-            })()}
-          </motion.div>
-        )}
+        {game.last_move != null &&
+          game.last_move.elemental_triggered === true && (
+            <motion.div
+              key="elemental-feedback"
+              className="text-sm font-heading font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
+              aria-live="polite"
+              aria-label="elemental feedback"
+              initial={{ scale: 1.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+            >
+              {(() => {
+                const elemKey = boardElements?.[game.last_move!.cell_index];
+                return elemKey
+                  ? elemKey.charAt(0).toUpperCase() +
+                      elemKey.slice(1) +
+                      " Elemental!"
+                  : "Elemental!";
+              })()}
+            </motion.div>
+          )}
       </AnimatePresence>
 
       {/* Opponent hand count */}
@@ -242,7 +248,9 @@ export function ActiveGameView({
         </div>
         <div>
           <p className="text-xs text-muted-foreground">Opponent archetype</p>
-          <p className="text-sm capitalize">{opponentPlayer?.archetype ?? "None"}</p>
+          <p className="text-sm capitalize">
+            {opponentPlayer?.archetype ?? "None"}
+          </p>
           {opponentPlayer?.archetype && (
             <p className="text-xs text-muted-foreground">
               {opponentPlayer.archetype_used ? "Used" : "Available"}
@@ -275,7 +283,12 @@ export function ActiveGameView({
       </Button>
 
       {/* Leave */}
-      <Button variant="outline" size="sm" onClick={onOpenLeaveConfirm} disabled={leaving}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onOpenLeaveConfirm}
+        disabled={leaving}
+      >
         Leave Game
       </Button>
 
@@ -334,27 +347,41 @@ export function ActiveGameView({
               myIndex={myIndex}
               canPlace={canPlace}
               onCellClick={(i) => void onPlaceCard(i)}
-              onCellInspect={(cardKey) => onPreviewCard(cardKey, cardDefs.get(cardKey))}
+              onCellInspect={(cardKey) =>
+                onPreviewCard(cardKey, cardDefs.get(cardKey))
+              }
               placedCells={placedCells}
               capturedCells={capturedCells}
               cardDefs={cardDefs}
               lastMoveCellIndex={game.last_move?.cell_index ?? null}
               boardElements={boardElements}
               selectedCardElement={selectedCardElement}
-              mistsEffect={placedCells.size > 0 ? (game.last_move?.mists_effect as "none" | "fog" | "omen" | null) : null}
+              mistsEffect={
+                placedCells.size > 0
+                  ? (game.last_move?.mists_effect as
+                      | "none"
+                      | "fog"
+                      | "omen"
+                      | null)
+                  : null
+              }
               intimidatePendingCell={intimidatePendingCell}
             />
           </div>
 
           {/* Move error */}
-          {moveError && <p className="text-destructive text-sm shrink-0">{moveError}</p>}
+          {moveError && (
+            <p className="text-destructive text-sm shrink-0">{moveError}</p>
+          )}
 
           {/* Bottom section: action panel + hand, side by side on sm+ */}
           <div className="shrink-0 flex flex-col sm:flex-row gap-2 items-start">
             <div className="w-full sm:w-52 shrink-0">
               <ActionPanel
                 isMyTurn={isMyTurn}
-                selectedCardDef={selectedCard ? cardDefs.get(selectedCard) : undefined}
+                selectedCardDef={
+                  selectedCard ? cardDefs.get(selectedCard) : undefined
+                }
                 myPlayer={myPlayer}
               />
             </div>
@@ -408,9 +435,7 @@ export function ActiveGameView({
         </div>
       </div>
 
-      <ArchetypeModal
-        open={!!myPlayer && !myPlayer.archetype}
-      />
+      <ArchetypeModal open={!!myPlayer && !myPlayer.archetype} />
     </>
   );
 }

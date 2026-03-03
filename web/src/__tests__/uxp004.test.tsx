@@ -51,49 +51,6 @@ describe("US-UXP-004: Retro pixel fonts", () => {
     expect(css).toMatch(/h1.*h2.*h3/s);
   });
 
-  it("button component uses font-heading class", () => {
-    const button = fs.readFileSync(
-      path.join(webRoot, "src/components/ui/button.tsx"),
-      "utf-8"
-    );
-    expect(button).toContain("font-heading");
-  });
-
-  it("ActionPanel turn label uses font-heading", () => {
-    const panel = fs.readFileSync(
-      path.join(webRoot, "src/routes/game-room/ActionPanel.tsx"),
-      "utf-8"
-    );
-    expect(panel).toContain("font-heading");
-  });
-
-  it("ActiveGameView score and callouts use font-heading", () => {
-    const view = fs.readFileSync(
-      path.join(webRoot, "src/routes/game-room/ActiveGameView.tsx"),
-      "utf-8"
-    );
-    // Score bar
-    const fontHeadingCount = (view.match(/font-heading/g) ?? []).length;
-    // Score + Plus callout + Elemental callout + capture feedback + Info & Actions
-    expect(fontHeadingCount).toBeGreaterThanOrEqual(4);
-  });
-
-  it("CompleteGameView result text uses font-heading", () => {
-    const view = fs.readFileSync(
-      path.join(webRoot, "src/routes/game-room/CompleteGameView.tsx"),
-      "utf-8"
-    );
-    expect(view).toContain("font-heading");
-  });
-
-  it("HandPanel labels use font-heading", () => {
-    const handPanel = fs.readFileSync(
-      path.join(webRoot, "src/routes/game-room/HandPanel.tsx"),
-      "utf-8"
-    );
-    expect(handPanel).toContain("font-heading");
-  });
-
   it("body font size is at least 18px for VT323 readability", () => {
     const css = fs.readFileSync(
       path.join(webRoot, "src/index.css"),

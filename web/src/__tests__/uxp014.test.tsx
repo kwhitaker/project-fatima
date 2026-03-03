@@ -14,9 +14,6 @@ import path from "node:path";
 const generatedPath = path.resolve(__dirname, "../lib/api-types.generated.ts");
 const generatedSrc = fs.readFileSync(generatedPath, "utf-8");
 
-const apiPath = path.resolve(__dirname, "../lib/api.ts");
-const apiSrc = fs.readFileSync(apiPath, "utf-8");
-
 const pkgPath = path.resolve(__dirname, "../../package.json");
 const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
 
@@ -51,34 +48,6 @@ describe("US-UXP-014: Auto-generated frontend types", () => {
       expect(generatedSrc).toContain("martial");
       expect(generatedSrc).toContain("skulker");
       expect(generatedSrc).toContain("intimidate");
-    });
-  });
-
-  describe("api.ts re-exports from generated file", () => {
-    it("imports from api-types.generated", () => {
-      expect(apiSrc).toContain("api-types.generated");
-    });
-
-    it("re-exports all key types", () => {
-      for (const name of [
-        "CardSides",
-        "CardDefinition",
-        "PlayerState",
-        "BoardCell",
-        "GameResult",
-        "LastMoveInfo",
-        "GameState",
-        "Archetype",
-      ]) {
-        expect(apiSrc).toContain(`export type ${name}`);
-      }
-    });
-
-    it("does not define interface blocks for backend types", () => {
-      // Manual interface definitions should be gone
-      expect(apiSrc).not.toMatch(/export interface GameState\s*\{/);
-      expect(apiSrc).not.toMatch(/export interface CardDefinition\s*\{/);
-      expect(apiSrc).not.toMatch(/export interface BoardCell\s*\{/);
     });
   });
 

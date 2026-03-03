@@ -6,7 +6,7 @@
  * - cardEmoji helper returns correct emoji by character_key
  * - cardEmoji returns undefined for unknown keys
  * - CardDefinition includes character_key
- * - CardFace, HandPanel, HandDrawer, CardInspectPreview reference cardEmoji
+ * - CardFace, HandPanel, CardInspectPreview reference cardEmoji
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -19,7 +19,6 @@ const apiPath = path.resolve(__dirname, "../lib/api-types.generated.ts");
 const cardFacePath = path.resolve(__dirname, "../routes/game-room/CardFace.tsx");
 const boardGridPath = path.resolve(__dirname, "../routes/game-room/BoardGrid.tsx");
 const handPanelPath = path.resolve(__dirname, "../routes/game-room/HandPanel.tsx");
-const handDrawerPath = path.resolve(__dirname, "../routes/game-room/HandDrawer.tsx");
 const cardInspectPath = path.resolve(__dirname, "../routes/game-room/CardInspectPreview.tsx");
 
 describe("US-UXP-013: Emoji card faces from character mapping", () => {
@@ -76,12 +75,6 @@ describe("US-UXP-013: Emoji card faces from character mapping", () => {
 
     it("HandPanel imports and uses cardEmoji", () => {
       const src = fs.readFileSync(handPanelPath, "utf-8");
-      expect(src).toContain("cardEmoji");
-      expect(src).toContain("character_key");
-    });
-
-    it("HandDrawer imports and uses cardEmoji", () => {
-      const src = fs.readFileSync(handDrawerPath, "utf-8");
       expect(src).toContain("cardEmoji");
       expect(src).toContain("character_key");
     });

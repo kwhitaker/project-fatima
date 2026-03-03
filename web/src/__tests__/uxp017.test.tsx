@@ -21,7 +21,6 @@ const loginPath = path.resolve(__dirname, "../routes/Login.tsx");
 const gameRulesDialogPath = path.resolve(__dirname, "../routes/game-room/GameRulesDialog.tsx");
 const forfeitDialogPath = path.resolve(__dirname, "../routes/game-room/ForfeitDialog.tsx");
 const cardInspectPath = path.resolve(__dirname, "../routes/game-room/CardInspectPreview.tsx");
-const handDrawerPath = path.resolve(__dirname, "../routes/game-room/HandDrawer.tsx");
 const handPanelPath = path.resolve(__dirname, "../routes/game-room/HandPanel.tsx");
 
 describe("US-UXP-017: Castlevania theme audit — buttons & interactive elements", () => {
@@ -117,21 +116,11 @@ describe("US-UXP-017: Castlevania theme audit — buttons & interactive elements
       expect(src).not.toMatch(/bg-white\b/);
     });
 
-    it("HandDrawer uses bg-card instead of bg-white", () => {
-      const src = fs.readFileSync(handDrawerPath, "utf-8");
-      expect(src).toContain("bg-card");
-      expect(src).not.toMatch(/bg-white\b/);
-    });
   });
 
   describe("info buttons use theme hover", () => {
     it("HandPanel info button has hover:border-accent", () => {
       const src = fs.readFileSync(handPanelPath, "utf-8");
-      expect(src).toContain("hover:border-accent");
-    });
-
-    it("HandDrawer info button has hover:border-accent", () => {
-      const src = fs.readFileSync(handDrawerPath, "utf-8");
       expect(src).toContain("hover:border-accent");
     });
   });

@@ -86,17 +86,12 @@ describe("US-UXP-004: Retro pixel fonts", () => {
     expect(view).toContain("font-heading");
   });
 
-  it("HandPanel and HandDrawer labels use font-heading", () => {
+  it("HandPanel labels use font-heading", () => {
     const handPanel = fs.readFileSync(
       path.join(webRoot, "src/routes/game-room/HandPanel.tsx"),
       "utf-8"
     );
-    const handDrawer = fs.readFileSync(
-      path.join(webRoot, "src/routes/game-room/HandDrawer.tsx"),
-      "utf-8"
-    );
     expect(handPanel).toContain("font-heading");
-    expect(handDrawer).toContain("font-heading");
   });
 
   it("body font size is at least 18px for VT323 readability", () => {

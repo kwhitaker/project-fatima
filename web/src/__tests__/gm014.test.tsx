@@ -163,7 +163,7 @@ describe("US-GM-014 — board + hand always visible", () => {
       expect(screen.getByLabelText("hand panel")).toBeInTheDocument();
     });
     const handPanel = screen.getByLabelText("hand panel");
-    // The old HandDrawer used a fixed-position wrapper; new HandPanel is in-flow
+    // HandPanel is rendered in-flow, not inside a fixed-position wrapper
     expect(handPanel.closest(".fixed")).toBeNull();
   });
 

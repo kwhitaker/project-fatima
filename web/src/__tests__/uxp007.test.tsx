@@ -6,7 +6,7 @@
  * - @property --tier-angle and @keyframes tier-spin exist
  * - :root has tier-spin animation
  * - CardFace exports tierClass helper and accepts tier prop
- * - BoardGrid, HandPanel, HandDrawer, CardInspectPreview apply tier classes
+ * - BoardGrid, HandPanel, CardInspectPreview apply tier classes
  * - Tier 3 has ::after pseudo-element overlay
  */
 import { describe, it, expect } from "vitest";
@@ -17,7 +17,6 @@ const cssPath = path.resolve(__dirname, "../index.css");
 const cardFacePath = path.resolve(__dirname, "../routes/game-room/CardFace.tsx");
 const boardGridPath = path.resolve(__dirname, "../routes/game-room/BoardGrid.tsx");
 const handPanelPath = path.resolve(__dirname, "../routes/game-room/HandPanel.tsx");
-const handDrawerPath = path.resolve(__dirname, "../routes/game-room/HandDrawer.tsx");
 const cardInspectPath = path.resolve(__dirname, "../routes/game-room/CardInspectPreview.tsx");
 
 describe("US-UXP-007: Tier-based card rarity visuals", () => {
@@ -94,12 +93,6 @@ describe("US-UXP-007: Tier-based card rarity visuals", () => {
 
     it("HandPanel imports tierClass and applies it to card buttons", () => {
       const src = fs.readFileSync(handPanelPath, "utf-8");
-      expect(src).toContain("tierClass");
-      expect(src).toMatch(/tierClass\(.*tier/);
-    });
-
-    it("HandDrawer imports tierClass and applies it to card buttons", () => {
-      const src = fs.readFileSync(handDrawerPath, "utf-8");
       expect(src).toContain("tierClass");
       expect(src).toMatch(/tierClass\(.*tier/);
     });

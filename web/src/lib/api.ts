@@ -9,6 +9,7 @@ export interface CardSides {
 
 export interface CardDefinition {
   card_key: string;
+  character_key: string;
   name: string;
   version: string;
   tier: number;

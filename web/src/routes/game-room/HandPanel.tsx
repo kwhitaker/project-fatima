@@ -1,7 +1,7 @@
 import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
-import { tierClass } from "@/routes/game-room/CardFace";
+import { cardEmoji, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { motion } from "motion/react";
 
@@ -67,7 +67,15 @@ export function HandPanel({
                 )}
                 aria-pressed={selectedCard === cardKey}
               >
-                <span className="font-semibold truncate max-w-full text-center text-[11px] sm:text-xs">
+                {cardEmoji(def?.character_key) && (
+                  <span className="text-xl sm:text-2xl leading-none select-none" aria-hidden="true">
+                    {cardEmoji(def?.character_key)}
+                  </span>
+                )}
+                <span className={cn(
+                  "font-semibold truncate max-w-full text-center",
+                  cardEmoji(def?.character_key) ? "text-[8px] sm:text-[9px]" : "text-[11px] sm:text-xs"
+                )}>
                   {displayName}
                 </span>
                 <div className="flex flex-col items-center mt-1 text-[10px] sm:text-[11px] text-muted-foreground w-full">

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import type { CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
-import { tierClass } from "@/routes/game-room/CardFace";
+import { cardEmoji, tierClass } from "@/routes/game-room/CardFace";
 
 export function CardInspectPreview({
   cardKey,
@@ -25,6 +25,11 @@ export function CardInspectPreview({
       }}
     >
       <div className={cn("bg-white border-2 border-zinc-200 rounded-none p-6 w-full max-w-xs shadow-xl dark:bg-zinc-900 dark:border-zinc-700", tierClass(def?.tier))}>
+        {cardEmoji(def?.character_key) && (
+          <div className="text-4xl leading-none text-center mb-2 select-none" aria-hidden="true">
+            {cardEmoji(def?.character_key)}
+          </div>
+        )}
         <h2 className="text-lg font-bold mb-3">{name}</h2>
         <div className="text-sm text-muted-foreground mb-3">
           {def?.element

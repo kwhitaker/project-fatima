@@ -347,7 +347,7 @@ export function ActiveGameView({
           {/* Board: centered, takes remaining vertical space */}
           <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
             <BoardGrid
-              board={game.board}
+              board={game.board ?? []}
               myIndex={myIndex}
               canPlace={canPlace}
               onCellClick={(i) => void onPlaceCard(i)}
@@ -358,7 +358,7 @@ export function ActiveGameView({
               lastMoveCellIndex={game.last_move?.cell_index ?? null}
               boardElements={boardElements}
               selectedCardElement={selectedCardElement}
-              mistsEffect={placedCells.size > 0 ? game.last_move?.mists_effect : null}
+              mistsEffect={placedCells.size > 0 ? (game.last_move?.mists_effect as "none" | "fog" | "omen" | null) : null}
               intimidatePendingCell={intimidatePendingCell}
             />
           </div>

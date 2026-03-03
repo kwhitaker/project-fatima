@@ -3,7 +3,7 @@ import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { playPlace, playCapture, playCombo } from "@/lib/sounds";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {

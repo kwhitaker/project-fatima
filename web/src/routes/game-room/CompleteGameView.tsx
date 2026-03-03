@@ -39,7 +39,7 @@ export function CompleteGameView({
   // Cells owned by the winner for sequential victory glow
   const victoryCells = useMemo(() => {
     if (!isWinner) return undefined;
-    return game.board
+    return (game.board ?? [])
       .map((cell, i) => (cell && cell.owner === myIndex ? i : -1))
       .filter((i) => i >= 0);
   }, [game.board, isWinner, myIndex]);
@@ -74,7 +74,7 @@ export function CompleteGameView({
 
         {/* Final board */}
         <BoardGrid
-          board={game.board}
+          board={game.board ?? []}
           myIndex={myIndex}
           cardDefs={cardDefs}
           onCellInspect={(cardKey) => onPreviewCard(cardKey, cardDefs.get(cardKey))}

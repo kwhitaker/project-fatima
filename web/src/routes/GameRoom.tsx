@@ -199,11 +199,12 @@ export default function GameRoom() {
   const opponentPlayer = myIndex >= 0 ? game.players[opponentIndex] : undefined;
 
   // Score: count board cells owned by each player
+  const board = game.board ?? [];
   const myScore = myIndex >= 0
-    ? game.board.filter((c) => c !== null && c.owner === myIndex).length
+    ? board.filter((c) => c !== null && c.owner === myIndex).length
     : 0;
   const opponentScore = myIndex >= 0
-    ? game.board.filter((c) => c !== null && c.owner === opponentIndex).length
+    ? board.filter((c) => c !== null && c.owner === opponentIndex).length
     : 0;
 
   const titleText =

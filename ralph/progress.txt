@@ -105,3 +105,14 @@ Started: 2026-03-03
 - Learnings: Backend already returns character_key in /api/cards — just needed to add it to the frontend type. JSON static import works cleanly with Vite+TS (resolveJsonModule already enabled). Multi-emoji strings (🌕🐺) render fine at text-2xl; no overflow handling needed at current card sizes.
 ---
 
+## 2026-03-03 13:53 - US-UXP-009
+- Replaced CSS card-captured/card-flip animations with Motion-powered sequential capture chain in BoardGrid.tsx: captured cards flip (scaleX 1→0→1 with brightness flash) one by one with staggered delay (0.35s base + 0.3s per card)
+- Placed card pulses (scale overshoot to 1.08) when captures exist, drawing attention to the source
+- Added punch-in animations for Plus! and Elemental! callouts (scale 1.5→1 with spring) and capture feedback (scale 1.2→1) using AnimatePresence in ActiveGameView.tsx
+- Score numbers animate with AnimatePresence popLayout (slide up/down on change)
+- Updated uxp006/uxp008 tests to reflect CSS→Motion migration; added uxp009 test suite (13 assertions)
+- Tests: 268 frontend passed, 553 backend passed
+- Files changed: web/src/index.css, BoardGrid.tsx, ActiveGameView.tsx, uxp006.test.tsx, uxp008.test.tsx, uxp009.test.tsx (new)
+- Learnings: Motion spring animations only support 2 keyframes — use `type: "tween"` with `times` array for multi-keyframe sequences (pulse, flip). `easeInOut` works well for the scaleX flip. AnimatePresence `mode="popLayout"` prevents layout jumps during score number swaps.
+---
+

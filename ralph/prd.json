@@ -156,7 +156,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 10,
-      "passes": false,
+      "passes": true,
       "notes": "This is the highest-impact juice story. The key challenge is orchestrating the sequence: place → (optional Plus!/Elemental! callout) → capture 1 flip → capture 2 flip → ... → score update. The `capturedCells` set provides which cells were captured, but the current data model doesn't specify capture order. If capture order isn't available from the backend, animate them in index order (top-left to bottom-right) — still reads as sequential. For the flip effect, animate `scaleX` not `rotateY` — it's simpler and fits the 2D aesthetic. Consider using `useAnimate` from motion for the imperative sequencing, or `AnimatePresence` with `mode='popLayout'`."
     },
     {

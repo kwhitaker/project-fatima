@@ -157,25 +157,25 @@ describe("US-UX-005: game room header UX", () => {
     ).toBeTruthy();
   });
 
-  it("Back to Games button is present in WAITING state", async () => {
+  it("Back to Games link is present in WAITING state", async () => {
     vi.mocked(getGame).mockResolvedValue(makeWaitingGame());
     renderGameRoom();
     await screen.findByText(/waiting for opponent/i);
-    expect(screen.getByRole("button", { name: /back to games/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /back to games/i })).toBeTruthy();
   });
 
-  it("Back to Games button is present in ACTIVE state", async () => {
+  it("Back to Games link is present in ACTIVE state", async () => {
     vi.mocked(getGame).mockResolvedValue(makeActiveGame());
     renderGameRoom();
     await screen.findByText(/playing against/i);
-    expect(screen.getByRole("button", { name: /back to games/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /back to games/i })).toBeTruthy();
   });
 
-  it("Back to Games button is present in COMPLETE state", async () => {
+  it("Back to Games link is present in COMPLETE state", async () => {
     vi.mocked(getGame).mockResolvedValue(makeCompleteGame());
     renderGameRoom();
     await screen.findByText(/you win/i);
-    expect(screen.getByRole("button", { name: /back to games/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /back to games/i })).toBeTruthy();
   });
 
   it("Leave Game button is NOT shown in COMPLETE state", async () => {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -212,10 +212,10 @@ export default function GameRoom() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/games")}
+            asChild
             className="hover:bg-accent cursor-pointer"
           >
-            ← Back to Games
+            <Link to="/games">← Back to Games</Link>
           </Button>
         </div>
       </div>

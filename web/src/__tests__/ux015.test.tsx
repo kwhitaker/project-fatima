@@ -226,8 +226,8 @@ describe("US-UX-015: Games list button has focus-visible styles", () => {
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
     });
 
-    const rowBtn = screen.getByRole("button", { name: /opp@example\.com/i });
-    expect(rowBtn.className).toContain("focus-visible:ring-2");
+    const rowLink = screen.getByRole("link", { name: /opp@example\.com/i });
+    expect(rowLink.className).toContain("focus-visible:ring-2");
   });
 });
 

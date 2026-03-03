@@ -57,7 +57,7 @@ describe("US-UX-001: dark mode default + mobile-first layout", () => {
     );
     // Row now shows truncated ID (8 chars: "game-abc") instead of full game_id
     await screen.findByText("game-abc");
-    const rows = document.querySelectorAll("button.cursor-pointer");
+    const rows = document.querySelectorAll("a.cursor-pointer");
     expect(rows.length).toBeGreaterThan(0);
   });
 

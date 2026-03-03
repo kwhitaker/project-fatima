@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { listGames, createGame, type GameState } from "@/lib/api";
@@ -115,9 +115,9 @@ export default function Games() {
             const resultLabel = getResultLabel(game, myId);
             return (
               <li key={game.game_id}>
-                <button
-                  className="hover:bg-muted w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  onClick={() => void navigate(`/g/${game.game_id}`)}
+                <Link
+                  to={`/g/${game.game_id}`}
+                  className="hover:bg-muted block w-full cursor-pointer rounded-lg border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex min-w-0 flex-col">
@@ -134,7 +134,7 @@ export default function Games() {
                       {resultLabel && <ResultBadge label={resultLabel} />}
                     </div>
                   </div>
-                </button>
+                </Link>
               </li>
             );
           })}

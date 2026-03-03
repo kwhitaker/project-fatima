@@ -232,7 +232,7 @@ describe("US-UX-007: Games list row UX", () => {
       </MemoryRouter>
     );
     await screen.findByText("opponent@example.com");
-    const rows = document.querySelectorAll("button.cursor-pointer");
+    const rows = document.querySelectorAll("a.cursor-pointer");
     expect(rows.length).toBeGreaterThan(0);
   });
 });

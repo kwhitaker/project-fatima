@@ -54,6 +54,13 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Press Start 2P", monospace;
   }
 }
 

@@ -56,7 +56,7 @@ export function ActionPanel({
       {/* Turn label */}
       <p
         className={cn(
-          "text-sm font-semibold",
+          "text-sm font-heading font-semibold leading-relaxed",
           !isMyTurn && "text-muted-foreground"
         )}
       >

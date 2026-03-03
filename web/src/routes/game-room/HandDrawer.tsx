@@ -70,7 +70,7 @@ export function HandDrawer({
         >
           <div className="flex items-center gap-3">
             <span className="h-1.5 w-12 rounded-full bg-zinc-300 dark:bg-zinc-700" />
-            <span className="text-sm font-semibold">Hand & Players</span>
+            <span className="text-sm font-heading font-semibold">Hand & Players</span>
           </div>
           <span className="text-xs text-muted-foreground">{open ? "Hide" : "Show"}</span>
         </button>
@@ -119,7 +119,7 @@ export function HandDrawer({
 
               {/* My hand */}
               <div>
-                <p className="text-sm font-medium mb-1">Your hand</p>
+                <p className="text-sm font-heading font-medium mb-1">Your hand</p>
                 {game.current_player_index === myIndex && !movePending && (
                   <p className="text-xs text-muted-foreground mb-2">
                     {selectedCard

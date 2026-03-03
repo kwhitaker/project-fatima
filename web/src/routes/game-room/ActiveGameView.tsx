@@ -127,7 +127,7 @@ export function ActiveGameView({
       {capturedCells.size > 0 && (
         <div
           className={cn(
-            "text-sm font-semibold p-2 rounded border",
+            "text-sm font-heading font-semibold p-2 rounded border",
             capturedCells.size === 1
               ? "bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/50 dark:border-amber-800 dark:text-amber-300"
               : "bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-300"
@@ -144,7 +144,7 @@ export function ActiveGameView({
       {/* Plus! callout */}
       {game.last_move?.plus_triggered === true && (
         <div
-          className="text-sm font-semibold p-2 rounded border bg-cyan-50 border-cyan-200 text-cyan-800 dark:bg-cyan-950/50 dark:border-cyan-800 dark:text-cyan-300"
+          className="text-sm font-heading font-semibold p-2 rounded border bg-cyan-50 border-cyan-200 text-cyan-800 dark:bg-cyan-950/50 dark:border-cyan-800 dark:text-cyan-300"
           aria-live="polite"
           aria-label="plus feedback"
         >
@@ -155,7 +155,7 @@ export function ActiveGameView({
       {/* Elemental! callout */}
       {game.last_move != null && game.last_move.elemental_triggered === true && (
         <div
-          className="text-sm font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
+          className="text-sm font-heading font-semibold p-2 rounded border bg-yellow-50 border-yellow-400 text-yellow-900 dark:bg-yellow-950/50 dark:border-yellow-700 dark:text-yellow-300"
           aria-live="polite"
           aria-label="elemental feedback"
         >
@@ -241,7 +241,7 @@ export function ActiveGameView({
         <div className="flex-1 min-w-0 min-h-0 flex flex-col gap-2">
           {/* Score bar */}
           <div className="flex items-center justify-end shrink-0">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-heading text-muted-foreground">
               You: {myScore} | Opp: {opponentScore}
             </p>
           </div>
@@ -314,7 +314,7 @@ export function ActiveGameView({
             aria-label="toggle secondary info"
             aria-expanded={sidebarOpen}
           >
-            <span className="font-medium">Info & Actions</span>
+            <span className="font-heading font-medium">Info & Actions</span>
             <span className="text-xs text-muted-foreground">
               {sidebarOpen ? "Hide" : "Show"}
             </span>

@@ -22,11 +22,11 @@ export function CompleteGameView({
         {/* Result banner */}
         <div className="p-4 rounded border">
           {game.result?.is_draw ? (
-            <p className="text-xl font-bold">Draw!</p>
+            <p className="text-xl font-heading font-bold">Draw!</p>
           ) : game.result?.winner === myIndex ? (
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">You win!</p>
+            <p className="text-xl font-heading font-bold text-green-600 dark:text-green-400">You win!</p>
           ) : (
-            <p className="text-xl font-bold text-red-600 dark:text-red-400">You lose!</p>
+            <p className="text-xl font-heading font-bold text-red-600 dark:text-red-400">You lose!</p>
           )}
         </div>
 

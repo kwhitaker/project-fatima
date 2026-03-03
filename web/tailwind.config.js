@@ -9,6 +9,10 @@ export default {
       screens: { "2xl": "1400px" },
     },
     extend: {
+      fontFamily: {
+        heading: ['"Press Start 2P"', "monospace"],
+        body: ["VT323", "monospace"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

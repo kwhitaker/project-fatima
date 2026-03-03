@@ -26,7 +26,7 @@ export function HandPanel({
 
   return (
     <div aria-label="hand panel">
-      <p className="text-sm font-medium mb-1">Your hand</p>
+      <p className="text-sm font-heading font-medium mb-1">Your hand</p>
       <div className="flex gap-2 flex-wrap">
         {myPlayer?.hand.map((cardKey) => {
           const def = cardDefs.get(cardKey);

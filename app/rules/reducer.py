@@ -191,7 +191,7 @@ def _apply_archetype(
     if player.archetype == Archetype.DEVOUT:
         return _ArchetypeResult(
             card=card,
-            activated=True,
+            activated=False,  # consumed only when Fog actually rolls
             caster_reroll=False,
             devout_negate_fog=True,
             intimidate_target=None,
@@ -285,6 +285,7 @@ def apply_intent(
         mists_modifier = mists_modifier_from_roll(roll)
         if devout_negate_fog and mists_modifier == -2:
             mists_modifier = 0  # Devout treats Fog as no effect
+            archetype_activated = True  # power consumed only on actual Fog
         mists_roll = roll
 
     # --- Elemental bonus ---

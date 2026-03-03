@@ -309,7 +309,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 18,
-      "passes": false,
+      "passes": true,
       "notes": "Builds on US-UXP-009's sequential capture chain. The escalation should be subtle but noticeable \u2014 brightness flash scales up by ~10% per step in the chain. The combo counter is a floating motion.div with AnimatePresence. Chain lines can be SVG or absolutely-positioned divs connecting cell centers. The custom events (dispatchEvent) will be consumed by US-UXP-015's sound module later."
     },
     {

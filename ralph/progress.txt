@@ -194,3 +194,14 @@ Started: 2026-03-03
 - Files changed: BoardGrid.tsx, ActiveGameView.tsx, index.css, uxp008.test.tsx (updated), uxp019.test.tsx (new)
 - Learnings: motion.div key trick for grid container allows re-triggering shake animation on each new placement. CSS box-shadow inset animation works well for brief color tints without affecting layout or z-ordering.
 ---
+
+## 2026-03-03 15:30 - US-UXP-020
+- Escalating brightness: each successive combo capture uses brightness(2 + captureSeq * 0.2) for increasingly dramatic flashes
+- Ownership color wipe: semi-transparent blue/red overlay fades in/out during the scaleX flip midpoint, reinforcing color change
+- Combo counter overlay: "+N" labels (font-heading, yellow, drop-shadow) appear on each captured cell during multi-captures
+- Chain pulse ring: yellow border ring scales outward (0.5→1.3) and fades on each captured cell
+- Custom events: `capture-step` CustomEvent dispatched at each capture delay with { cellIndex, step, total } detail for future sound system
+- Tests: 345 frontend passed; 8 new uxp020 assertions
+- Files changed: BoardGrid.tsx, uxp020.test.tsx (new)
+- Learnings: Template literal in Motion animate prop works for dynamic brightness values. useRef tracks emitted event keys to avoid re-dispatching on re-renders. setTimeout aligns custom events with animation delays.
+---

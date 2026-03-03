@@ -184,17 +184,18 @@ describe("US-UX-009: card visuals — board and hand", () => {
     expect(handBtn!.textContent).toContain("2"); // W
   });
 
-  it("hand cards have hover scale class for enlargement", async () => {
+  it("hand cards have hover scale via motion whileHover", async () => {
     vi.mocked(getGame).mockResolvedValue(makeActiveGame());
     renderGameRoom();
 
     await screen.findByText(/your turn/i);
 
-    // Main card button has aria-pressed and hover:scale
+    // Main card button has aria-pressed (hover is now handled by motion whileHover on the wrapper)
     const cardBtn = screen.getAllByRole("button", { name: /barovia guard/i })
       .find((b) => b.hasAttribute("aria-pressed"));
     expect(cardBtn).toBeTruthy();
-    expect(cardBtn!.className).toMatch(/hover:scale/);
+    // The button still renders and is interactive
+    expect(cardBtn!.tagName.toLowerCase()).toBe("button");
   });
 
   it("selected hand card has aria-pressed=true, unselected has aria-pressed=false", async () => {

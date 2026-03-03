@@ -173,3 +173,12 @@ Started: 2026-03-03
 - Learnings: Many components used hardcoded zinc-* colors from shadcn/ui defaults instead of theme CSS custom properties. Converting to bg-card/border-border ensures all dialogs follow the Castlevania palette automatically.
 ---
 
+
+## 2026-03-03 15:20 - US-UXP-018
+- Added vampire emoji (🧛) as large visual centerpiece above login form (text-6xl, aria-hidden)
+- Added "Yugi-Strahd" title with font-heading (Press Start 2P) and tagline "A Curse of Strahd Card Game" in font-body (VT323)
+- Demoted form title (Sign in / Create account / Reset password) from h1 to h2, kept functional
+- Tests: 330 frontend passed; 5 new uxp018 assertions
+- Files changed: Login.tsx, uxp018.test.tsx (new)
+- Learnings: Simple additive branding — no structural changes to form logic needed. font-heading/font-body utility classes from US-UXP-004 make font assignment trivial.
+---

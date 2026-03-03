@@ -278,7 +278,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 16,
-      "passes": false,
+      "passes": true,
       "notes": "Simple frontend-only branding change to Login.tsx. The fonts (Press Start 2P, VT323) are already loaded from US-UXP-004. Keep the form functional \u2014 this is additive visual branding above the existing form."
     },
     {

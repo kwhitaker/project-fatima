@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -300,13 +301,15 @@ export default function GameRoom() {
       )}
 
       {/* Card inspect preview dialog */}
-      {previewCard !== null && (
-        <CardInspectPreview
-          cardKey={previewCard.cardKey}
-          def={previewCard.def}
-          onClose={() => setPreviewCard(null)}
-        />
-      )}
+      <AnimatePresence>
+        {previewCard !== null && (
+          <CardInspectPreview
+            cardKey={previewCard.cardKey}
+            def={previewCard.def}
+            onClose={() => setPreviewCard(null)}
+          />
+        )}
+      </AnimatePresence>
 
       <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>

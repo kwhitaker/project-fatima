@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 
@@ -48,7 +49,12 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 p-6">
+      <motion.div
+        className="w-full max-w-sm space-y-6 p-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <h1 className="text-2xl font-bold">Set new password</h1>
         {status === "done" ? (
           <p className="text-sm text-green-600">Password updated. Redirecting…</p>
@@ -78,7 +84,7 @@ export default function ResetPassword() {
             )}
           </form>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }

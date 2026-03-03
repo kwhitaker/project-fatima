@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 
@@ -61,7 +62,12 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 p-6">
+      <motion.div
+        className="w-full max-w-sm space-y-6 p-6"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <h1 className="text-2xl font-bold">{titles[mode]}</h1>
 
         {status === "done" ? (
@@ -126,7 +132,7 @@ export default function Login() {
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

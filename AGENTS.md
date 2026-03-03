@@ -24,6 +24,12 @@ uv run pytest -k "capture and not slow"   # by name substring
 uv run ruff check . --fix
 ```
 
+### Regenerate frontend types from backend OpenAPI schema
+```bash
+cd web && bun run typegen
+```
+Requires the backend importable (uses `uv run python` to dump the schema). Output: `web/src/lib/api-types.generated.ts`.
+
 ### Frontend E2E (Playwright)
 ```bash
 # One-time browser install: cd web && bunx playwright install chromium

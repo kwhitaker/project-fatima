@@ -11,7 +11,7 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const apiPath = path.resolve(__dirname, "../lib/api.ts");
+const apiPath = path.resolve(__dirname, "../lib/api-types.generated.ts");
 const apiSrc = fs.readFileSync(apiPath, "utf-8");
 
 const completeViewPath = path.resolve(__dirname, "../routes/game-room/CompleteGameView.tsx");

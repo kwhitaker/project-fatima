@@ -15,7 +15,7 @@ import path from "node:path";
 import cardEmojis from "@/lib/card-emojis.json";
 import { cardEmoji } from "@/routes/game-room/CardFace";
 
-const apiPath = path.resolve(__dirname, "../lib/api.ts");
+const apiPath = path.resolve(__dirname, "../lib/api-types.generated.ts");
 const cardFacePath = path.resolve(__dirname, "../routes/game-room/CardFace.tsx");
 const boardGridPath = path.resolve(__dirname, "../routes/game-room/BoardGrid.tsx");
 const handPanelPath = path.resolve(__dirname, "../routes/game-room/HandPanel.tsx");

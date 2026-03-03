@@ -1,67 +1,15 @@
 import { supabase } from "@/lib/supabase";
+import type { components } from "./api-types.generated";
 
-export interface CardSides {
-  n: number;
-  e: number;
-  s: number;
-  w: number;
-}
-
-export interface CardDefinition {
-  card_key: string;
-  character_key: string;
-  name: string;
-  version: string;
-  tier: number;
-  sides: CardSides;
-  element?: string;
-}
-
-export interface PlayerState {
-  player_id: string;
-  email?: string | null;
-  archetype: "martial" | "skulker" | "caster" | "devout" | "intimidate" | null;
-  hand: string[];
-  archetype_used: boolean;
-}
-
-export interface BoardCell {
-  card_key: string;
-  owner: 0 | 1;
-}
-
-export interface GameResult {
-  winner: 0 | 1 | null;
-  is_draw: boolean;
-  completion_reason?: string | null;
-  forfeit_by_index?: number | null;
-  early_finish?: boolean;
-}
-
-export interface LastMoveInfo {
-  player_index: number; // 0 or 1
-  card_key: string;
-  cell_index: number;   // 0-8
-  mists_roll: number;   // 1–6 die result
-  mists_effect: string; // "fog" | "omen" | "none"
-  plus_triggered?: boolean;
-  elemental_triggered?: boolean;
-}
-
-export interface GameState {
-  game_id: string;
-  status: "waiting" | "active" | "complete";
-  players: PlayerState[];
-  board: (BoardCell | null)[];
-  current_player_index: number;
-  starting_player_index: number;
-  state_version: number;
-  round_number: number;
-  result: GameResult | null;
-  last_move?: LastMoveInfo | null;
-  board_elements: string[] | null;
-  created_at?: string | null;
-}
+// Re-export backend types from auto-generated schema
+export type CardSides = components["schemas"]["CardSides"];
+export type CardDefinition = components["schemas"]["CardDefinition"];
+export type PlayerState = components["schemas"]["PlayerState"];
+export type BoardCell = components["schemas"]["BoardCell"];
+export type GameResult = components["schemas"]["GameResult"];
+export type LastMoveInfo = components["schemas"]["LastMoveInfo"];
+export type GameState = components["schemas"]["GameState"];
+export type Archetype = components["schemas"]["Archetype"];
 
 async function authHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession();
@@ -171,8 +119,6 @@ export async function placeCard(
   }
   return res.json() as Promise<GameState>;
 }
-
-export type Archetype = "martial" | "skulker" | "caster" | "devout" | "intimidate";
 
 export async function selectArchetype(
   gameId: string,

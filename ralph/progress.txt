@@ -237,3 +237,12 @@ Started: 2026-03-03
 - Files changed: game.py, reducer.py, api.ts, BoardGrid.tsx, CompleteGameView.tsx, test_early_finish.py (new), uxp023.test.tsx (new)
 - Learnings: The clinch formula `cells >= 5 + empty` is clean — on a 3x3 board you need 5+ to win, so if you own that many plus enough to cover all remaining empty cells, opponent can't catch up. Captures can push a player over the threshold in a single move.
 ---
+
+## 2026-03-03 16:10 - US-UXP-024
+- Added mise task definitions to existing .mise.toml: dev (concurrent), dev:api, dev:ui, test, lint, format
+- Updated README.md Tooling section with all mise task commands and usage note
+- No code changes — config-only; `depends = ["dev:*"]` gives concurrent dev startup
+- Tests: 562 backend passed, 385 frontend passed
+- Files changed: .mise.toml, README.md
+- Learnings: mise `depends = ["dev:*"]` wildcard runs matching subtasks concurrently by default. Existing .mise.toml already had [tools] section from prior work.
+---

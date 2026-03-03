@@ -379,7 +379,7 @@
         "Document in README.md"
       ],
       "priority": 22,
-      "passes": false,
+      "passes": true,
       "notes": "mise is a polyglot dev tool manager (successor to rtx/asdf). The `.mise.toml` format supports concurrent task execution natively. If mise is not installed, the individual commands still work \u2014 this is additive DX, not a hard dependency. Keep the toml simple and well-commented."
     },
     {

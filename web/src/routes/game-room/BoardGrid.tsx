@@ -61,7 +61,7 @@ export function BoardGrid({
                 ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
             isPlaced && "animate-card-placed",
-            isCaptured && "animate-card-captured",
+            isCaptured && "animate-card-captured animate-card-flip",
             isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
             isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300"
           );

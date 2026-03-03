@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
 import { tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
+import { motion } from "motion/react";
 
 export function HandPanel({
   game,
@@ -28,7 +29,12 @@ export function HandPanel({
   return (
     <div aria-label="hand panel">
       <p className="text-sm font-heading font-medium mb-1">Your hand</p>
-      <div className="flex gap-2 flex-wrap">
+      <motion.div
+        className="flex gap-2 flex-wrap"
+        initial="hidden"
+        animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+      >
         {myPlayer?.hand.map((cardKey) => {
           const def = cardDefs.get(cardKey);
           const displayName = def?.name ?? cardKey;
@@ -37,7 +43,15 @@ export function HandPanel({
             !isMyTurn ||
             movePending;
           return (
-            <div key={cardKey} className="relative">
+            <motion.div
+              key={cardKey}
+              className="relative"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              transition={{ type: "spring", stiffness: 300, damping: 24 }}
+            >
               <button
                 onClick={() => onSelectCard(selectedCard === cardKey ? null : cardKey)}
                 disabled={disabled}
@@ -82,10 +96,10 @@ export function HandPanel({
               >
                 ⓘ
               </button>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }

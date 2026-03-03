@@ -65,12 +65,6 @@
   }
 }
 
-@keyframes card-placed {
-  0%   { transform: scale(0.3); opacity: 0; }
-  70%  { transform: scale(1.1); opacity: 1; }
-  100% { transform: scale(1);   opacity: 1; }
-}
-
 @keyframes card-captured {
   0%, 100% { filter: brightness(1); }
   30%       { filter: brightness(2); }
@@ -81,10 +75,6 @@
   0%   { transform: scaleX(1); }
   50%  { transform: scaleX(0.1); }
   100% { transform: scaleX(1); }
-}
-
-.animate-card-placed {
-  animation: card-placed 0.4s steps(4);
 }
 
 .animate-card-captured {

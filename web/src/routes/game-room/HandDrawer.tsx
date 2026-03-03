@@ -8,6 +8,7 @@ import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
 import { tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
+import { motion } from "motion/react";
 
 export function HandDrawer({
   drawerRef,
@@ -128,7 +129,12 @@ export function HandDrawer({
                       : "Click a card to select it, then click an empty cell on the board"}
                   </p>
                 )}
-                <div className="flex gap-2 flex-wrap">
+                <motion.div
+                  className="flex gap-2 flex-wrap"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
+                >
                   {myPlayer?.hand.map((cardKey) => {
                     const def = cardDefs.get(cardKey);
                     const displayName = def?.name ?? cardKey;
@@ -137,7 +143,15 @@ export function HandDrawer({
                       game.current_player_index !== myIndex ||
                       movePending;
                     return (
-                      <div key={cardKey} className="relative">
+                      <motion.div
+                        key={cardKey}
+                        className="relative"
+                        variants={{
+                          hidden: { opacity: 0, y: 20 },
+                          visible: { opacity: 1, y: 0 },
+                        }}
+                        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+                      >
                         <button
                           onClick={() => onSelectCard(selectedCard === cardKey ? null : cardKey)}
                           disabled={disabled}
@@ -182,10 +196,10 @@ export function HandDrawer({
                         >
                           ⓘ
                         </button>
-                      </div>
+                      </motion.div>
                     );
                   })}
-                </div>
+                </motion.div>
               </div>
 
               {/* Opponent hand */}

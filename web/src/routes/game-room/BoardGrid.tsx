@@ -2,6 +2,7 @@ import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
+import { motion } from "motion/react";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
   blood: "🩸",
@@ -56,13 +57,12 @@ export function BoardGrid({
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
 
           const cellClass = cn(
-            "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative",
+            "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative overflow-hidden",
             cell === null
               ? "bg-muted text-muted-foreground"
               : cell.owner === myIndex
                 ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
-            isPlaced && "animate-card-placed",
             isCaptured && "animate-card-captured animate-card-flip",
             isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
             isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300",
@@ -85,7 +85,7 @@ export function BoardGrid({
 
           if (canPlace && cell === null) {
             return (
-              <button
+              <motion.button
                 key={i}
                 aria-label={`cell ${i}`}
                 onClick={() => onCellClick?.(i)}
@@ -95,9 +95,11 @@ export function BoardGrid({
                 )}
                 data-last-move={isLastMove ? "true" : undefined}
                 title={elementTitle}
+                whileHover={{ scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
                 {elementBadge}
-              </button>
+              </motion.button>
             );
           }
 
@@ -116,7 +118,18 @@ export function BoardGrid({
                 title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
               >
                 {elementBadge}
-                <CardFace cardKey={cell.card_key} def={def} />
+                {isPlaced ? (
+                  <motion.div
+                    className="w-full h-full flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <CardFace cardKey={cell.card_key} def={def} />
+                  </motion.div>
+                ) : (
+                  <CardFace cardKey={cell.card_key} def={def} />
+                )}
               </button>
             );
           }
@@ -137,7 +150,18 @@ export function BoardGrid({
             >
               {elementBadge}
               {cell ? (
-                <CardFace cardKey={cell.card_key} def={def} />
+                isPlaced ? (
+                  <motion.div
+                    className="w-full h-full flex items-center justify-center"
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  >
+                    <CardFace cardKey={cell.card_key} def={def} />
+                  </motion.div>
+                ) : (
+                  <CardFace cardKey={cell.card_key} def={def} />
+                )
               ) : (
                 ""
               )}

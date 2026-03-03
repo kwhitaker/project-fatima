@@ -59,3 +59,14 @@ Started: 2026-03-03
 - Learnings: `--radius: 0px` handles shadcn components automatically but app code had 19 hardcoded `rounded-*` instances. The `border-2` addition on buttons required setting border-color per variant to avoid ghost/link variants showing unexpected borders.
 ---
 
+## 2026-03-03 13:25 - US-UXP-006
+- Changed card-placed animation timing from ease-out to steps(4) for 4-frame NES sprite pop
+- Changed card-captured animation timing from ease-in-out to steps(3) for 3-frame brightness blink
+- Added new @keyframes card-flip (scaleX: 1 → 0.1 → 1) with steps(3) at 0.3s for ownership flip effect
+- Applied animate-card-flip alongside animate-card-captured on captured cells in BoardGrid.tsx
+- Callout animations (Plus!, Elemental!) had no existing transitions — no changes needed
+- Tests: 226 frontend passed
+- Files changed: web/src/index.css, web/src/routes/game-room/BoardGrid.tsx, web/src/__tests__/uxp006.test.tsx (new)
+- Learnings: steps(N) CSS timing divides animation into discrete frames with no interpolation — perfect for NES aesthetic. Callouts in ActiveGameView had no animations to convert.
+---
+

@@ -99,7 +99,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "The `steps(N)` timing function divides the animation into N discrete frames with no interpolation between them — this is exactly how NES sprite animations work. The existing keyframes in index.css are the only animations; updating their timing function is the primary change. The new card-flip class is additive — BoardGrid.tsx would need to apply it to captured cards, but that wiring can be done in this story if straightforward."
     },
     {

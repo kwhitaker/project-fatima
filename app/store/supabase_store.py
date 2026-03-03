@@ -85,6 +85,17 @@ class SupabaseGameStore:
         )
         return [GameState.model_validate(row["current_state"]) for row in (response.data or [])]
 
+    def list_open_games(self, exclude_player_id: str) -> list[GameState]:
+        response = (
+            self._client.table("games")
+            .select("current_state")
+            .eq("status", "waiting")
+            .is_("player2_id", "null")
+            .neq("player1_id", exclude_player_id)
+            .execute()
+        )
+        return [GameState.model_validate(row["current_state"]) for row in (response.data or [])]
+
     def append_event(
         self,
         game_id: str,

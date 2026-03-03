@@ -99,15 +99,21 @@ def test_list_games_returns_created_game(client: TestClient) -> None:
 
 def test_list_games_only_returns_caller_games(client: TestClient) -> None:
     # Alice creates a game; Bob creates a different game
-    as_user(client, "alice", "post", "/games", json={"seed": 1})
-    as_user(client, "bob", "post", "/games", json={"seed": 2})
+    resp_a = as_user(client, "alice", "post", "/games", json={"seed": 1})
+    resp_b = as_user(client, "bob", "post", "/games", json={"seed": 2})
+    alice_id = resp_a.json()["game_id"]
+    bob_id = resp_b.json()["game_id"]
 
     alice_games = as_user(client, "alice", "get", "/games").json()
     bob_games = as_user(client, "bob", "get", "/games").json()
 
-    assert len(alice_games) == 1
-    assert len(bob_games) == 1
-    assert alice_games[0]["game_id"] != bob_games[0]["game_id"]
+    # Both see 2 games (own + other's open game)
+    assert len(alice_games) == 2
+    assert len(bob_games) == 2
+    alice_ids = {g["game_id"] for g in alice_games}
+    bob_ids = {g["game_id"] for g in bob_games}
+    assert alice_ids == {alice_id, bob_id}
+    assert bob_ids == {alice_id, bob_id}
 
 
 def test_list_games_includes_games_joined_as_player2(client: TestClient) -> None:
@@ -123,9 +129,11 @@ def test_list_games_includes_games_joined_as_player2(client: TestClient) -> None
     assert any(g["game_id"] == game_id for g in bob_games)
 
 
-def test_list_games_excludes_unrelated_games(client: TestClient) -> None:
-    # Alice creates a game; Charlie is not involved
-    as_user(client, "alice", "post", "/games", json={"seed": 1})
+def test_list_games_excludes_active_unrelated_games(client: TestClient) -> None:
+    # Alice creates + Bob joins (now ACTIVE); Charlie is not involved
+    resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
+    game_id = resp.json()["game_id"]
+    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
     charlie_games = as_user(client, "charlie", "get", "/games").json()
     assert charlie_games == []
 

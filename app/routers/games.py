@@ -45,7 +45,13 @@ class MoveRequest(BaseModel):
 
 @router.get("", response_model=list[GameState])
 def list_games(caller_id: CallerIdDep, game_store: GameStoreDep) -> list[GameState]:
-    return game_store.list_games_for_player(caller_id)
+    own = game_store.list_games_for_player(caller_id)
+    open_games = game_store.list_open_games(caller_id)
+    combined = own + open_games
+    # Newest first, then non-complete before complete (stable sort)
+    combined.sort(key=lambda g: g.created_at or "", reverse=True)
+    combined.sort(key=lambda g: g.status == GameStatus.COMPLETE)
+    return combined
 
 
 @router.post("", response_model=GameState, status_code=201)

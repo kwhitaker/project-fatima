@@ -62,6 +62,7 @@ class GameState(BaseModel):
     seed: int = 0
     last_move: LastMoveInfo | None = None
     board_elements: list[str] | None = None  # one element per cell (0-8); None for old snapshots
+    created_at: str | None = None  # ISO-8601 UTC timestamp; None for old snapshots
 
     @model_validator(mode="before")
     @classmethod

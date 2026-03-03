@@ -1,6 +1,7 @@
 """Game orchestration: create, join, archetype selection, and move submission."""
 
 import uuid
+from datetime import UTC, datetime
 from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
@@ -26,6 +27,7 @@ def create_game(
         seed=seed,
         status=GameStatus.WAITING,
         players=[PlayerState(player_id=player_id, email=email)],
+        created_at=datetime.now(UTC).isoformat(),
     )
     game_store.create_game(game_id, initial_state)
     return initial_state

@@ -503,9 +503,10 @@ describe("games page", () => {
 
   it("renders a game row for each game returned by the API", async () => {
     setupAuth(true);
+    const me = { player_id: "user-123", archetype: null, hand: [], archetype_used: false };
     mockListGames.mockResolvedValue([
-      makeGame({ game_id: "game-aaa", status: "waiting" }),
-      makeGame({ game_id: "game-bbb", status: "active", state_version: 3 }),
+      makeGame({ game_id: "game-aaa", status: "waiting", players: [me] }),
+      makeGame({ game_id: "game-bbb", status: "active", state_version: 3, players: [me] }),
     ]);
     renderAt("/games");
     await waitFor(() => {

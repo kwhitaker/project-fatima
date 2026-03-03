@@ -58,6 +58,7 @@ export interface GameState {
   result: GameResult | null;
   last_move?: LastMoveInfo | null;
   board_elements: string[] | null;
+  created_at?: string | null;
 }
 
 async function authHeaders(): Promise<HeadersInit> {

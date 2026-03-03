@@ -125,3 +125,12 @@ Started: 2026-03-01
 - Learnings: `Button asChild` + `<Link>` via radix-ui Slot delegates rendering to the child anchor while preserving Button's variant/size classes and focus-visible ring. For game rows, plain `<Link>` with custom classes is simpler than wrapping in Button since the original wasn't using the Button component.
 ---
 
+## 2026-03-03 12:01 - US-GM-013
+- Added `ActiveGameExistsError` + `_check_no_active_game` helper in `game_service.py`; called at top of `create_game` and `join_game`; router catches it → 409 with error message including existing game_id
+- Updated `createGame()` and `joinGame()` in `web/src/lib/api.ts` to parse error detail from response body (matching `placeCard` pattern); error flows to existing `setError` UI in Games.tsx and GameRoom.tsx
+- 10 new backend tests in `test_gm013_one_active_game.py`; 4 new frontend tests in `gm013.test.tsx`; updated 3 existing tests that assumed multiple games per user (`test_cannot_join_twice` 400→409, `test_starting_player_deterministic_from_seed` uses distinct users, `test_newest_first_within_status_group` uses distinct creators)
+- Tests run: `uv run pytest` — 553 passed; `bun run test --run` — 186 passed
+- Files changed: `app/services/game_service.py`, `app/routers/games.py`, `web/src/lib/api.ts`, `tests/test_gm013_one_active_game.py`, `web/src/__tests__/gm013.test.tsx`, `tests/test_api.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`
+- Learnings: One-active-game constraint cascades into many existing tests that create multiple games for the same user — these need different user identities or completed games between creates. The service-layer check uses existing `list_games_for_player` so no new store method is needed.
+---
+

@@ -223,7 +223,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Definition of 'active' for this constraint is 'non-complete': both WAITING and ACTIVE count; COMPLETE does not."
     },
     {

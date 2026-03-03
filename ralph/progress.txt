@@ -10,3 +10,12 @@
 Started: 2026-03-03
 ---
 
+## 2026-03-03 12:55 - US-UXP-001
+- Rewrote root README.md with project summary, prerequisites, backend/frontend setup, test/lint commands, seed data, and Further Reading links
+- Trimmed AGENTS.md: removed duplicated setup/command sections (now in README), kept agent-specific workflow, code style, and useful pytest/ruff flags
+- No existing .md files deleted
+- Tests: 553 backend passed, 207 frontend passed
+- Files changed: README.md, AGENTS.md
+- Learnings: README already existed with basic content; rewrote rather than created fresh
+---
+

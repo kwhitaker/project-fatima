@@ -16,7 +16,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 1,
-      "passes": false,
+      "passes": true,
       "notes": "The README should be concise (not a wall of text). Use the commands from CLAUDE.md/AGENTS.md as the source of truth. Keep AGENTS.md as the AI-agent-specific guide but remove the duplicated 'how to run' sections that now live in README."
     },
     {

@@ -190,7 +190,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 12,
-      "passes": false,
+      "passes": true,
       "notes": "The sidebar is where all game feedback lives, so animating these elements makes the game feel responsive. The key pattern is `AnimatePresence` + conditional rendering — motion handles mount/unmount animations. For the score counter, the `mode='popLayout'` prop on AnimatePresence prevents layout jumps during the swap. The mobile drawer height animation replaces the current `sidebarOpen && (...)` conditional — instead, always render the content but animate its container height between 0 and auto."
     },
     {

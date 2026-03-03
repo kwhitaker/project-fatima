@@ -127,3 +127,13 @@ Started: 2026-03-03
 - Learnings: Motion spring animations only support 2 keyframes — use `type: "tween"` with `times` array for multi-keyframe sequences (pulse, flip). `easeInOut` works well for the scaleX flip. AnimatePresence `mode="popLayout"` prevents layout jumps during score number swaps.
 ---
 
+## 2026-03-03 14:02 - US-UXP-011
+- Added slide-in entrance/exit animations (opacity 0→1, x 20→0) to last move callout and Mists feedback via motion.div + AnimatePresence in ActiveGameView.tsx
+- Added turn indicator animation in ActionPanel.tsx: motion.p with AnimatePresence mode="wait" swaps between "Your turn" / "Opponent's turn" with scale pulse (0.9→1)
+- Replaced instant mobile drawer show/hide with AnimatePresence + motion.div height animation (0→auto with spring)
+- Existing callout animations (capture, Plus!, Elemental!, score) were already implemented in US-UXP-009 — verified still present
+- Tests: 300 frontend passed, 553 backend passed
+- Files changed: ActiveGameView.tsx, ActionPanel.tsx, uxp011.test.tsx (new)
+- Learnings: Many sidebar animations were already done in US-UXP-009 (capture/Plus/Elemental callouts, score numbers). This story completed the remaining gaps: last move, Mists, turn indicator, and mobile drawer. AnimatePresence `initial={false}` on the drawer prevents animation on first mount.
+---
+

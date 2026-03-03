@@ -3,18 +3,10 @@ import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/ui/ModalShell";
 import type { Archetype } from "@/lib/api";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
+import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 
-export function ArchetypeModal({
-  open,
-  pending,
-  error,
-  onSelect,
-}: {
-  open: boolean;
-  pending: boolean;
-  error: string | null;
-  onSelect: (archetype: Archetype) => void | Promise<void>;
-}) {
+export function ArchetypeModal({ open }: { open: boolean }) {
+  const { archetypePending: pending, archetypeError: error, onSelectArchetype: onSelect } = useGameRoom();
   const [activeArch, setActiveArch] = useState<Archetype>("martial");
   const archetypes: Archetype[] = [
     "martial",

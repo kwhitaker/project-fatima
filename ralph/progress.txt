@@ -305,3 +305,21 @@ Started: 2026-03-03
 - Files changed: app/rules/reducer.py
 - Learnings: NamedTuple is cleaner than dataclass for small immutable result types. Moving the deferred import to top-level is safe since captures.py has no circular dependency on reducer.py.
 ---
+
+## 2026-03-03 16:45 - US-CH-005
+- Created `app/rules/board.py` with `ADJACENCY` dict and `get_adjacent_indices()` helper
+- Updated `captures.py`: removed local `_ADJACENCY` definition, imports `ADJACENCY` from `board.py`
+- Updated `reducer.py`: imports `get_adjacent_indices` from `board.py`, uses it in `_apply_archetype` instead of `_ADJACENCY` set comprehension
+- Tests: 567 backend passed (11 new in test_board.py), ruff clean
+- Files changed: app/rules/board.py (new), app/rules/captures.py, app/rules/reducer.py, tests/test_board.py (new)
+- Learnings: Symmetry test (if A→B exists then B→A with opposite sides) is a strong invariant check for adjacency data — caught nothing here but would catch future typos.
+---
+
+## 2026-03-03 19:52 - US-CH-006
+- Created ModalShell component (web/src/components/ui/ModalShell.tsx) with AnimatePresence, backdrop, content container, Escape key handler
+- Refactored all 4 modal components (ArchetypeModal, ForfeitDialog, CardInspectPreview, GameRulesDialog) to use ModalShell — net -46 lines
+- Updated uxp012 and uxp017 tests to assert on ModalShell usage
+- Tests: 408 frontend passed, 567 backend passed
+- Files changed: ModalShell.tsx (new), ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, GameRoom.tsx, uxp012.test.tsx, uxp017.test.tsx
+- Learnings: ModalShell with aria-labelledby/aria-label/data-testid pass-through props keeps accessibility attributes on the dialog role element
+---

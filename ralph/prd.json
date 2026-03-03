@@ -90,7 +90,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 5,
-      "passes": false,
+      "passes": true,
       "notes": "The adjacency data is a static mapping of the 3x3 grid. It's currently defined as `_ADJACENCY` in captures.py and imported (breaking the private convention) by reducer.py. Moving it to a shared board.py is a clean separation. The `get_adjacent_indices` helper is a one-liner (`{nb[0] for nb in ADJACENCY[cell_index]}`) but saves the caller from knowing the tuple structure. Keep board.py minimal — just the adjacency data and helper."
     },
     {
@@ -108,7 +108,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "All 4 modals share identical two-layer motion.div structure (backdrop + content). The only differences are maxWidth and optional extra classes. ModalShell wraps AnimatePresence internally so callers just pass `open` and don't manage AnimatePresence themselves. The Escape handler should be on the backdrop div (or use useEffect with keydown listener). One subtlety: ArchetypeModal currently does NOT have an Escape handler — adding one via ModalShell is fine (it's a UX improvement, not a behavior change). CardInspectPreview currently doesn't wrap itself in AnimatePresence (the caller does) — ModalShell internalizes this."
     },
     {

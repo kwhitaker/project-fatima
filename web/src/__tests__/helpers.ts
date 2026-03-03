@@ -5,7 +5,9 @@
  * each test file must still define its own `vi.hoisted()` + `vi.mock()` blocks.
  * This file deduplicates the data and factory functions, not the mock wiring.
  */
-import type { GameState, PlayerState, BoardCell } from "@/lib/api";
+import { createElement, type ReactNode } from "react";
+import type { GameState, PlayerState, BoardCell, Archetype, CardDefinition } from "@/lib/api";
+import { GameRoomProvider } from "@/routes/game-room/GameRoomContext";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -47,4 +49,47 @@ export function makePlayer(id: string, email?: string): PlayerState {
     hand: [],
     archetype_used: false,
   };
+}
+
+// ---------------------------------------------------------------------------
+// GameRoomContext wrapper for tests
+// ---------------------------------------------------------------------------
+
+/** Default no-op context values for tests that render components using useGameRoom. */
+export const DEFAULT_GAME_ROOM_CTX = {
+  selectedCard: null as string | null,
+  onSelectCard: (() => {}) as (cardKey: string | null) => void,
+  selectedCardElement: null as string | null,
+  movePending: false,
+  usePower: false,
+  onUsePowerChange: (() => {}) as (next: boolean) => void,
+  powerSide: null as string | null,
+  onPowerSideToggle: (() => {}) as (side: "n" | "e" | "s" | "w") => void,
+  intimidatePendingCell: null as number | null,
+  onCancelIntimidatePending: () => {},
+  archetypePending: false,
+  archetypeError: null as string | null,
+  onSelectArchetype: (() => {}) as (archetype: Archetype) => void | Promise<void>,
+  onPreviewCard: (() => {}) as (cardKey: string, def?: CardDefinition) => void,
+  leaving: false,
+  onOpenLeaveConfirm: () => {},
+  showLeaveConfirm: false,
+  onCloseLeaveConfirm: () => {},
+  onConfirmLeave: () => {},
+  onShowRules: () => {},
+};
+
+/** Wraps children in a GameRoomProvider with sensible defaults. Override individual values as needed. */
+export function GameRoomWrapper({
+  ctx,
+  children,
+}: {
+  ctx?: Partial<typeof DEFAULT_GAME_ROOM_CTX>;
+  children: ReactNode;
+}) {
+  return createElement(
+    GameRoomProvider,
+    { value: { ...DEFAULT_GAME_ROOM_CTX, ...ctx } },
+    children,
+  );
 }

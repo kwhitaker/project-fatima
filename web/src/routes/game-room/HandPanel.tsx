@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
 import { cardEmoji, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
+import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { AnimatePresence, motion } from "motion/react";
 
 export function HandPanel({
@@ -10,20 +11,13 @@ export function HandPanel({
   myIndex,
   myPlayer,
   cardDefs,
-  selectedCard,
-  onSelectCard,
-  movePending,
-  onPreviewCard,
 }: {
   game: GameState;
   myIndex: number;
   myPlayer?: PlayerState;
   cardDefs: Map<string, CardDefinition>;
-  selectedCard: string | null;
-  onSelectCard: (cardKey: string | null) => void;
-  movePending: boolean;
-  onPreviewCard: (cardKey: string, def?: CardDefinition) => void;
 }) {
+  const { selectedCard, onSelectCard, movePending, onPreviewCard } = useGameRoom();
   const isMyTurn = game.current_player_index === myIndex;
 
   return (

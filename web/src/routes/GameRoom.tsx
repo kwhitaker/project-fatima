@@ -12,6 +12,7 @@ import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
 import { CompleteGameView } from "@/routes/game-room/CompleteGameView";
 import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
 import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
+import { GameRoomProvider } from "@/routes/game-room/GameRoomContext";
 
 import { useBoardDiffAnimations } from "@/routes/game-room/hooks/useBoardDiffAnimations";
 import { useGameSubscription } from "@/routes/game-room/hooks/useGameSubscription";
@@ -261,49 +262,54 @@ export default function GameRoom() {
       </div>
 
       {game.status === "active" ? (
-        <ActiveGameView
-          game={game}
-          myIndex={myIndex}
-          myPlayer={myPlayer}
-          opponentPlayer={opponentPlayer}
-          myScore={myScore}
-          opponentScore={opponentScore}
-          cardDefs={cardDefs}
-          selectedCard={selectedCard}
-          onSelectCard={setSelectedCard}
-          movePending={movePending}
-          moveError={moveError}
-          usePower={usePower}
-          onUsePowerChange={(next) => {
-            setUsePower(next);
-            setPowerSide(null);
-            setIntimidatePendingCell(null);
+        <GameRoomProvider
+          value={{
+            selectedCard,
+            onSelectCard: setSelectedCard,
+            selectedCardElement,
+            movePending,
+            usePower,
+            onUsePowerChange: (next) => {
+              setUsePower(next);
+              setPowerSide(null);
+              setIntimidatePendingCell(null);
+            },
+            powerSide,
+            onPowerSideToggle: (side) => {
+              setPowerSide(powerSide === side ? null : side);
+            },
+            intimidatePendingCell,
+            onCancelIntimidatePending: () => setIntimidatePendingCell(null),
+            archetypePending,
+            archetypeError,
+            onSelectArchetype: (arch) => void handleSelectArchetype(arch),
+            onPreviewCard: (cardKey, def) => setPreviewCard({ cardKey, def }),
+            leaving,
+            onOpenLeaveConfirm: () => setShowLeaveConfirm(true),
+            showLeaveConfirm,
+            onCloseLeaveConfirm: () => setShowLeaveConfirm(false),
+            onConfirmLeave: () => {
+              setShowLeaveConfirm(false);
+              void handleLeave();
+            },
+            onShowRules: () => setShowRules(true),
           }}
-          powerSide={powerSide}
-          onPowerSideToggle={(side) => {
-            setPowerSide(powerSide === side ? null : side);
-          }}
-          placedCells={placedCells}
-          capturedCells={capturedCells}
-          onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
-          onPreviewCard={(cardKey, def) => setPreviewCard({ cardKey, def })}
-          leaving={leaving}
-          onOpenLeaveConfirm={() => setShowLeaveConfirm(true)}
-          showLeaveConfirm={showLeaveConfirm}
-          onCloseLeaveConfirm={() => setShowLeaveConfirm(false)}
-          onConfirmLeave={() => {
-            setShowLeaveConfirm(false);
-            void handleLeave();
-          }}
-          archetypePending={archetypePending}
-          archetypeError={archetypeError}
-          onSelectArchetype={(arch) => void handleSelectArchetype(arch)}
-          boardElements={game.board_elements ?? null}
-          selectedCardElement={selectedCardElement}
-          onShowRules={() => setShowRules(true)}
-          intimidatePendingCell={intimidatePendingCell}
-          onCancelIntimidatePending={() => setIntimidatePendingCell(null)}
-        />
+        >
+          <ActiveGameView
+            game={game}
+            myIndex={myIndex}
+            myPlayer={myPlayer}
+            opponentPlayer={opponentPlayer}
+            myScore={myScore}
+            opponentScore={opponentScore}
+            cardDefs={cardDefs}
+            placedCells={placedCells}
+            capturedCells={capturedCells}
+            onPlaceCard={(cellIndex) => void handlePlaceCard(cellIndex)}
+            boardElements={game.board_elements ?? null}
+            moveError={moveError}
+          />
+        </GameRoomProvider>
       ) : game.status === "waiting" ? (
         <WaitingGameView
           game={game}

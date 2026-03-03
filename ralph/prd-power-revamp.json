@@ -1,0 +1,80 @@
+{
+  "project": "project-fatima",
+  "branchName": "ralph/archetype-power-revamp",
+  "description": "Archetype power rebalance: buff Caster (best-of-two rolls), make Devout conditional (only consumed on Fog), buff Skulker (+2 → +3), and add CW/CCW direction choice to Martial.",
+  "userStories": [
+    {
+      "id": "US-PR-001",
+      "title": "Caster reroll: best of two rolls",
+      "description": "As a Caster player, I want the reroll power to use the better of two Mists rolls instead of blindly discarding the first — so the power reliably improves my outcome rather than being a coin flip.",
+      "acceptanceCriteria": [
+        "In `apply_intent` (reducer.py), when `caster_reroll` is True, roll twice and keep the max: `roll = max(rng.randint(1, 6), rng.randint(1, 6))`",
+        "Higher roll is always better: 1=Fog (−2) is worst, 6=Omen (+2) is best, so `max()` is correct",
+        "Both rolls are consumed from the RNG stream (two calls to `rng.randint`)",
+        "Add/update tests in `tests/test_reducer.py` covering: Caster best-of-two picks the higher roll, Caster without power still rolls once, seeded RNG produces deterministic results",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "US-PR-002",
+      "title": "Devout conditional consume: only spent on Fog",
+      "description": "As a Devout player, I want my fog-negation power to only be consumed when Fog actually rolls — so I'm not punished for activating it on a non-Fog roll and can keep trying until Fog appears.",
+      "acceptanceCriteria": [
+        "In `apply_intent` (reducer.py), set `archetype_activated = True` only inside the `if devout_negate_fog and mists_modifier == -2:` block, not at dispatch time",
+        "At dispatch time for Devout, set `devout_negate_fog = True` but do NOT set `archetype_activated = True`",
+        "When `devout_negate_fog` is True and the roll is NOT Fog (modifier != −2), `archetype_activated` stays False and the player's `archetype_used` is not set — they can use_archetype again next turn",
+        "When `devout_negate_fog` is True and the roll IS Fog, set `archetype_activated = True` so the power is consumed",
+        "Add/update tests: Devout on non-Fog roll → power NOT consumed (archetype_used stays False), Devout on Fog roll → power consumed and modifier zeroed, Devout can retry on subsequent turns until Fog triggers",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "US-PR-003",
+      "title": "Skulker boost +2 → +3",
+      "description": "As a Skulker player, I want my side boost increased from +2 to +3 — so the power is competitive with the buffed Caster and conditional Devout.",
+      "acceptanceCriteria": [
+        "In `apply_skulker_boost` (archetypes.py), change `sides_dict[side] += 2` to `sides_dict[side] += 3`",
+        "Update the docstring to say 'increased by 3'",
+        "Update any existing tests that assert the +2 value to assert +3 instead",
+        "Add a test confirming Skulker boost applies +3 to the chosen side and leaves other sides unchanged",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "US-PR-004",
+      "title": "Martial rotation direction choice (CW/CCW)",
+      "description": "As a Martial player, I want to choose clockwise or counter-clockwise rotation when activating my power — so I have more tactical flexibility.",
+      "acceptanceCriteria": [
+        "Add `rotate_card_ccw(card: CardDefinition) -> CardDefinition` to `archetypes.py` with mapping: new.n=old.e, new.e=old.s, new.s=old.w, new.w=old.n",
+        "Add `martial_rotation_direction: str | None = field(default=None)` to `PlacementIntent` in reducer.py, accepting 'cw' or 'ccw'",
+        "Add `martial_rotation_direction: str | None = None` to `MoveRequest` in games.py router, accepting 'cw' or 'ccw'",
+        "In the reducer Martial dispatch block, validate `martial_rotation_direction` is 'cw' or 'ccw' (raise `ArchetypePowerArgumentError` otherwise), then call `rotate_card_once` for 'cw' or `rotate_card_ccw` for 'ccw'",
+        "Default to 'cw' if `martial_rotation_direction` is None for backward compatibility",
+        "Pass `martial_rotation_direction` from `MoveRequest` through to `PlacementIntent` in the router",
+        "Add `martialRotationDirection?: 'cw' | 'ccw'` to the `powerOptions` parameter in `web/src/lib/api.ts` and spread it as `martial_rotation_direction` in the request body",
+        "In `ActionPanel.tsx`, when the player's archetype is Martial and Use Power is checked, show a CW / CCW toggle (two buttons, similar to Skulker's direction picker)",
+        "Wire the selected direction through GameRoom state to the `placeCard` call",
+        "Add backend tests: CCW rotation produces correct side mapping, CW rotation still works, missing direction defaults to CW, invalid direction raises error",
+        "Add frontend test: ActionPanel renders CW/CCW toggle when Martial power is active",
+        "`uv run pytest` passes",
+        "`uv run ruff check . && uv run ruff format .` clean",
+        "`uv run pyright` clean",
+        "`bun run test --run` passes"
+      ],
+      "priority": 4,
+      "passes": false
+    }
+  ]
+}

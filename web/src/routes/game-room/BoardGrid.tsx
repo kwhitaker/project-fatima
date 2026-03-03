@@ -35,6 +35,7 @@ export function BoardGrid({
   mistsEffect,
   victoryCells,
   intimidatePendingCell,
+  earlyFinish,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -50,6 +51,7 @@ export function BoardGrid({
   mistsEffect?: "fog" | "omen" | "none" | null;
   victoryCells?: number[];
   intimidatePendingCell?: number | null;
+  earlyFinish?: boolean;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -125,7 +127,7 @@ export function BoardGrid({
           const cellClass = cn(
             "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative overflow-hidden",
             cell === null
-              ? "bg-muted text-muted-foreground"
+              ? earlyFinish ? "bg-muted/50 text-muted-foreground opacity-50 border-dashed" : "bg-muted text-muted-foreground"
               : cell.owner === myIndex
                 ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
@@ -284,6 +286,8 @@ export function BoardGrid({
             ) : (
               <CardFace cardKey={cell.card_key} def={def} />
             )
+          ) : earlyFinish ? (
+            <span className="text-muted-foreground/40 font-heading text-lg select-none" aria-label="unplayed cell">✕</span>
           ) : (
             ""
           );

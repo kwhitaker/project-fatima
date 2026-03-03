@@ -280,6 +280,21 @@ def apply_intent(
         updates["players"] = new_players
         updates["current_player_index"] = (intent.player_index + 1) % 2
 
+    # --- Early finish check (mathematically decided) ---
+    # After capture resolution, check if one player owns enough cells that
+    # the opponent cannot reach majority (5+) even by capturing all remaining.
+    empty_cells = sum(1 for cell in new_board if cell is None)
+    if empty_cells > 0:
+        p0_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 0)
+        p1_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 1)
+        for pi, count in ((0, p0_cells), (1, p1_cells)):
+            if count >= 5 + empty_cells:
+                updates["result"] = GameResult(
+                    winner=pi, is_draw=False, completion_reason="normal", early_finish=True
+                )
+                updates["status"] = GameStatus.COMPLETE
+                return state.model_copy(update=updates)
+
     # --- End-of-round check ---
     if all(cell is not None for cell in new_board):
         round_result = compute_round_result(new_board)

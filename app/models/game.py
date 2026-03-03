@@ -36,6 +36,7 @@ class GameResult(BaseModel):
     is_draw: bool
     completion_reason: str | None = None  # "normal" | "forfeit"
     forfeit_by_index: int | None = None  # player index who forfeited (only when reason="forfeit")
+    early_finish: bool = False  # True when game ended because outcome was mathematically decided
 
 
 class LastMoveInfo(BaseModel):

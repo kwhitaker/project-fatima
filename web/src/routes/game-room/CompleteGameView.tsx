@@ -37,6 +37,8 @@ export function CompleteGameView({
       .filter((i) => i >= 0);
   }, [game.board, isWinner, myIndex]);
 
+  const earlyFinish = game.result?.early_finish === true;
+
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
       {showVictory && <VictoryOverlay onDismiss={dismissVictory} />}
@@ -50,6 +52,11 @@ export function CompleteGameView({
             <p className="text-xl font-heading font-bold text-green-600 dark:text-green-400">You win!</p>
           ) : (
             <p className="text-xl font-heading font-bold text-red-600 dark:text-red-400">You lose!</p>
+          )}
+          {earlyFinish && (
+            <p className="text-sm font-body text-muted-foreground mt-1">
+              {isWinner ? "Inevitable victory" : "The darkness claims this match"}
+            </p>
           )}
         </div>
 
@@ -65,6 +72,7 @@ export function CompleteGameView({
           cardDefs={cardDefs}
           onCellInspect={(cardKey) => onPreviewCard(cardKey, cardDefs.get(cardKey))}
           victoryCells={victoryCells}
+          earlyFinish={earlyFinish}
         />
       </div>
     </div>

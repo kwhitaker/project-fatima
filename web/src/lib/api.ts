@@ -35,6 +35,7 @@ export interface GameResult {
   is_draw: boolean;
   completion_reason?: string | null;
   forfeit_by_index?: number | null;
+  early_finish?: boolean;
 }
 
 export interface LastMoveInfo {

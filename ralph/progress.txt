@@ -7,3 +7,20 @@
 Started: 2026-03-03
 ---
 
+## 2026-03-03 — US-PR-001
+- Changed Caster reroll from "discard first, use second" to `max(roll1, roll2)` (best-of-two)
+- Updated tests: best-of-two picks higher roll, keeps first when higher, deterministic with seeded RNG
+- Tests/validation: 568 passed, ruff clean on changed files, pyright pre-existing errors only
+- Files changed: `app/rules/reducer.py`, `tests/test_caster.py`
+- Learnings: mock_rng returns values in sequence; max() on raw die values is correct since higher=better (1=Fog worst, 6=Omen best)
+---
+
+## 2026-03-03 — US-PR-002
+- Devout `activated` set to False at dispatch; only set True when Fog actually negated
+- Added `archetype_activated = True` inside the `devout_negate_fog and mists_modifier == -2` block
+- Tests: non-Fog → power NOT consumed, Fog → consumed, retry across multiple turns until Fog
+- Tests/validation: 568 passed, ruff clean, pyright pre-existing only
+- Files changed: `app/rules/reducer.py`, `tests/test_devout.py`
+- Learnings: conditional consume pattern — set flag at dispatch, consume at effect site
+---
+

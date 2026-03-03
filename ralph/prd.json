@@ -17,7 +17,7 @@
         "`uv run pyright` clean"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-PR-002",
@@ -34,7 +34,7 @@
         "`uv run pyright` clean"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-PR-003",

@@ -293,7 +293,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 17,
-      "passes": false,
+      "passes": true,
       "notes": "Builds on the existing Motion-powered placement animation from US-UXP-008. The slam is a spring overshoot (scale to 1.08 then settle to 1). The ripple can be a CSS pseudo-element with scale+opacity animation. The micro-shake is a quick translateX oscillation on the board grid container. Mists tints are brief color overlays keyed to the last_move.mists_roll value."
     },
     {

@@ -182,3 +182,15 @@ Started: 2026-03-03
 - Files changed: Login.tsx, uxp018.test.tsx (new)
 - Learnings: Simple additive branding — no structural changes to form logic needed. font-heading/font-body utility classes from US-UXP-004 make font assignment trivial.
 ---
+
+## 2026-03-03 15:25 - US-UXP-019
+- Added slam overshoot: non-pulse placed cards use scale keyframes [0, 1.08, 1] for a decisive pop effect
+- Added impact ripple: motion.div pseudo-element scales from 0.8→1.6 with opacity fade on placed cards
+- Added board micro-shake: grid container is now motion.div with translateX oscillation [0, -2, 2, -1, 1, 0] keyed to placedCells
+- Added Mists tint: CSS keyframes mists-fog-flash (blue inset glow) and mists-omen-flash (gold inset glow), applied via animate-mists-fog/animate-mists-omen classes on placed cards based on mistsEffect prop
+- ActiveGameView passes game.last_move.mists_effect to BoardGrid when placement is active
+- Updated uxp008 test to reflect slam overshoot change (no longer asserts spring params for non-pulse)
+- Tests: 339 frontend passed; 11 new uxp019 assertions
+- Files changed: BoardGrid.tsx, ActiveGameView.tsx, index.css, uxp008.test.tsx (updated), uxp019.test.tsx (new)
+- Learnings: motion.div key trick for grid container allows re-triggering shake animation on each new placement. CSS box-shadow inset animation works well for brief color tints without affecting layout or z-ordering.
+---

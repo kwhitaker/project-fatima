@@ -95,27 +95,21 @@ describe("US-UXP-017: Castlevania theme audit — buttons & interactive elements
   });
 
   describe("dialogs use theme tokens", () => {
-    it("GameRulesDialog uses bg-card and border-border", () => {
-      const src = fs.readFileSync(gameRulesDialogPath, "utf-8");
+    it("ModalShell (shared dialog wrapper) uses bg-card and border-border", () => {
+      const modalShellPath = path.resolve(__dirname, "../components/ui/ModalShell.tsx");
+      const src = fs.readFileSync(modalShellPath, "utf-8");
       expect(src).toContain("bg-card");
       expect(src).toContain("border-border");
       expect(src).not.toMatch(/bg-white\b/);
     });
 
-    it("ForfeitDialog uses bg-card and border-border", () => {
-      const src = fs.readFileSync(forfeitDialogPath, "utf-8");
-      expect(src).toContain("bg-card");
-      expect(src).toContain("border-border");
-      expect(src).not.toMatch(/bg-white\b/);
+    it("All dialog components use ModalShell for theming", () => {
+      for (const filePath of [gameRulesDialogPath, forfeitDialogPath, cardInspectPath]) {
+        const src = fs.readFileSync(filePath, "utf-8");
+        expect(src).toContain("ModalShell");
+        expect(src).not.toMatch(/bg-white\b/);
+      }
     });
-
-    it("CardInspectPreview uses bg-card and border-border", () => {
-      const src = fs.readFileSync(cardInspectPath, "utf-8");
-      expect(src).toContain("bg-card");
-      expect(src).toContain("border-border");
-      expect(src).not.toMatch(/bg-white\b/);
-    });
-
   });
 
   describe("info buttons use theme hover", () => {

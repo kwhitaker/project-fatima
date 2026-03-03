@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AnimatePresence } from "motion/react";
+
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,8 @@ export default function GameRoom() {
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
   const [previewCard, setPreviewCard] = useState<{ cardKey: string; def?: CardDefinition } | null>(null);
+  const lastPreviewCard = useRef<{ cardKey: string; def?: CardDefinition }>({ cardKey: "" });
+  if (previewCard) lastPreviewCard.current = previewCard;
 
   const { placedCells, capturedCells } = useBoardDiffAnimations(game?.board ?? null);
 
@@ -324,15 +326,12 @@ export default function GameRoom() {
       )}
 
       {/* Card inspect preview dialog */}
-      <AnimatePresence>
-        {previewCard !== null && (
-          <CardInspectPreview
-            cardKey={previewCard.cardKey}
-            def={previewCard.def}
-            onClose={() => setPreviewCard(null)}
-          />
-        )}
-      </AnimatePresence>
+      <CardInspectPreview
+        open={previewCard !== null}
+        cardKey={lastPreviewCard.current.cardKey}
+        def={lastPreviewCard.current.def}
+        onClose={() => setPreviewCard(null)}
+      />
 
       <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </div>

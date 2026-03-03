@@ -32,45 +32,17 @@ describe("US-UXP-012 — Page transitions and modal animations", () => {
     expect(src).toContain("motion.div");
   });
 
-  it("ArchetypeModal has AnimatePresence entrance/exit", () => {
-    const src = read("routes/game-room/ArchetypeModal.tsx");
+  it("ModalShell provides AnimatePresence entrance/exit for all modals", () => {
+    const src = read("components/ui/ModalShell.tsx");
     expect(src).toContain("AnimatePresence");
     expect(src).toContain("motion.div");
     expect(src).toContain("exit=");
-    // Should NOT have early return null
-    expect(src).not.toContain("if (!open) return null");
+    expect(src).toContain("scale: 0.9");
+    expect(src).toContain("opacity: 0");
+    expect(src).toContain("duration: 0.15");
   });
 
-  it("ForfeitDialog has AnimatePresence entrance/exit", () => {
-    const src = read("routes/game-room/ForfeitDialog.tsx");
-    expect(src).toContain("AnimatePresence");
-    expect(src).toContain("motion.div");
-    expect(src).toContain("exit=");
-    expect(src).not.toContain("if (!open) return null");
-  });
-
-  it("CardInspectPreview uses motion for entrance/exit", () => {
-    const src = read("routes/game-room/CardInspectPreview.tsx");
-    expect(src).toContain('from "motion/react"');
-    expect(src).toContain("motion.div");
-    expect(src).toContain("exit=");
-  });
-
-  it("GameRoom wraps CardInspectPreview in AnimatePresence", () => {
-    const src = read("routes/GameRoom.tsx");
-    expect(src).toContain("AnimatePresence");
-    expect(src).toContain("CardInspectPreview");
-  });
-
-  it("GameRulesDialog has AnimatePresence entrance/exit", () => {
-    const src = read("routes/game-room/GameRulesDialog.tsx");
-    expect(src).toContain("AnimatePresence");
-    expect(src).toContain("motion.div");
-    expect(src).toContain("exit=");
-    expect(src).not.toContain("if (!open) return null");
-  });
-
-  it("Modal animations use scale + opacity pattern", () => {
+  it("All 4 modal components use ModalShell", () => {
     for (const file of [
       "routes/game-room/ArchetypeModal.tsx",
       "routes/game-room/ForfeitDialog.tsx",
@@ -78,19 +50,15 @@ describe("US-UXP-012 — Page transitions and modal animations", () => {
       "routes/game-room/GameRulesDialog.tsx",
     ]) {
       const src = read(file);
-      expect(src).toContain("scale: 0.9");
-      expect(src).toContain("opacity: 0");
+      expect(src).toContain("ModalShell");
+      // Should NOT have early return null
+      expect(src).not.toContain("if (!open) return null");
     }
   });
 
-  it("Transition durations are snappy (0.15-0.25s range)", () => {
-    for (const file of [
-      "routes/game-room/ArchetypeModal.tsx",
-      "routes/game-room/ForfeitDialog.tsx",
-      "routes/game-room/GameRulesDialog.tsx",
-    ]) {
-      const src = read(file);
-      expect(src).toContain("duration: 0.15");
-    }
+  it("GameRoom renders CardInspectPreview with open prop", () => {
+    const src = read("routes/GameRoom.tsx");
+    expect(src).toContain("CardInspectPreview");
+    expect(src).toContain("open=");
   });
 });

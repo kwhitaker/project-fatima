@@ -265,3 +265,13 @@ Started: 2026-03-03
 - Files changed: api.ts, api-types.generated.ts (new), uxp014.test.tsx (new), uxp013.test.tsx, uxp023.test.tsx, AGENTS.md
 - Learnings: openapi-typescript generates types using `components["schemas"]["X"]` nested pattern rather than flat exports. Re-export aliases in api.ts keep all downstream imports working unchanged. The `typegen` script dumps schema via `uv run python` (no server needed).
 ---
+
+## 2026-03-03 16:25 - US-UXP-015
+- Created `web/src/lib/sounds.ts` with 8 procedural sound effects (place, capture, combo, plus, elemental, turn start, victory, defeat) using Web Audio API oscillators (square/sawtooth waveforms for 8-bit feel)
+- Shared AudioContext lazy-initialized on first click; masterGain controls mute; localStorage persists mute preference
+- Wired sounds: BoardGrid (playPlace on placedCells, playCapture/playCombo on capture-step), ActiveGameView (playPlus, playElemental, playTurnStart on turn change), CompleteGameView (playVictory/playDefeat on mount)
+- Created MuteToggle component (speaker emoji button) placed next to score bar in ActiveGameView
+- Tests: 427 frontend passed (17 new uxp015 assertions), 562 backend passed
+- Files changed: sounds.ts (new), MuteToggle.tsx (new), BoardGrid.tsx, ActiveGameView.tsx, CompleteGameView.tsx, GameRoom.tsx, uxp015.test.tsx (new)
+- Learnings: Web Audio `new AudioContext` matches regex `/new Audio/` — use `/new Audio\(/` to check for HTMLAudioElement. All play* functions no-op gracefully when AudioContext is not yet initialized (before first user gesture).
+---

@@ -432,7 +432,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 25,
-      "passes": false,
+      "passes": true,
       "notes": "Web Audio API is available in all modern browsers with zero dependencies. The key pattern: create an OscillatorNode with the desired waveform (square/sawtooth for 8-bit feel), connect through a GainNode for volume envelope, schedule start/stop times, and let the nodes garbage-collect. Browser autoplay policy requires AudioContext to be created inside a user gesture handler \u2014 the `initAudio()` call should happen on the first click/tap anywhere in the app (add a one-time event listener). Square wave oscillators naturally sound 8-bit. For the combo arpeggio, schedule multiple oscillators at staggered `startTime` offsets. Keep all gains low (~0.1-0.15) so sounds are atmospheric, not jarring. The mute toggle can be a simple speaker icon (\ud83d\udd0a/\ud83d\udd07) \u2014 no need for a volume slider."
     }
   ]

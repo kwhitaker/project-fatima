@@ -99,9 +99,11 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   echo "$STORY_DESC" | fold -s -w 60 | sed 's/^/  /'
   echo "==============================================================="
 
-  OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
+  TMPFILE=$(mktemp)
+  trap 'rm -f "$TMPFILE"' EXIT
+  claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee "$TMPFILE" || true
 
-  if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
+  if grep -q "<promise>COMPLETE</promise>" "$TMPFILE"; then
     echo ""
     echo "Ralph completed all tasks."
     exit 0

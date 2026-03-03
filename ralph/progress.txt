@@ -106,3 +106,13 @@ Started: 2026-03-01
 - Learnings: The three cell branches (clickable empty, occupied with inspect, fallback div) each need their own `title` logic; computing `elementTitle` once at the top of the map callback avoids duplication. `getByTitle` works well for testing native tooltip `title` attributes.
 ---
 
+## 2026-03-03 09:49 - US-GM-011
+- Added `created_at: str | None` to `GameState` (set in `create_game` via `datetime.now(UTC).isoformat()`); added `list_open_games(exclude_player_id)` to `GameStore` protocol + both implementations (memory + supabase)
+- Updated `GET /games` router to combine own games + open joinable games (WAITING, 1 player, caller not in it); sorted non-complete before complete, newest first (stable two-pass sort)
+- Frontend: `Games.tsx` shows "Open" badge (emerald) for games user is not a participant of; displays host email for open games; updated `GameState` TS interface with `created_at`
+- Updated 2 existing tests (`test_auth_api.py`) that assumed old behavior (caller only sees own games); added 9 backend tests + 5 frontend tests
+- Tests run: `uv run pytest` — 543 passed; `bun run test --run` — 182 passed
+- Files changed: `app/models/game.py`, `app/routers/games.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `tests/test_auth_api.py`, `tests/test_gm011_open_games.py`, `web/src/__tests__/routes.test.tsx`, `web/src/__tests__/gm011.test.tsx`, `web/src/lib/api.ts`, `web/src/routes/Games.tsx`
+- Learnings: When adding open games to a list endpoint, existing tests that assert "caller only sees own games" need updating. Python stable sort (two passes) cleanly handles multi-key sorts where one key is descending — sort by secondary descending first, then by primary ascending. Frontend test game_ids must be ≤8 chars since `Games.tsx` uses `slice(0, 8)` for display.
+---
+

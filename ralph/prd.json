@@ -190,7 +190,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 11,
-      "passes": false,
+      "passes": true,
       "notes": "We intentionally avoid auto-joining from the list: clicking navigates to the game room; joining still requires an explicit action. If creation timestamps are not currently available in the API, add what is needed to sort deterministically by creation time."
     },
     {

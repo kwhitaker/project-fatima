@@ -257,7 +257,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 15,
-      "passes": false,
+      "passes": true,
       "notes": "Keep the reducer/gameplay unchanged; this is a UX/clarity pass that reuses existing state (`selectedCard`, `usePower`, `powerSide`, `movePending`, `current_player_index`)."
     },
     {

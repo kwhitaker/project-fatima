@@ -134,6 +134,15 @@ Started: 2026-03-01
 - Learnings: One-active-game constraint cascades into many existing tests that create multiple games for the same user — these need different user identities or completed games between creates. The service-layer check uses existing `list_games_for_player` so no new store method is needed.
 ---
 
+## 2026-03-03 - US-GM-015
+- Created `ActionPanel` component: always-visible panel showing turn label ("Your turn"/"Opponent's turn"), step text ("Select a card", "Choose a cell", "Choose a direction for your power"), selected card summary with Cancel button, and archetype power controls (checkbox + direction buttons for skulker/presence)
+- Moved power toggle/direction controls from `ActiveGameView` into `ActionPanel`; removed redundant step text from `HandPanel`; removed duplicate turn text from turn bar (now lives in ActionPanel)
+- 8 new tests in `gm015.test.tsx`: step text, opponent's turn, selected card summary, cancel deselect, direction gating, choose-cell after direction, disabled hand on opponent turn, hidden power when used
+- Tests run: `bun run test --run` — 199 passed; `uv run pytest` — 553 passed
+- Files changed: `web/src/routes/game-room/ActionPanel.tsx` (new), `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/game-room/HandPanel.tsx`, `web/src/__tests__/gm015.test.tsx` (new)
+- Learnings: Removing "Your turn"/"Opponent's turn" from the turn bar breaks many existing tests that use `getByText(/your turn/i)` as a wait condition; keeping the turn label in the ActionPanel preserves backward compat. "Choose your archetype" as step text conflicts with the ArchetypeModal heading — use distinct wording. Hand card buttons and inspect buttons both match `/card name/i`; use `{ pressed: false }` to target only the selection button.
+---
+
 ## 2026-03-03 13:07 - US-GM-014
 - Created `HandPanel` component as in-flow replacement for fixed-overlay `HandDrawer`; board and hand now render simultaneously without occlusion
 - Rewrote `ActiveGameView` with responsive two-column layout: board+hand (left) + secondary sidebar (right on lg+); mobile uses collapsible "Info & Actions" panel for secondary content (last move callouts, archetypes, leave button)

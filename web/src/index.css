@@ -118,3 +118,15 @@
 .animate-mists-omen {
   animation: mists-omen-flash 0.6s ease-out;
 }
+
+/* Victory glow for owned cards */
+@keyframes victory-glow {
+  0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+  30% { box-shadow: 0 0 16px 4px rgba(234, 179, 8, 0.7); }
+  60% { box-shadow: 0 0 8px 2px rgba(234, 179, 8, 0.4); }
+  100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+}
+
+.animate-victory-glow {
+  animation: victory-glow 0.6s steps(4) forwards;
+}

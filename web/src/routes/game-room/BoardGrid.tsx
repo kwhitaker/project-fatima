@@ -33,6 +33,7 @@ export function BoardGrid({
   boardElements,
   selectedCardElement,
   mistsEffect,
+  victoryCells,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -46,6 +47,7 @@ export function BoardGrid({
   boardElements?: string[] | null;
   selectedCardElement?: string | null;
   mistsEffect?: "fog" | "omen" | "none" | null;
+  victoryCells?: number[];
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -114,6 +116,9 @@ export function BoardGrid({
             elementLabel === selectedCardElement;
 
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
+
+          // Victory glow: staggered delay based on position in victoryCells array
+          const victoryIdx = victoryCells?.indexOf(i) ?? -1;
 
           const cellClass = cn(
             "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative overflow-hidden",
@@ -281,15 +286,22 @@ export function BoardGrid({
             ""
           );
 
+          const victoryGlowClass = victoryIdx >= 0 ? "animate-victory-glow" : undefined;
+          const victoryGlowStyle = victoryIdx >= 0
+            ? { animationDelay: `${victoryIdx * 0.2}s` }
+            : undefined;
+
           if (cell !== null && onCellInspect) {
             return (
               <button
                 key={i}
                 className={cn(
                   cellClass,
+                  victoryGlowClass,
                   "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 )}
-                data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+                style={victoryGlowStyle}
+                data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
                 data-last-move={isLastMove ? "true" : undefined}
                 onClick={() => onCellInspect(cell.card_key)}
                 aria-label={`inspect ${def?.name ?? cell.card_key}`}
@@ -304,8 +316,9 @@ export function BoardGrid({
           return (
             <div
               key={i}
-              className={cellClass}
-              data-anim={isPlaced ? "placed" : isCaptured ? "captured" : undefined}
+              className={cn(cellClass, victoryGlowClass)}
+              style={victoryGlowStyle}
+              data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
               title={
                 cell

@@ -323,3 +323,26 @@ Started: 2026-03-03
 - Files changed: ModalShell.tsx (new), ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, GameRoom.tsx, uxp012.test.tsx, uxp017.test.tsx
 - Learnings: ModalShell with aria-labelledby/aria-label/data-testid pass-through props keeps accessibility attributes on the dialog role element
 ---
+
+## 2026-03-03 20:05 - US-CH-007
+- Created GameRoomContext.tsx with useGameRoom() hook and GameRoomProvider; context holds 20 values (selection, power, archetype, leave, rules callbacks)
+- ActiveGameView props reduced from 32 to 12 (game, myIndex, myPlayer, opponentPlayer, myScore, opponentScore, cardDefs, placedCells, capturedCells, onPlaceCard, boardElements, moveError)
+- ActionPanel props reduced from 12 to 3 (isMyTurn, selectedCardDef, myPlayer); consumes 9 values from context
+- HandPanel props reduced from 8 to 4 (game, myIndex, myPlayer, cardDefs); consumes 4 from context
+- ArchetypeModal props reduced from 4 to 1 (open); consumes pending/error/onSelect from context
+- BoardGrid unchanged (used outside GameRoomContext in CompleteGameView/DevPlayground)
+- Added GameRoomWrapper + DEFAULT_GAME_ROOM_CTX to helpers.ts for test context wrapping
+- Tests: 408 frontend passed, 567 backend passed
+- Files changed: GameRoomContext.tsx (new), GameRoom.tsx, ActiveGameView.tsx, ActionPanel.tsx, HandPanel.tsx, ArchetypeModal.tsx, helpers.ts
+- Learnings: helpers.ts is .ts not .tsx — use createElement() instead of JSX for wrapper components. BoardGrid stays prop-based since it's rendered in multiple contexts without a provider.
+---
+
+## 2026-03-03 20:15 - US-CH-008
+- Audited all 19 uxp*.test.tsx files using fs.readFileSync on .tsx source files
+- Deleted 7 entire test files (uxp010, uxp011, uxp012, uxp018, uxp020, uxp022, uxp025) — all tests were pure source-string assertions
+- Trimmed source-string tests from 12 more files (uxp004, uxp006, uxp007, uxp008, uxp009, uxp013, uxp014, uxp015, uxp017, uxp019, uxp021, uxp023), keeping only config file tests (CSS, JSON, package.json) and banned-pattern scans
+- Net: -1255 lines of brittle source-string tests; remaining tests read config files or are behavioral
+- Tests: 246 frontend passed (32 test files), 567 backend passed
+- Files changed: 19 uxp*.test.tsx files (7 deleted, 12 trimmed)
+- Learnings: Source-string tests break on every refactor and don't test user-visible behavior. Config file tests (CSS keyframes, package.json deps) are acceptable since they verify build/deploy contracts. Banned-pattern scans (zinc classes) are linting-style checks worth keeping.
+---

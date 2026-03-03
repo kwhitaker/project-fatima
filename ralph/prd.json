@@ -127,7 +127,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "The 12-13 pure pass-through props are the clear candidates for context. The remaining ~15 props that ActiveGameView uses directly could stay as props (they document the component's actual interface) or move to context — either is fine as long as the result is cleaner. Don't move everything into context just because you can — if a prop is used by only ActiveGameView and one child, a prop might still be clearer. The test files that render ActiveGameView or GameRoom will need updated setup — they'll need a context provider wrapper. Consider adding a `renderWithGameContext` helper to helpers.ts."
     },
     {
@@ -147,7 +147,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "This is the largest story by file count (19 files) but many of the individual test changes are deletions. The key judgment call: does this test guard behavior a user would notice, or does it guard an implementation detail? 'Button has hover:border-accent' is implementation — if we change the hover color, the test breaks but nothing is actually wrong. 'Card shows emoji for strahd_von_zarovich' is behavior — worth testing. Err on the side of deleting low-value tests rather than investing effort converting them. The goal is fewer, better tests — not the same number of tests in a different style. Work through the files in numeric order (uxp004, uxp006, uxp007, ...). This story may be split if it's too large for one iteration — if so, do the highest-value conversions first and mark the remainder for a follow-up."
     }
   ]

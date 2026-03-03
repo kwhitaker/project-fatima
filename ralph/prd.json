@@ -32,7 +32,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "CSS-variable-only change. HSL values in shadcn use space-separated format without 'hsl()' wrapper (e.g. '0 70% 45%' not 'hsl(0, 70%, 45%)'). Reference NES Castlevania palette: purples (#1c0040, #3c0080), reds (#a00000, #c02020), stone (#606070, #808890), gold (#c0a000). The key test is: can you tell what's a button vs what's a label? Primary buttons should pop against the dark background."
     },
     {

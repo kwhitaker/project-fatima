@@ -19,3 +19,13 @@ Started: 2026-03-03
 - Learnings: README already existed with basic content; rewrote rather than created fresh
 ---
 
+## 2026-03-03 13:00 - US-UXP-002
+- Replaced default shadcn/ui neutral palette with Castlevania NES-inspired colors in both :root and .dark blocks
+- Dark mode: deep blue-black bg (240 20% 6%), warm parchment fg (40 20% 90%), blood-red primary (0 70% 45%), dark stone secondary (240 10% 15%), dull gold accent (45 60% 45%)
+- Light mode: readable inverse with parchment bg, dark fg, same red primary
+- Destructive uses orange-red (hue 25) to stay distinct from blood-red primary
+- Tests: 207 frontend passed
+- Files changed: web/src/index.css
+- Learnings: CSS-variable-only change; all shadcn/ui components pick up theme automatically
+---
+

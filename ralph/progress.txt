@@ -255,3 +255,13 @@ Started: 2026-03-03
 - Files changed: DevPlayground.tsx (new), App.tsx, uxp025.test.tsx (new)
 - Learnings: Lazy import gated by import.meta.env.DEV ensures the component and its mock data are fully tree-shaken in production builds. setTimeout(50ms) after reset() prevents React batching from swallowing state transitions.
 ---
+
+## 2026-03-03 16:20 - US-UXP-014
+- Generated `web/src/lib/api-types.generated.ts` from backend OpenAPI schema via `openapi-typescript`
+- Refactored `web/src/lib/api.ts`: replaced 7 manual interface definitions with re-exports from generated types (`components["schemas"]["X"]` pattern)
+- Updated 2 existing tests (uxp013, uxp023) that read api.ts source to point at generated file instead
+- Added `typegen` workflow docs to AGENTS.md
+- Tests: 413 frontend passed (10 new uxp014 assertions), 562 backend passed, pyright unchanged (2 pre-existing errors)
+- Files changed: api.ts, api-types.generated.ts (new), uxp014.test.tsx (new), uxp013.test.tsx, uxp023.test.tsx, AGENTS.md
+- Learnings: openapi-typescript generates types using `components["schemas"]["X"]` nested pattern rather than flat exports. Re-export aliases in api.ts keep all downstream imports working unchanged. The `typegen` script dumps schema via `uv run python` (no server needed).
+---

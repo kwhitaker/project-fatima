@@ -414,7 +414,7 @@
         "`uv run pyright` passes (no backend changes expected, but verify)"
       ],
       "priority": 24,
-      "passes": false,
+      "passes": true,
       "notes": "This is a DX story, not user-facing UX. FastAPI auto-generates an OpenAPI 3.1 schema at `/openapi.json` from Pydantic models. `openapi-typescript` reads this and outputs TS types. The generated types will use the OpenAPI naming (which matches Python snake_case since FastAPI preserves Pydantic field names). Key gotcha: the backend must be running when the typegen script executes (it fetches from localhost). An alternative is to first dump the schema to a JSON file (`python -c 'from app.main import app; import json; print(json.dumps(app.openapi()))' > openapi.json`) and then point openapi-typescript at the file \u2014 this avoids needing the server running. Either approach is fine. The re-export pattern keeps the migration non-breaking: `export type { GameState } from './api-types.generated'` in api.ts."
     },
     {

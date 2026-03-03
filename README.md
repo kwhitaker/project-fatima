@@ -68,12 +68,23 @@ uv run ruff format .
 uv run pyright
 ```
 
-## Tooling
+## Tooling (mise)
 
-We use [mise](https://mise.jdx.dev) to manage runtime/tool versions for consistent local development.
+We use [mise](https://mise.jdx.dev) to manage runtimes and provide unified dev tasks.
 
 - Install mise: https://mise.jdx.dev/installing-mise.html
 - After cloning: `mise install`
+
+```bash
+mise run dev          # Start backend + frontend concurrently
+mise run dev:api      # Start FastAPI backend only
+mise run dev:ui       # Start Vite frontend only
+mise run test         # Run backend + frontend tests
+mise run lint         # Lint Python code (ruff check)
+mise run format       # Format Python code (ruff format)
+```
+
+These are convenience wrappers — the individual commands (documented above) still work without mise.
 
 ## Deploy
 

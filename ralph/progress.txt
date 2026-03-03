@@ -286,3 +286,22 @@ Started: 2026-03-03
 - Files changed: tests/conftest.py (new), 19 test files updated
 - Learnings: tests/__init__.py makes conftest a package module — must use `from tests.conftest import` not `from conftest import`. make_state with players[] means hand validation runs — tests that bypassed it before now need p0_hand.
 ---
+
+## 2026-03-03 16:35 - US-CH-003
+- Removed 6 duplicate error-path tests from test_api.py (404 GET/JOIN, 403 archetype/move, 422 wrong turn, 409 stale version)
+- All 6 scenarios already covered more thoroughly in test_error_responses.py (also asserts `detail` key)
+- test_api.py now has only happy-path + 2 unique error cases (cannot_join_twice, archetype_already_selected)
+- Tests: 556 backend passed (6 fewer test functions, same coverage)
+- Files changed: tests/test_api.py
+- Learnings: test_error_responses.py is strictly better for error scenarios — it uses _assert_error() which checks both status code and detail key presence.
+---
+
+## 2026-03-03 16:40 - US-CH-004
+- Extracted archetype dispatch block (~60 lines) from apply_intent into _apply_archetype function
+- Created _ArchetypeResult NamedTuple with card, activated, caster_reroll, devout_negate_fog, intimidate_target fields
+- Moved _ADJACENCY import from deferred (inside function) to top-level import
+- apply_intent now reads as: validate → archetype → mists → elemental → board update → captures → end checks
+- Tests/validation: 556 backend tests passed, ruff/pyright unchanged (pre-existing errors only)
+- Files changed: app/rules/reducer.py
+- Learnings: NamedTuple is cleaner than dataclass for small immutable result types. Moving the deferred import to top-level is safe since captures.py has no circular dependency on reducer.py.
+---

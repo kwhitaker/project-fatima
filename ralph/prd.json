@@ -40,7 +40,7 @@
         "`bun run test --run` passes with all existing tests unchanged in behavior"
       ],
       "priority": 2,
-      "passes": false,
+      "passes": true,
       "notes": "The vi.mock hoisting constraint is the main complexity here. `vi.mock` calls are hoisted to the top of the file by vitest's transform — the factory function must not reference variables from the module scope UNLESS they are created via `vi.hoisted()`. The practical pattern: helpers.ts exports data (MOCK_SESSION, makeGame) and can export factory functions, but each test file still needs its own `vi.mock(...)` call and its own `vi.hoisted()` block for mock function references. The win is deduplicating the data/factories, not the mock wiring. Don't try to be too clever with mock abstractions — keep it simple. The gm01x and routes test files have the most duplication and should be the priority."
     },
     {
@@ -57,7 +57,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "The 6 known duplicates are all cases where test_api.py tests an error path that test_error_responses.py also tests more systematically. The fix is simple: delete the duplicate test functions from test_api.py. Check that test_error_responses.py covers each scenario with equivalent or better assertions before deleting. If test_api.py has a better assertion for a particular case, move that assertion to test_error_responses.py instead of deleting it."
     },
     {
@@ -74,7 +74,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "The INTIMIDATE branch is the longest (30 lines) because it validates adjacency, checks opponent ownership, etc. The others are 2-6 lines each. The extraction should make apply_intent read like a pipeline: validate turn → apply archetype → place card → resolve captures → check game over → return state. The archetype result type might look like: `ArchetypeResult(card: CardDefinition, caster_reroll: bool, devout_negate_fog: bool, intimidate_debuff: tuple[int, str] | None)`. Keep it simple — don't over-engineer the result type."
     },
     {

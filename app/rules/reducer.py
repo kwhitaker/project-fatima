@@ -13,7 +13,8 @@ from typing import NamedTuple
 from app.models.cards import CardDefinition
 from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo
 from app.rules.archetypes import apply_skulker_boost, rotate_card_once
-from app.rules.captures import _ADJACENCY, resolve_captures
+from app.rules.board import get_adjacent_indices
+from app.rules.captures import resolve_captures
 from app.rules.errors import (
     ArchetypeAlreadyUsedError,
     ArchetypeNotAvailableError,
@@ -205,7 +206,7 @@ def _apply_archetype(
                 f"got {intent.intimidate_target_cell!r}"
             )
         target_cell = intent.intimidate_target_cell
-        adjacent_indices = {nb[0] for nb in _ADJACENCY[intent.cell_index]}
+        adjacent_indices = get_adjacent_indices(intent.cell_index)
         if target_cell not in adjacent_indices:
             raise ArchetypePowerArgumentError(
                 f"Intimidate target cell {target_cell} is not adjacent "

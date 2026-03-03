@@ -12,21 +12,7 @@ opposing side (N↔S, E↔W). Strict greater-than triggers a capture.
 
 from app.models.cards import CardDefinition
 from app.models.game import BoardCell
-
-# Maps cell index → list of (neighbor_index, placed_side, neighbor_side)
-# placed_side: which side of the placed card is used for comparison
-# neighbor_side: which side of the neighbor card is used for comparison
-_ADJACENCY: dict[int, list[tuple[int, str, str]]] = {
-    0: [(1, "e", "w"), (3, "s", "n")],
-    1: [(0, "w", "e"), (2, "e", "w"), (4, "s", "n")],
-    2: [(1, "w", "e"), (5, "s", "n")],
-    3: [(0, "n", "s"), (4, "e", "w"), (6, "s", "n")],
-    4: [(1, "n", "s"), (3, "w", "e"), (5, "e", "w"), (7, "s", "n")],
-    5: [(2, "n", "s"), (4, "w", "e"), (8, "s", "n")],
-    6: [(3, "n", "s"), (7, "e", "w")],
-    7: [(4, "n", "s"), (6, "w", "e"), (8, "e", "w")],
-    8: [(5, "n", "s"), (7, "w", "e")],
-}
+from app.rules.board import ADJACENCY
 
 
 def resolve_captures(
@@ -62,7 +48,7 @@ def resolve_captures(
     # Compute raw side-sums for each adjacent opponent-owned cell.
     # Group by sum; if any sum appears 2+ times, capture all matching cells.
     sum_to_neighbors: dict[int, list[tuple[int, str]]] = {}  # sum → [(neighbor_idx, card_key)]
-    for neighbor_index, placed_side, neighbor_side in _ADJACENCY[placed_index]:
+    for neighbor_index, placed_side, neighbor_side in ADJACENCY[placed_index]:
         neighbor_cell = new_board[neighbor_index]
         if neighbor_cell is None or neighbor_cell.owner == placed_owner:
             continue
@@ -93,7 +79,7 @@ def resolve_captures(
     while queue:
         src_index, src_card, mist_mod, intim_target = queue.pop(0)
 
-        for neighbor_index, placed_side, neighbor_side in _ADJACENCY[src_index]:
+        for neighbor_index, placed_side, neighbor_side in ADJACENCY[src_index]:
             neighbor_cell = new_board[neighbor_index]
             if neighbor_cell is None or neighbor_cell.owner == placed_owner:
                 continue

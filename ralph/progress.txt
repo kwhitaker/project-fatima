@@ -246,3 +246,12 @@ Started: 2026-03-03
 - Files changed: .mise.toml, README.md
 - Learnings: mise `depends = ["dev:*"]` wildcard runs matching subtasks concurrently by default. Existing .mise.toml already had [tools] section from prior work.
 ---
+
+## 2026-03-03 16:15 - US-UXP-025
+- Created DevPlayground route at /dev/playground with 11 scenario buttons: card placement, single capture, combo chain (4), Plus trigger, Elemental trigger, Plus+Elemental combined, Fog mists, Omen mists, Victory screen, Defeat screen, early finish
+- Dev-only guard: lazy import gated by import.meta.env.DEV in App.tsx, tree-shaken from production
+- Mock data covers edge cases: 4-card combo chain, Plus+Elemental same move, Fog on placement, early finish clinch
+- Tests: 562 backend passed, 403 frontend passed (18 new uxp025 assertions)
+- Files changed: DevPlayground.tsx (new), App.tsx, uxp025.test.tsx (new)
+- Learnings: Lazy import gated by import.meta.env.DEV ensures the component and its mock data are fully tree-shaken in production builds. setTimeout(50ms) after reset() prevents React batching from swallowing state transitions.
+---

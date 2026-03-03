@@ -395,7 +395,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 23,
-      "passes": false,
+      "passes": true,
       "notes": "This is a development tool, not user-facing. Use `import.meta.env.DEV` guard so the route and its code are tree-shaken from production builds. The mock data can be inline constants \u2014 no need for a proper fixture system. Each scenario button should render the relevant game component (BoardGrid, CompleteGameView, etc.) with the mock state, then auto-reset after the animation completes. Useful for rapid iteration on US-UXP-019 through US-UXP-022."
     },
     {

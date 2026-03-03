@@ -209,7 +209,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 13,
-      "passes": false,
+      "passes": true,
       "notes": "Page transitions with react-router-dom v7 + AnimatePresence can be tricky. The simplest approach: wrap each page's root element in a `motion.div` with enter/exit animations, and use `AnimatePresence mode='wait'` at the router outlet level. Don't try to animate between routes with shared layout — just a simple crossfade is enough. For modals, if they already use Radix Dialog (via shadcn), the open/close state is already managed — wrap the dialog content in motion.div and use `AnimatePresence` keyed on the `open` prop. Keep transitions fast — anything over 0.3s will feel sluggish in a game context."
     },
     {

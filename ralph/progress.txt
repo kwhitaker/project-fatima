@@ -137,3 +137,15 @@ Started: 2026-03-03
 - Learnings: Many sidebar animations were already done in US-UXP-009 (capture/Plus/Elemental callouts, score numbers). This story completed the remaining gaps: last move, Mists, turn indicator, and mobile drawer. AnimatePresence `initial={false}` on the drawer prevents animation on first mount.
 ---
 
+## 2026-03-03 14:06 - US-UXP-012
+- Added page entrance animations: Login and ResetPassword fade+slide up (motion.div, opacity 0→1, y 12→0, 0.2s); Games page fades in (0.15s)
+- Games list items stagger in with motion.ul/motion.li variants (staggerChildren: 0.04, opacity 0→1, y 10→0)
+- All 4 modals (ArchetypeModal, ForfeitDialog, CardInspectPreview, GameRulesDialog) now use AnimatePresence with scale+fade entrance/exit (scale 0.9→1, opacity 0→1, duration 0.15s). Backdrop fades independently
+- Removed `if (!open) return null` early returns from ArchetypeModal, ForfeitDialog, GameRulesDialog — replaced with AnimatePresence conditional rendering
+- CardInspectPreview wrapped in AnimatePresence at parent level (GameRoom.tsx) since it's conditionally rendered by parent
+- Fixed ux014 test: added waitFor around close-button dialog removal assertion (AnimatePresence keeps element during exit animation)
+- Tests: 310 frontend passed
+- Files changed: Login.tsx, Games.tsx, ResetPassword.tsx, GameRoom.tsx, ArchetypeModal.tsx, ForfeitDialog.tsx, CardInspectPreview.tsx, GameRulesDialog.tsx, ux014.test.tsx, uxp012.test.tsx (new)
+- Learnings: AnimatePresence with conditional `{open && (...)}` replaces `if (!open) return null` pattern cleanly. All durations kept at 0.15s for snappy feel. Existing tests that assert immediate DOM removal after close need `waitFor` when AnimatePresence is introduced.
+---
+

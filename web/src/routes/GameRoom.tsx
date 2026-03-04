@@ -219,13 +219,13 @@ export default function GameRoom() {
   return (
     <div className="container py-4 h-[100dvh] flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-2xl font-bold">{titleText}</h1>
+        <h1 className="text-base font-semibold">{titleText}</h1>
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             asChild
-            className="hover:bg-accent cursor-pointer"
+            className="hover:bg-accent cursor-pointer text-xs"
           >
             <Link to="/games">← Back to Games</Link>
           </Button>
@@ -233,11 +233,11 @@ export default function GameRoom() {
       </div>
 
       {/* Realtime status indicator + manual refresh */}
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-2 mb-1">
         <span
           aria-label="realtime status"
           className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-none border-2 text-xs",
+            "inline-flex items-center gap-1 px-1.5 py-px rounded-none border text-[10px]",
             realtimeStatus === "live"
               ? "bg-green-50 border-green-200 text-green-700 dark:bg-green-950/50 dark:border-green-800 dark:text-green-400"
               : "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950/50 dark:border-yellow-800 dark:text-yellow-400"
@@ -256,7 +256,7 @@ export default function GameRoom() {
           size="sm"
           onClick={handleRefresh}
           aria-label="refresh game"
-          className="cursor-pointer"
+          className="cursor-pointer text-xs"
         >
           Refresh
         </Button>

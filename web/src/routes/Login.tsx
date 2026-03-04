@@ -97,14 +97,20 @@ export default function Login() {
               className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
             />
             {mode !== "forgot" && (
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
-              />
+              <div>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={8}
+                  className="border-input bg-background w-full rounded-none border-2 px-3 py-2 text-sm transition-colors hover:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-primary"
+                />
+                {mode === "signup" && (
+                  <p className="mt-1 text-xs text-muted-foreground">At least 8 characters</p>
+                )}
+              </div>
             )}
             <Button type="submit" className="w-full" disabled={status === "sending"}>
               {status === "sending"

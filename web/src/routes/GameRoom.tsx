@@ -138,6 +138,7 @@ export default function GameRoom() {
             useArchetype: true,
             skulkerBoostSide: myPlr?.archetype === "skulker" ? (powerSide ?? undefined) : undefined,
             intimidateTargetCell: myPlr?.archetype === "intimidate" ? cellIndex : undefined,
+            martialRotationDirection: myPlr?.archetype === "martial" ? (powerSide as "cw" | "ccw" ?? undefined) : undefined,
           }
         );
       } else {

@@ -12,7 +12,7 @@ interface GameRoomContextValue {
   usePower: boolean;
   onUsePowerChange: (next: boolean) => void;
   powerSide: string | null;
-  onPowerSideToggle: (side: "n" | "e" | "s" | "w") => void;
+  onPowerSideToggle: (side: string) => void;
   intimidatePendingCell: number | null;
   onCancelIntimidatePending: () => void;
 

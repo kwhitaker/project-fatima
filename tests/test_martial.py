@@ -15,8 +15,12 @@ from functools import partial
 import pytest
 
 from app.models.game import Archetype, BoardCell
-from app.rules.archetypes import rotate_card_once
-from app.rules.errors import ArchetypeAlreadyUsedError, ArchetypeNotAvailableError
+from app.rules.archetypes import rotate_card_ccw, rotate_card_once
+from app.rules.errors import (
+    ArchetypeAlreadyUsedError,
+    ArchetypeNotAvailableError,
+    ArchetypePowerArgumentError,
+)
 from app.rules.reducer import PlacementIntent, apply_intent
 from tests.conftest import make_card
 from tests.conftest import make_state as _make_state
@@ -211,6 +215,128 @@ class TestMartialOncePerGame:
         )
         with pytest.raises(ArchetypeAlreadyUsedError):
             apply_intent(state3, intent2, lookup)
+
+
+# ---------------------------------------------------------------------------
+# Wrong archetype enforcement
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Unit: rotate_card_ccw
+# ---------------------------------------------------------------------------
+
+
+class TestRotateCardCcw:
+    def test_ccw_rotation_remaps_sides(self):
+        """CCW rotation maps N→W, E→N, S→E, W→S."""
+        card = make_card("c", n=8, e=7, s=6, w=5)
+        rotated = rotate_card_ccw(card)
+        assert rotated.sides.n == 7  # old.e
+        assert rotated.sides.e == 6  # old.s
+        assert rotated.sides.s == 5  # old.w
+        assert rotated.sides.w == 8  # old.n
+
+    def test_cw_then_ccw_restores_original(self):
+        """CW followed by CCW is identity."""
+        card = make_card("c", n=1, e=2, s=3, w=4)
+        result = rotate_card_ccw(rotate_card_once(card))
+        assert result.sides.n == card.sides.n
+        assert result.sides.e == card.sides.e
+        assert result.sides.s == card.sides.s
+        assert result.sides.w == card.sides.w
+
+    def test_four_ccw_rotations_restores_original(self):
+        """Four CCW rotations return the card to its original orientation."""
+        card = make_card("c", n=1, e=2, s=3, w=4)
+        result = card
+        for _ in range(4):
+            result = rotate_card_ccw(result)
+        assert result.sides.n == card.sides.n
+        assert result.sides.e == card.sides.e
+        assert result.sides.s == card.sides.s
+        assert result.sides.w == card.sides.w
+
+
+# ---------------------------------------------------------------------------
+# Integration: Martial direction choice via apply_intent
+# ---------------------------------------------------------------------------
+
+
+class TestMartialDirectionChoice:
+    def test_cw_direction_uses_clockwise_rotation(self):
+        """Explicit 'cw' direction produces clockwise rotation."""
+        placed = make_card("placed", n=1, e=1, s=1, w=10)
+        neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+            martial_rotation_direction="cw",
+        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
+        # CW: W=10 becomes N=10, vs neighbor S=5 → capture
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 0
+
+    def test_ccw_direction_uses_counter_clockwise_rotation(self):
+        """Explicit 'ccw' direction produces counter-clockwise rotation."""
+        # CCW: E=10 becomes N=10 (new.n = old.e)
+        placed = make_card("placed", n=1, e=10, s=1, w=1)
+        neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+            martial_rotation_direction="ccw",
+        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 0
+
+    def test_none_direction_defaults_to_cw(self):
+        """Missing direction (None) defaults to clockwise for backward compat."""
+        placed = make_card("placed", n=1, e=1, s=1, w=10)
+        neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+            # martial_rotation_direction is None by default
+        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
+        # Default CW: W=10 → N=10 vs neighbor S=5 → capture
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 0
+
+    def test_invalid_direction_raises_argument_error(self):
+        """Invalid direction string raises ArchetypePowerArgumentError."""
+        card = make_card("card_a")
+        state = make_state(p0_hand=["card_a"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="card_a",
+            cell_index=0,
+            use_archetype=True,
+            martial_rotation_direction="left",
+        )
+        with pytest.raises(ArchetypePowerArgumentError):
+            apply_intent(state, intent, {"card_a": card})
 
 
 # ---------------------------------------------------------------------------

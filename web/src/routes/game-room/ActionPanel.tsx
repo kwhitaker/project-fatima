@@ -27,8 +27,10 @@ export function ActionPanel({
   const hasArchetype = !!myPlayer?.archetype;
   const powerAvailable =
     hasArchetype && !myPlayer!.archetype_used && isMyTurn;
-  const needsDirection =
+  const needsSkulkerDirection =
     usePower && myPlayer?.archetype === "skulker";
+  const needsMartialDirection =
+    usePower && myPlayer?.archetype === "martial";
   const isIntimidate = usePower && myPlayer?.archetype === "intimidate";
 
   // Determine step text (shown below the turn label on my turn)
@@ -41,7 +43,7 @@ export function ActionPanel({
     stepText = "Pick an archetype to begin";
   } else if (selectedCard === null) {
     stepText = "Select a card";
-  } else if (needsDirection && powerSide === null) {
+  } else if ((needsSkulkerDirection || needsMartialDirection) && powerSide === null) {
     stepText = "Choose a direction for your power";
   } else if (isIntimidate && intimidatePendingCell !== null) {
     stepText = "Click an adjacent opponent card to debuff";
@@ -109,7 +111,7 @@ export function ActionPanel({
             />
             Use Power
           </label>
-          {needsDirection && (
+          {needsSkulkerDirection && (
             <div className="flex gap-2">
               {(["n", "e", "s", "w"] as const).map((side) => (
                 <Button
@@ -119,6 +121,20 @@ export function ActionPanel({
                   onClick={() => onPowerSideToggle(side)}
                 >
                   {side}
+                </Button>
+              ))}
+            </div>
+          )}
+          {needsMartialDirection && (
+            <div className="flex gap-2" data-testid="martial-direction-toggle">
+              {(["cw", "ccw"] as const).map((dir) => (
+                <Button
+                  key={dir}
+                  variant={powerSide === dir ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onPowerSideToggle(dir)}
+                >
+                  {dir === "cw" ? "CW" : "CCW"}
                 </Button>
               ))}
             </div>

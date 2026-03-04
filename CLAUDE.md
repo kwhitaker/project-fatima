@@ -79,7 +79,7 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 - **Mists (1d6)**: Roll per placement. 1=Fog (−2 all comparisons), 6=Omen (+2), 2–5=no effect. Modifier is ephemeral — printed stats never change.
 - **Plus rule**: When placing a card, if 2+ adjacent opponent cards each share the same sum (placed card's attacking side + neighbor's facing side), all matching neighbors are captured immediately — even if the placed card's side is lower. Uses raw printed values only; Mists modifier and Elemental bonus do NOT apply to Plus sums. Plus-captured cards enter the standard BFS combo chain.
 - **Elemental system**: Each card has one of five elements: `blood`, `holy`, `arcane`, `shadow`, `nature`. Each board cell also has an element (9 elements, generated deterministically from the game seed at match start). Placing a card on a matching-element cell grants +1 to all its side comparisons for that placement's initial battles. Combo chains and Plus rule both use raw printed values (no elemental bonus).
-- **Archetypes**: Once-per-game power. Martial (rotate card), Skulker (+3 one side), Caster (reroll Mists), Devout (negate Fog), Intimidate (debuff adjacent opponent card's facing side to its weakest).
+- **Archetypes**: Once-per-game power. Martial (rotate card CW/CCW), Skulker (+3 one side), Caster (reroll Mists), Devout (negate Fog), Intimidate (debuff adjacent opponent card's facing side to its weakest).
 - **Sudden Death**: Tie at board-full → same `game_id`, `round_number++`, each player's deck = the 9 cards they owned. Cap: 3 Sudden Death rounds, then draw.
 - **Deck (10 cards)**: Named character uniqueness by `character_key`; rarity slots (ultra≤1, very_rare≤2, rare≤3); copy limits by rarity bucket.
 

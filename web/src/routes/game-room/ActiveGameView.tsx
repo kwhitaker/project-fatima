@@ -65,7 +65,7 @@ export function ActiveGameView({
     !movePending &&
     (!usePower ||
       myPlayer?.archetype === "intimidate" ||
-      myPlayer?.archetype !== "skulker" ||
+      (myPlayer?.archetype !== "skulker" && myPlayer?.archetype !== "martial") ||
       powerSide !== null);
 
   const isMyTurn = game.current_player_index === myIndex;

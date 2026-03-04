@@ -27,6 +27,26 @@ def rotate_card_once(card: CardDefinition) -> CardDefinition:
     return card.model_copy(update={"sides": rotated_sides})
 
 
+def rotate_card_ccw(card: CardDefinition) -> CardDefinition:
+    """Return a copy of *card* with sides rotated once counter-clockwise.
+
+    Rotation mapping (N→W→S→E→N):
+      new.n = old.e
+      new.e = old.s
+      new.s = old.w
+      new.w = old.n
+
+    Printed stats are never mutated; the original card is unchanged.
+    """
+    rotated_sides = CardSides(
+        n=card.sides.e,
+        e=card.sides.s,
+        s=card.sides.w,
+        w=card.sides.n,
+    )
+    return card.model_copy(update={"sides": rotated_sides})
+
+
 def apply_skulker_boost(card: CardDefinition, side: str) -> CardDefinition:
     """Return a copy of *card* with *side* increased by 3 for this placement.
 

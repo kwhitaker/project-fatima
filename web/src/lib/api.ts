@@ -89,6 +89,7 @@ export async function placeCard(
     useArchetype?: boolean;
     skulkerBoostSide?: string;
     intimidateTargetCell?: number;
+    martialRotationDirection?: "cw" | "ccw";
   }
 ): Promise<GameState> {
   const headers = await authHeaders();
@@ -103,6 +104,7 @@ export async function placeCard(
       ...(powerOptions?.useArchetype && { use_archetype: true }),
       ...(powerOptions?.skulkerBoostSide && { skulker_boost_side: powerOptions.skulkerBoostSide }),
       ...(powerOptions?.intimidateTargetCell != null && { intimidate_target_cell: powerOptions.intimidateTargetCell }),
+      ...(powerOptions?.martialRotationDirection && { martial_rotation_direction: powerOptions.martialRotationDirection }),
     }),
   });
   if (!res.ok) {

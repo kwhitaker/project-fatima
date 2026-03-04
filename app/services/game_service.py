@@ -209,6 +209,7 @@ def submit_move(
     use_archetype: bool = False,
     skulker_boost_side: str | None = None,
     intimidate_target_cell: int | None = None,
+    martial_rotation_direction: str | None = None,
     idempotency_key: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
@@ -241,6 +242,7 @@ def submit_move(
         use_archetype=use_archetype,
         skulker_boost_side=skulker_boost_side,
         intimidate_target_cell=intimidate_target_cell,
+        martial_rotation_direction=martial_rotation_direction,
     )
     new_state = apply_intent(state, intent, card_lookup, rng)
 

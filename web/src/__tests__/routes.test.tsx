@@ -1057,7 +1057,20 @@ describe("archetype power UX (US-UI-009)", () => {
     expect(screen.queryByRole("button", { name: /^n$/i })).not.toBeInTheDocument();
   });
 
-  it("submits move with use_archetype=true and no extra params for martial", async () => {
+  it("martial: shows CW/CCW toggle after Use Power is toggled", async () => {
+    setupAuth(true);
+    mockGetGame.mockResolvedValue(makePowerGame("martial"));
+    const user = userEvent.setup();
+    renderAt("/g/game-power");
+    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
+    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^CW$/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /^CCW$/i })).toBeInTheDocument();
+    });
+  });
+
+  it("submits move with martial_rotation_direction when martial power used", async () => {
     setupAuth(true);
     mockGetGame.mockResolvedValue(makePowerGame("martial"));
     mockPlaceCard.mockResolvedValue(makePowerGame("martial"));
@@ -1065,13 +1078,15 @@ describe("archetype power UX (US-UI-009)", () => {
     renderAt("/g/game-power");
     await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
     await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /^CW$/i }));
+    await user.click(screen.getByRole("button", { name: /^CW$/i }));
     await user.click(screen.getByRole("button", { name: "card-a" }));
     await waitFor(() => screen.getByRole("button", { name: /cell 0/i }));
     await user.click(screen.getByRole("button", { name: /cell 0/i }));
     await waitFor(() => {
       expect(mockPlaceCard).toHaveBeenCalledWith(
         "game-power", "card-a", 0, 5, expect.any(String),
-        { useArchetype: true, skulkerBoostSide: undefined, intimidateTargetCell: undefined }
+        { useArchetype: true, skulkerBoostSide: undefined, intimidateTargetCell: undefined, martialRotationDirection: "cw" }
       );
     });
   });

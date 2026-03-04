@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 from app.models.cards import CardDefinition
 from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo
-from app.rules.archetypes import apply_skulker_boost, rotate_card_once
+from app.rules.archetypes import apply_skulker_boost, rotate_card_ccw, rotate_card_once
 from app.rules.board import get_adjacent_indices
 from app.rules.captures import resolve_captures
 from app.rules.errors import (
@@ -33,6 +33,7 @@ class PlacementIntent:
     use_archetype: bool = field(default=False)
     skulker_boost_side: str | None = field(default=None)
     intimidate_target_cell: int | None = field(default=None)
+    martial_rotation_direction: str | None = field(default=None)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -157,8 +158,15 @@ def _apply_archetype(
         )
 
     if player.archetype == Archetype.MARTIAL:
+        direction = intent.martial_rotation_direction or "cw"
+        if direction not in {"cw", "ccw"}:
+            raise ArchetypePowerArgumentError(
+                f"Martial rotation direction must be 'cw' or 'ccw', "
+                f"got {direction!r}"
+            )
+        rotated = rotate_card_ccw(card) if direction == "ccw" else rotate_card_once(card)
         return _ArchetypeResult(
-            card=rotate_card_once(card),
+            card=rotated,
             activated=True,
             caster_reroll=False,
             devout_negate_fog=False,

@@ -11,7 +11,7 @@ export const ARCHETYPE_COPY: Record<Archetype, ArchetypeCopy> = {
     name: "Martial",
     powerTitle: "Spin your card",
     powerText:
-      "After you place a card, it spins one step clockwise before fights start. Use it once per game.",
+      "After you place a card, choose CW or CCW to spin it one step before fights start. Use it once per game.",
   },
   skulker: {
     name: "Skulker",

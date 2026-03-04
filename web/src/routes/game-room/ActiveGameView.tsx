@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
+import type { Archetype, CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
 import { ArchetypeModal } from "@/routes/game-room/ArchetypeModal";
-import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
+import { ARCHETYPE_COPY } from "@/routes/game-room/archetypesCopy";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
 import { ActionPanel } from "@/routes/game-room/ActionPanel";
@@ -230,53 +230,22 @@ export function ActiveGameView({
           )}
       </AnimatePresence>
 
-      {/* Opponent hand count */}
-      <div>
-        <p className="text-xs text-muted-foreground">Opponent's hand</p>
-        <p className="text-sm">{opponentPlayer?.hand.length ?? 0} cards</p>
+      {/* Opponent hand + archetypes (compact grid) */}
+      <div className="grid grid-cols-[1fr_1fr_auto] gap-x-4 gap-y-1 items-baseline text-sm">
+        {/* Row: You */}
+        <ArchetypeTooltipName
+          label="You"
+          archetype={myPlayer?.archetype ?? null}
+          used={myPlayer?.archetype_used ?? false}
+        />
+        {/* Row: Opponent */}
+        <ArchetypeTooltipName
+          label="Opp"
+          archetype={opponentPlayer?.archetype ?? null}
+          used={opponentPlayer?.archetype_used ?? false}
+          extra={`${opponentPlayer?.hand.length ?? 0} cards`}
+        />
       </div>
-
-      {/* Archetypes */}
-      <div className="flex gap-6">
-        <div>
-          <p className="text-xs text-muted-foreground">Your archetype</p>
-          <p className="text-sm capitalize">{myPlayer?.archetype ?? "None"}</p>
-          {myPlayer?.archetype && (
-            <p className="text-xs text-muted-foreground">
-              {myPlayer.archetype_used ? "Used" : "Available"}
-            </p>
-          )}
-        </div>
-        <div>
-          <p className="text-xs text-muted-foreground">Opponent archetype</p>
-          <p className="text-sm capitalize">
-            {opponentPlayer?.archetype ?? "None"}
-          </p>
-          {opponentPlayer?.archetype && (
-            <p className="text-xs text-muted-foreground">
-              {opponentPlayer.archetype_used ? "Used" : "Available"}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Archetype power details */}
-      {(myPlayer?.archetype || opponentPlayer?.archetype) && (
-        <div className="grid gap-2">
-          {myPlayer?.archetype && (
-            <ArchetypePowerAside
-              archetype={myPlayer.archetype}
-              label="your archetype power"
-            />
-          )}
-          {opponentPlayer?.archetype && (
-            <ArchetypePowerAside
-              archetype={opponentPlayer.archetype}
-              label="opponent archetype power"
-            />
-          )}
-        </div>
-      )}
 
       {/* Rules */}
       <Button variant="outline" size="sm" onClick={onShowRules}>
@@ -458,6 +427,55 @@ export function ActiveGameView({
       </div>
 
       <ArchetypeModal open={!!myPlayer && !myPlayer.archetype} />
+    </>
+  );
+}
+
+/** Compact archetype display with hover/tap tooltip for power details. */
+function ArchetypeTooltipName({
+  label,
+  archetype,
+  used,
+  extra,
+}: {
+  label: string;
+  archetype: Archetype | null;
+  used: boolean;
+  extra?: string;
+}) {
+  const copy = archetype ? ARCHETYPE_COPY[archetype] : null;
+  return (
+    <>
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {archetype && copy ? (
+        <span className="group relative cursor-help" aria-label={`${label} archetype`}>
+          <span className="capitalize underline decoration-dotted underline-offset-2">
+            {archetype}
+          </span>
+          <span className="text-xs text-muted-foreground ml-1">
+            {used ? "Used" : "Available"}
+          </span>
+          {/* Tooltip */}
+          <span
+            role="tooltip"
+            className={cn(
+              "absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-56 p-2 rounded border-2 border-border bg-popover text-popover-foreground text-xs shadow-md",
+              "opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100",
+              "transition-all duration-150 z-30",
+            )}
+          >
+            <p className="font-semibold">{copy.powerTitle}</p>
+            <p className="text-muted-foreground mt-0.5">{copy.powerText}</p>
+          </span>
+        </span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      )}
+      {extra ? (
+        <span className="text-xs text-muted-foreground">{extra}</span>
+      ) : (
+        <span />
+      )}
     </>
   );
 }

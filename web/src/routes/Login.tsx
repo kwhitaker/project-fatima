@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
@@ -9,6 +9,8 @@ type Mode = "signin" | "signup" | "forgot";
 export default function Login() {
   const { session, signIn, signUp, resetPasswordForEmail } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnTo = (location.state as { from?: string })?.from ?? "/games";
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,7 +18,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    if (session) navigate("/games", { replace: true });
+    if (session) navigate(returnTo, { replace: true });
   }, [session, navigate]);
 
   // Reset status when switching modes

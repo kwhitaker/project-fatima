@@ -10,6 +10,10 @@ import random
 from app.models.cards import CardDefinition
 from app.rules.cards import STAT_BUDGETS, rarity_bucket
 
+# Hand/deal sizing constants.
+DEAL_SIZE = 7   # Cards dealt to each player before draft
+HAND_SIZE = 5   # Cards kept after draft selection
+
 # Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
 _RARITY_SLOT_LIMITS: dict[str, int] = {
     "ultra": 1,

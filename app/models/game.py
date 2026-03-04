@@ -14,6 +14,7 @@ class Archetype(str, Enum):
 
 class GameStatus(str, Enum):
     WAITING = "waiting"
+    DRAFTING = "drafting"
     ACTIVE = "active"
     COMPLETE = "complete"
 
@@ -27,7 +28,8 @@ class PlayerState(BaseModel):
     player_id: str
     email: str | None = None
     archetype: Archetype | None = None
-    hand: list[str] = []
+    deal: list[str] = []  # 7 dealt cards before draft selection; empty after draft
+    hand: list[str] = []  # 5 selected cards (populated after draft)
     archetype_used: bool = False
 
 

@@ -10,6 +10,7 @@ Covers:
 from fastapi.testclient import TestClient
 
 from app.rules.errors import ArchetypeNotSelectedError, InvalidMoveError
+from tests.conftest import create_and_draft_game
 
 
 def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
@@ -17,9 +18,9 @@ def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # typ
 
 
 def _create_active_game(client: TestClient) -> tuple[str, str, str]:
-    game_id = _as(client, "p1", "post", "/games", json={}).json()["game_id"]
-    _as(client, "p2", "post", f"/games/{game_id}/join", json={})
-    return game_id, "p1", "p2"
+    """Create, join, and draft to reach ACTIVE status (no archetypes yet)."""
+    data = create_and_draft_game(client, alice_id="p1", bob_id="p2")
+    return data["game_id"], "p1", "p2"
 
 
 # ---------------------------------------------------------------------------

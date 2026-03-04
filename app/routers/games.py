@@ -34,6 +34,10 @@ class LeaveGameRequest(BaseModel):
     idempotency_key: str | None = None
 
 
+class DraftRequest(BaseModel):
+    selected_cards: list[str]
+
+
 class MoveRequest(BaseModel):
     card_key: str
     cell_index: int
@@ -86,6 +90,23 @@ def join_game(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/{game_id}/draft", response_model=GameState)
+def submit_draft(
+    game_id: str,
+    body: DraftRequest,
+    caller_id: CallerIdDep,
+    game_store: GameStoreDep,
+) -> GameState:
+    try:
+        return game_service.submit_draft(game_store, game_id, caller_id, body.selected_cards)
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @router.post("/{game_id}/archetype", response_model=GameState)

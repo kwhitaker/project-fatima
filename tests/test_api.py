@@ -51,16 +51,37 @@ def test_full_happy_path(client: TestClient) -> None:
     assert resp.status_code == 201
     game_id = resp.json()["game_id"]
 
-    # 2. Bob joins → active, hands dealt
+    # 2. Bob joins → drafting, deals assigned
     resp = _bob(client, "post", f"/games/{game_id}/join", json={})
     assert resp.status_code == 200
     data = resp.json()
-    assert data["status"] == "active"
+    assert data["status"] == "drafting"
     assert len(data["players"]) == 2
+    alice_deal = data["players"][0]["deal"]
+    bob_deal = data["players"][1]["deal"]
+    assert len(alice_deal) == 7
+    assert len(bob_deal) == 7
+
+    # 3. Both players submit draft (pick first 5 cards)
+    resp = _alice(
+        client, "post", f"/games/{game_id}/draft",
+        json={"selected_cards": alice_deal[:5]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "drafting"  # Bob hasn't drafted yet
+
+    resp = _bob(
+        client, "post", f"/games/{game_id}/draft",
+        json={"selected_cards": bob_deal[:5]},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "active"  # Both drafted → active
+
     alice_hand = data["players"][0]["hand"]
     bob_hand = data["players"][1]["hand"]
-    assert len(alice_hand) == 7
-    assert len(bob_hand) == 7
+    assert len(alice_hand) == 5
+    assert len(bob_hand) == 5
 
     # Determine who goes first (depends on seed)
     first_player_index = data["current_player_index"]
@@ -69,7 +90,7 @@ def test_full_happy_path(client: TestClient) -> None:
     second_hand = bob_hand if first_player_index == 0 else alice_hand
     second_player_index = 1 - first_player_index
 
-    # 3. Select archetypes (both players)
+    # 4. Select archetypes (both players)
     resp = _alice(client, "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
     assert resp.status_code == 200
     resp = _bob(client, "post", f"/games/{game_id}/archetype", json={"archetype": "skulker"})

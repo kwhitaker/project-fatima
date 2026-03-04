@@ -142,11 +142,10 @@ def test_list_games_returns_player_emails(client: TestClient) -> None:
 def test_spectator_still_blocked_on_active_game(client: TestClient) -> None:
     resp = as_user(client, "alice", "post", "/games", email="alice@test.com", json={"seed": 1})
     game_id = resp.json()["game_id"]
-    as_user(client, "bob", "post", f"/games/{game_id}/join", email="bob@test.com", json={})
+    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", email="bob@test.com", json={})
 
-    # Confirm game is active
-    state = as_user(client, "alice", "get", f"/games/{game_id}", email="alice@test.com").json()
-    assert state["status"] == "active"
+    # After join, game is drafting (non-waiting) — spectators should be blocked
+    assert resp.json()["status"] == "drafting"
 
     # Charlie (non-participant) is blocked
     resp = as_user(client, "charlie", "get", f"/games/{game_id}")

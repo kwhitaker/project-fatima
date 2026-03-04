@@ -11,6 +11,8 @@ All error responses must include a ``detail`` key in the JSON body.
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import create_and_draft_game
+
 
 def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
     return getattr(client, method)(path, headers={"X-User-Id": user}, **kwargs)
@@ -19,11 +21,12 @@ def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # typ
 def _active_game(client: TestClient) -> tuple[str, list[str], list[str], int, int]:
     """Create and return (game_id, p0_hand, p1_hand, state_version, first_player_index).
 
-    Also selects archetypes for both players so that moves can be submitted immediately.
+    Creates, joins, drafts, then selects archetypes for both players so that
+    moves can be submitted immediately.
     state_version is the version after both archetype selections.
     """
-    game_id = _as(client, "alice", "post", "/games", json={"seed": 1}).json()["game_id"]
-    _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+    data = create_and_draft_game(client, seed=1, alice_id="alice", bob_id="bob")
+    game_id = data["game_id"]
     _as(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
     data = _as(
         client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}

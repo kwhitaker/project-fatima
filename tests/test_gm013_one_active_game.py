@@ -11,16 +11,17 @@ Covers:
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import create_and_draft_game
+
 
 def as_user(client: TestClient, user_id: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
     return getattr(client, method)(path, headers={"X-User-Id": user_id}, **kwargs)
 
 
 def _complete_game(client: TestClient, creator: str, joiner: str, seed: int = 1) -> str:
-    """Create, join, select archetypes, play all 9 moves to completion."""
-    resp = as_user(client, creator, "post", "/games", json={"seed": seed})
-    game_id = resp.json()["game_id"]
-    as_user(client, joiner, "post", f"/games/{game_id}/join", json={})
+    """Create, join, draft, select archetypes, play all 9 moves to completion."""
+    data = create_and_draft_game(client, seed=seed, alice_id=creator, bob_id=joiner)
+    game_id = data["game_id"]
     as_user(client, creator, "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
     as_user(client, joiner, "post", f"/games/{game_id}/archetype", json={"archetype": "devout"})
 
@@ -65,12 +66,12 @@ def test_create_blocked_when_caller_has_waiting_game(client: TestClient) -> None
 
 
 def test_create_blocked_when_caller_has_active_game(client: TestClient) -> None:
-    """Creating a new game while in an ACTIVE game returns 409."""
+    """Creating a new game while in a non-complete (drafting/active) game returns 409."""
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
     as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
 
-    # Alice now has an ACTIVE game
+    # Alice now has a DRAFTING game (non-complete)
     resp = as_user(client, "alice", "post", "/games", json={"seed": 2})
     assert resp.status_code == 409
     detail = resp.json()["detail"]
@@ -114,8 +115,8 @@ def test_join_blocked_when_caller_has_waiting_game(client: TestClient) -> None:
 
 
 def test_join_blocked_when_caller_has_active_game(client: TestClient) -> None:
-    """Joining a new game while in an ACTIVE game returns 409."""
-    # Alice creates, Bob joins → ACTIVE
+    """Joining a new game while in a non-complete (drafting/active) game returns 409."""
+    # Alice creates, Bob joins → DRAFTING (non-complete)
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
     as_user(client, "bob", "post", f"/games/{game_id}/join", json={})

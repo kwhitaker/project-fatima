@@ -108,6 +108,43 @@ def _mock_caller_id(request: Request) -> str:
     return request.headers.get("X-User-Id", "test-user")
 
 
+def create_and_draft_game(
+    client: TestClient,
+    seed: int = 100,
+    alice_id: str = "alice",
+    bob_id: str = "bob",
+) -> dict:
+    """Create a game, join both players, and auto-draft to reach ACTIVE status.
+
+    Returns the game state dict after both players have drafted and the game
+    is ACTIVE.
+    """
+    # Create
+    resp = client.post("/games", json={"seed": seed}, headers={"X-User-Id": alice_id})
+    assert resp.status_code == 201
+    game_id = resp.json()["game_id"]
+
+    # Join
+    resp = client.post(f"/games/{game_id}/join", json={}, headers={"X-User-Id": bob_id})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "drafting"
+
+    # Draft: both players pick first 5 from their deal
+    for i, uid in enumerate([alice_id, bob_id]):
+        deal = data["players"][i]["deal"]
+        resp = client.post(
+            f"/games/{game_id}/draft",
+            json={"selected_cards": deal[:5]},
+            headers={"X-User-Id": uid},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+
+    assert data["status"] == "active"
+    return data
+
+
 # ---------------------------------------------------------------------------
 # Fixtures (auto-discovered by pytest)
 # ---------------------------------------------------------------------------

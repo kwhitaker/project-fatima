@@ -12,6 +12,8 @@ Covers:
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import create_and_draft_game
+
 
 def as_user(client: TestClient, user_id: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
     return getattr(client, method)(path, headers={"X-User-Id": user_id}, **kwargs)
@@ -89,10 +91,11 @@ def test_list_games_includes_games_joined_as_player2(client: TestClient) -> None
 
 
 def test_list_games_excludes_active_unrelated_games(client: TestClient) -> None:
-    # Alice creates + Bob joins (now ACTIVE); Charlie is not involved
+    # Alice creates + Bob joins (now DRAFTING); Charlie is not involved
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
-    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    assert resp.json()["status"] == "drafting"
     charlie_games = as_user(client, "charlie", "get", "/games").json()
     assert charlie_games == []
 
@@ -128,16 +131,13 @@ def test_waiting_game_visible_to_non_participant(client: TestClient) -> None:
 
 
 def test_active_game_blocked_for_non_participant(client: TestClient) -> None:
-    """Non-participants get 403 on ACTIVE games."""
+    """Non-participants get 403 on non-WAITING games (drafting or active)."""
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
-    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    assert resp.json()["status"] == "drafting"
 
-    # Confirm game is active
-    state = as_user(client, "alice", "get", f"/games/{game_id}").json()
-    assert state["status"] == "active"
-
-    # Charlie is blocked
+    # Charlie is blocked even on drafting games
     resp = as_user(client, "charlie", "get", f"/games/{game_id}")
     assert resp.status_code == 403
 
@@ -145,7 +145,8 @@ def test_active_game_blocked_for_non_participant(client: TestClient) -> None:
 def test_participant_can_read_active_game(client: TestClient) -> None:
     resp = as_user(client, "alice", "post", "/games", json={"seed": 1})
     game_id = resp.json()["game_id"]
-    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    assert resp.json()["status"] == "drafting"
 
     assert as_user(client, "alice", "get", f"/games/{game_id}").status_code == 200
     assert as_user(client, "bob", "get", f"/games/{game_id}").status_code == 200
@@ -159,6 +160,7 @@ def test_participant_can_read_active_game(client: TestClient) -> None:
 def test_starting_player_deterministic_from_seed(client: TestClient) -> None:
     """Same seed → same starting player every time."""
     # Use distinct user pairs per iteration to avoid the one-active-game constraint.
+    # starting_player_index is set at join time (drafting status).
     pairs = [("alice1", "bob1"), ("alice2", "bob2"), ("alice3", "bob3")]
     starts = []
     for creator, joiner in pairs:
@@ -172,10 +174,7 @@ def test_starting_player_deterministic_from_seed(client: TestClient) -> None:
 
 def test_starting_player_stored_on_state(client: TestClient) -> None:
     """starting_player_index is set when game becomes ACTIVE."""
-    resp = as_user(client, "alice", "post", "/games", json={"seed": 42})
-    game_id = resp.json()["game_id"]
-    resp = as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
-    data = resp.json()
+    data = create_and_draft_game(client, seed=42, alice_id="alice", bob_id="bob")
     assert data["status"] == "active"
     assert data["starting_player_index"] == data["current_player_index"]
 
@@ -187,9 +186,13 @@ def test_starting_player_stored_on_state(client: TestClient) -> None:
 
 def test_last_move_populated_after_first_move(client: TestClient) -> None:
     """last_move should contain mists_roll and mists_effect after any move."""
-    resp = as_user(client, "alice", "post", "/games", json={"seed": 77})
-    game_id = resp.json()["game_id"]
-    as_user(client, "bob", "post", f"/games/{game_id}/join", json={})
+    data = create_and_draft_game(client, seed=77, alice_id="alice", bob_id="bob")
+    game_id = data["game_id"]
+    state_version = data["state_version"]
+    first_player_index = data["current_player_index"]
+    first_hand = data["players"][first_player_index]["hand"]
+
+    # Select archetypes
     as_user(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
     resp = as_user(
         client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}

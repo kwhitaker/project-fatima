@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
-from app.rules.deck import generate_matched_deals
+from app.rules.deck import HAND_SIZE, generate_matched_deals
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
@@ -76,10 +76,10 @@ def join_game(
     extra_updates: dict[str, object] = {}
     if len(new_players) == 2:
         cards = card_store.list_cards()
-        deck_a, deck_b = generate_matched_deals(cards, seed=state.seed)
-        new_players[0] = new_players[0].model_copy(update={"hand": [c.card_key for c in deck_a]})
-        new_players[1] = new_players[1].model_copy(update={"hand": [c.card_key for c in deck_b]})
-        new_status = GameStatus.ACTIVE
+        deal_a, deal_b = generate_matched_deals(cards, seed=state.seed)
+        new_players[0] = new_players[0].model_copy(update={"deal": [c.card_key for c in deal_a]})
+        new_players[1] = new_players[1].model_copy(update={"deal": [c.card_key for c in deal_b]})
+        new_status = GameStatus.DRAFTING
         # Pick starting player deterministically from seed
         starting = Random(state.seed).randint(0, 1)
         extra_updates["starting_player_index"] = starting
@@ -102,6 +102,72 @@ def join_game(
     game_store.append_event(
         game_id=game_id,
         event_type="player_joined",
+        payload={"player_id": player_id},
+        expected_version=state.state_version,
+        new_state=new_state,
+    )
+    return new_state
+
+
+def submit_draft(
+    game_store: GameStore,
+    game_id: str,
+    player_id: str,
+    selected_cards: list[str],
+) -> GameState:
+    """Submit a player's draft selection (pick HAND_SIZE cards from their deal)."""
+    state = game_store.get_game(game_id)
+    if state is None:
+        raise KeyError(f"Game {game_id!r} not found")
+    if state.status != GameStatus.DRAFTING:
+        raise ValueError("Game is not in DRAFTING state")
+
+    player_index = next(
+        (i for i, p in enumerate(state.players) if p.player_id == player_id), None
+    )
+    if player_index is None:
+        raise PermissionError(f"Player {player_id!r} is not in this game")
+
+    player = state.players[player_index]
+    if not player.deal:
+        raise ValueError(f"Player {player_id!r} has already submitted their draft")
+
+    if len(selected_cards) != HAND_SIZE:
+        raise ValueError(
+            f"Must select exactly {HAND_SIZE} cards; got {len(selected_cards)}"
+        )
+
+    # Validate all selected cards are in the deal
+    deal_set = set(player.deal)
+    for card_key in selected_cards:
+        if card_key not in deal_set:
+            raise ValueError(f"Card {card_key!r} is not in your deal")
+
+    # Check for duplicates in selection
+    if len(set(selected_cards)) != len(selected_cards):
+        raise ValueError("Duplicate cards in selection")
+
+    new_players = list(state.players)
+    new_players[player_index] = player.model_copy(
+        update={"hand": selected_cards, "deal": []}
+    )
+
+    # If both players have now drafted, transition to ACTIVE
+    both_drafted = all(
+        len(p.hand) == HAND_SIZE and len(p.deal) == 0 for p in new_players
+    )
+    new_status = GameStatus.ACTIVE if both_drafted else state.status
+
+    new_state = state.model_copy(
+        update={
+            "players": new_players,
+            "status": new_status,
+            "state_version": state.state_version + 1,
+        }
+    )
+    game_store.append_event(
+        game_id=game_id,
+        event_type="draft_submitted",
         payload={"player_id": player_id},
         expected_version=state.state_version,
         new_state=new_state,
@@ -161,7 +227,7 @@ def leave_game(
     if player_index is None:
         raise PermissionError(f"Player {player_id!r} is not in this game")
 
-    if state.status == GameStatus.ACTIVE:
+    if state.status in (GameStatus.ACTIVE, GameStatus.DRAFTING):
         other_index = 1 - player_index
         new_result = GameResult(
             winner=other_index,

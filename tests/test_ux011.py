@@ -12,16 +12,17 @@ Covers:
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import create_and_draft_game
+
 
 def _as(client: TestClient, user: str, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
     return getattr(client, method)(path, headers={"X-User-Id": user}, **kwargs)
 
 
 def _setup_active_game(client: TestClient, seed: int = 42) -> tuple[str, dict]:  # type: ignore[misc]
-    """Create a game, join, select archetypes, return (game_id, state_data)."""
-    resp = _as(client, "alice", "post", "/games", json={"seed": seed})
-    game_id = resp.json()["game_id"]
-    _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+    """Create a game, join, draft, select archetypes, return (game_id, state_data)."""
+    data = create_and_draft_game(client, seed=seed, alice_id="alice", bob_id="bob")
+    game_id = data["game_id"]
     _as(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
     resp = _as(client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"})
     return game_id, resp.json()

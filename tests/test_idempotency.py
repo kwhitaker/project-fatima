@@ -16,6 +16,7 @@ from app.models.game import GameState
 from app.store import ConflictError, DuplicateEventError
 from app.store.memory import MemoryGameStore
 from app.store.supabase_store import SupabaseGameStore
+from tests.conftest import create_and_draft_game
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -121,12 +122,11 @@ class TestApiIdempotency:
     def _setup_active_game(self, client: TestClient) -> tuple[str, list[str], int, int]:
         """Returns (game_id, first_player_hand, state_version, first_player_index).
 
-        Also selects archetypes for both players so that moves can be submitted.
+        Also drafts and selects archetypes for both players so that moves can be submitted.
         state_version is the version after both archetype selections.
         """
-        resp = _as(client, "alice", "post", "/games", json={"seed": 77})
-        game_id = resp.json()["game_id"]
-        _as(client, "bob", "post", f"/games/{game_id}/join", json={})
+        data = create_and_draft_game(client, seed=77, alice_id="alice", bob_id="bob")
+        game_id = data["game_id"]
         _as(client, "alice", "post", f"/games/{game_id}/archetype", json={"archetype": "martial"})
         data = _as(
             client, "bob", "post", f"/games/{game_id}/archetype", json={"archetype": "devout"}

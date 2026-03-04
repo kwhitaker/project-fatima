@@ -36,3 +36,12 @@ Started: 2026-03-04
 - Learnings: PlayerState.hand is string[] not object[]; keep status text consistent with existing tests
 ---
 
+## 2026-03-04 08:37 - US-UP-004
+- Replaced checkbox "Use Power" with prominent toggle button (⚡ Use Power)
+- Button has animate-pulse when available + not toggled, bg-primary filled state when toggled
+- Updated 10 existing test references from checkbox role to button role
+- Tests/validation: 4 new tests in up004.test.tsx, all 263 frontend tests pass
+- Files changed: web/src/routes/game-room/ActionPanel.tsx, web/src/__tests__/up004.test.tsx (new), web/src/__tests__/routes.test.tsx
+- Learnings: When changing element roles, update all existing tests that query by old role
+---
+

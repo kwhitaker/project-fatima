@@ -60,8 +60,8 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
     game_id: "dev-playground",
     status: "active",
     players: [
-      { player_id: "me", archetype: "skulker", hand: ["c-wolf", "c-cleric"], archetype_used: false },
-      { player_id: "opp", archetype: "caster", hand: ["c-zombie", "c-bat"], archetype_used: false },
+      { player_id: "me", archetype: "skulker", deal: [], hand: ["c-wolf", "c-cleric"], archetype_used: false },
+      { player_id: "opp", archetype: "caster", deal: [], hand: ["c-zombie", "c-bat"], archetype_used: false },
     ],
     board: emptyBoard(),
     current_player_index: 0,

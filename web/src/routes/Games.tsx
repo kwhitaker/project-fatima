@@ -7,6 +7,7 @@ import { listGames, createGame, type GameState } from "@/lib/api";
 
 const STATUS_LABELS: Record<GameState["status"], string> = {
   waiting: "Waiting",
+  drafting: "Drafting",
   active: "Active",
   complete: "Complete",
 };

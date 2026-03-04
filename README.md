@@ -2,6 +2,19 @@
 
 A turn-based 3x3 card-capture game inspired by Triple Triad, set in the world of Curse of Strahd. Players draft decks of gothic horror characters and battle on a 3x3 grid, capturing opponent cards by comparing side values. Features include Mists modifiers, the Plus rule, elemental affinities, and character archetypes with unique once-per-game powers.
 
+## Table of Contents
+
+- [Prerequisites](#prerequisites)
+- [Backend Setup](#backend-setup)
+- [Seed Data](#seed-data)
+- [Frontend Setup](#frontend-setup)
+- [Running Tests](#running-tests)
+- [Lint \& Typecheck](#lint--typecheck)
+- [Tooling (mise)](#tooling-mise)
+- [Deploy](#deploy)
+- [Ralph (Autonomous Agent Loop)](#ralph-autonomous-agent-loop)
+- [Further Reading](#further-reading)
+
 ## Prerequisites
 
 - Python 3.12+
@@ -33,7 +46,7 @@ Seed `cards.jsonl` into the Supabase `public.cards` table (requires `SUPABASE_UR
 uv run python scripts/seed_cards.py cards.jsonl
 ```
 
-More Supabase setup details: [`docs/supabase_dev_setup.md`](docs/supabase_dev_setup.md).
+More Supabase setup details: [`docs/SUPABASE_DEV_SETUP.md`](docs/SUPABASE_DEV_SETUP.md).
 
 ## Frontend Setup
 
@@ -88,7 +101,7 @@ These are convenience wrappers — the individual commands (documented above) st
 
 ## Deploy
 
-- Railway: see [`docs/railway_deploy.md`](docs/railway_deploy.md)
+- Railway: see [`docs/RAILWAY_DEPLOY.md`](docs/RAILWAY_DEPLOY.md)
 
 ## Ralph (Autonomous Agent Loop)
 
@@ -102,8 +115,11 @@ See [`AGENTS.md`](AGENTS.md) for agent-specific workflow notes and the full comm
 
 ## Further Reading
 
-- [GAME_RULES_OVERVIEW.md](GAME_RULES_OVERVIEW.md) — Full game rules (Mists, Plus, Elemental, Archetypes, Sudden Death)
-- [CARDS_SPEC.md](CARDS_SPEC.md) — Card data format, budget rules, and balance constraints
-- [TECH_DECISIONS.md](TECH_DECISIONS.md) — Architecture decisions and tradeoffs
-- [MVP_PLAN_OVERVIEW.md](MVP_PLAN_OVERVIEW.md) — MVP scope and implementation plan
-- [docs/](docs/) — Additional docs (Supabase setup, realtime, deployment)
+- [docs/GAME_RULES_OVERVIEW.md](docs/GAME_RULES_OVERVIEW.md) — Full game rules (Mists, Plus, Elemental, Archetypes, Sudden Death)
+- [docs/CARDS_SPEC.md](docs/CARDS_SPEC.md) — Card data format, budget rules, and balance constraints
+- [docs/TECH_DECISIONS.md](docs/TECH_DECISIONS.md) — Architecture decisions and tradeoffs
+- [docs/MVP_PLAN_OVERVIEW.md](docs/MVP_PLAN_OVERVIEW.md) — MVP scope and implementation plan
+- [docs/SUPABASE_DEV_SETUP.md](docs/SUPABASE_DEV_SETUP.md) — Supabase setup (seeding + manual testing)
+- [docs/REALTIME.md](docs/REALTIME.md) — Realtime subscription contract (game_events -> refetch snapshot)
+- [docs/RAILWAY_DEPLOY.md](docs/RAILWAY_DEPLOY.md) — Railway deploy notes
+- [docs/PRD_LIST.md](docs/PRD_LIST.md) — Archived PRD story index

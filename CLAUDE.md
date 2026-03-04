@@ -94,7 +94,7 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 ```
 
 - Active backlog: `ralph/prd.json` (ordered user stories, `passes` field tracks completion).
-- Archived API MVP backlog: `ralph/prd.json.api-mvp`.
+- Archived MVP backlog (API-first): `ralph/archive/2026-03-01-mvp/prd.json`.
 - Progress log: `ralph/progress.txt` (append-only).
 - Each iteration: implement ONE story → run checks → commit `feat: [US-XXX] - Title` → mark `passes: true`.
 - Commit only when `pytest` passes; never mark `passes: true` without passing tests.

@@ -177,9 +177,12 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   log_header "---------------------------------------------------------------"
 
   ITER_START=$(date +%s)
-  TMPFILE=$(mktemp)
+  LOGFILE="$SCRIPT_DIR/logs/iteration-${i}-${STORY_ID}.log"
+  mkdir -p "$SCRIPT_DIR/logs"
 
-  claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee "$TMPFILE" || true
+  log_info "Claude is working… (log: ${LOGFILE})"
+
+  claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" > "$LOGFILE" 2>&1 || true
 
   ITER_END=$(date +%s)
   ELAPSED=$((ITER_END - ITER_START))
@@ -211,14 +214,12 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
   log_header "==============================================================="
 
   # -- Check for completion signal --
-  if grep -q "<promise>COMPLETE</promise>" "$TMPFILE"; then
-    rm -f "$TMPFILE"
+  if grep -q "<promise>COMPLETE</promise>" "$LOGFILE" 2>/dev/null; then
     echo ""
     log_success "Ralph completed all tasks."
     exit 0
   fi
 
-  rm -f "$TMPFILE"
   sleep 2
 done
 

@@ -224,4 +224,5 @@ __marimo__/
 
 # Ralph loop artifacts
 ralph/archive/
+ralph/logs/
 ralph/.last-branch

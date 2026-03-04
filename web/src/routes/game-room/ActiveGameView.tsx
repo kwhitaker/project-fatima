@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { CardDefinition, GameState, PlayerState } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
+import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
 import { ArchetypeModal } from "@/routes/game-room/ArchetypeModal";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
@@ -341,7 +342,7 @@ export function ActiveGameView({
           </div>
 
           {/* Board: centered, takes remaining vertical space */}
-          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden">
+          <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative">
             <BoardGrid
               board={game.board ?? []}
               myIndex={myIndex}
@@ -366,6 +367,27 @@ export function ActiveGameView({
                   : null
               }
               intimidatePendingCell={intimidatePendingCell}
+            />
+            <BoardCallouts
+              mistsEffect={
+                placedCells.size > 0
+                  ? (game.last_move?.mists_effect as "none" | "fog" | "omen" | null)
+                  : null
+              }
+              mistsRoll={game.last_move?.mists_roll ?? null}
+              captureCount={capturedCells.size}
+              plusTriggered={game.last_move?.plus_triggered === true}
+              elementalTriggered={game.last_move?.elemental_triggered === true}
+              elementKey={
+                game.last_move?.elemental_triggered
+                  ? (boardElements?.[game.last_move.cell_index] ?? null)
+                  : null
+              }
+              changeKey={
+                game.last_move
+                  ? `${game.last_move.cell_index}-${game.last_move.card_key}`
+                  : null
+              }
             />
           </div>
 

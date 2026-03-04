@@ -63,7 +63,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex flex-1 min-h-0 items-center justify-center py-10">
       <motion.div
         className="w-full max-w-sm space-y-6 p-6"
         initial={{ opacity: 0, y: 12 }}

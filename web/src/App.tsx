@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import RequireAuth from "./components/RequireAuth";
+import { AppFooter } from "./components/AppFooter";
 import Login from "./routes/Login";
 import ResetPassword from "./routes/ResetPassword";
 import Games from "./routes/Games";
@@ -14,30 +15,36 @@ const DevPlayground = import.meta.env.DEV
 export default function App() {
   return (
     <AuthProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route
-          path="/games"
-          element={
-            <RequireAuth>
-              <Games />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/g/:gameId"
-          element={
-            <RequireAuth>
-              <GameRoom />
-            </RequireAuth>
-          }
-        />
-        {DevPlayground && (
-          <Route path="/dev/playground" element={<DevPlayground />} />
-        )}
-        <Route path="*" element={<Navigate to="/games" replace />} />
-      </Routes>
+      <div className="min-h-[100dvh] flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/games"
+              element={
+                <RequireAuth>
+                  <Games />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/g/:gameId"
+              element={
+                <RequireAuth>
+                  <GameRoom />
+                </RequireAuth>
+              }
+            />
+            {DevPlayground && (
+              <Route path="/dev/playground" element={<DevPlayground />} />
+            )}
+            <Route path="*" element={<Navigate to="/games" replace />} />
+          </Routes>
+        </div>
+
+        <AppFooter />
+      </div>
     </AuthProvider>
   );
 }

@@ -274,7 +274,7 @@ export default function DevPlayground() {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
+    <div className="flex-1 min-h-0 bg-background text-foreground p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-heading text-primary">Dev Playground</h1>

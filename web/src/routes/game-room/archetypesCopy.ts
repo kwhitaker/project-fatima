@@ -15,9 +15,9 @@ export const ARCHETYPE_COPY: Record<Archetype, ArchetypeCopy> = {
   },
   skulker: {
     name: "Skulker",
-    powerTitle: "+2 on one side",
+    powerTitle: "+3 on one side",
     powerText:
-      "After you place a card, pick N/E/S/W. That side gets +2 for this move only. Use it once per game.",
+      "After you place a card, pick N/E/S/W. That side gets +3 for this move only. Use it once per game.",
   },
   caster: {
     name: "Caster",

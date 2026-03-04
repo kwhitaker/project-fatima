@@ -145,7 +145,7 @@ MVP guidance:
 Implemented powers:
 
 - **Martial** (STR/DEX): After placing, rotate the placed card once before resolving captures.
-- **Skulker** (DEX): After placement, add +2 to one chosen side for this placement only.
+- **Skulker** (DEX): After placement, add +3 to one chosen side for this placement only.
 - **Caster** (INT): Reroll the Mists die for your placement.
 - **Devout** (WIS): Treat Fog (1) as no effect for your placement (negate the −2 modifier entirely).
 - **Intimidate** (CHA): After placing, choose one adjacent opponent card — its facing side is replaced with its lowest printed side value for this comparison only.

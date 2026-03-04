@@ -1,6 +1,6 @@
 """Tests for US-007: Skulker archetype side boost.
 
-Skulker power: add +2 to one chosen side (n/e/s/w) for comparisons this
+Skulker power: add +3 to one chosen side (n/e/s/w) for comparisons this
 placement only. Once per game per player.
 
 The choice is made at placement time (not after seeing results).
@@ -29,10 +29,10 @@ make_state = partial(_make_state, p0_archetype=Archetype.SKULKER)
 
 
 class TestApplySkulkerBoost:
-    def test_boosts_chosen_side_by_two(self):
+    def test_boosts_chosen_side_by_three(self):
         card = make_card("c", n=5, e=3, s=7, w=2)
         boosted = apply_skulker_boost(card, "n")
-        assert boosted.sides.n == 7
+        assert boosted.sides.n == 8
 
     def test_other_sides_unchanged(self):
         card = make_card("c", n=5, e=3, s=7, w=2)
@@ -46,7 +46,7 @@ class TestApplySkulkerBoost:
         for side in ("n", "e", "s", "w"):
             card = make_card("c", n=5, e=3, s=7, w=2)
             boosted = apply_skulker_boost(card, side)
-            assert getattr(boosted.sides, side) == getattr(card.sides, side) + 2
+            assert getattr(boosted.sides, side) == getattr(card.sides, side) + 3
 
     def test_does_not_mutate_original(self):
         card = make_card("c", n=5, e=5, s=5, w=5)
@@ -68,9 +68,9 @@ class TestApplySkulkerBoost:
 
 class TestSkulkerBoostInReducer:
     def test_boost_enables_capture_that_would_otherwise_miss(self):
-        """Skulker +2 on N turns a losing comparison into a winning one."""
+        """Skulker +3 on N turns a losing comparison into a winning one."""
         # Placed N=3 vs neighbor S=4 → no capture (3 < 4)
-        # With +2 on N: 5 > 4 → capture
+        # With +3 on N: 6 > 4 → capture
         placed = make_card("placed", n=3, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=4, w=1)
         board: list[BoardCell | None] = [None] * 9

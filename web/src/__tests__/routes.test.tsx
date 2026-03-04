@@ -940,6 +940,7 @@ describe("archetype selection UX (US-UI-008)", () => {
     renderAt("/g/game-arch");
     await waitFor(() => screen.getByRole("button", { name: /martial/i }));
     await user.click(screen.getByRole("button", { name: /martial/i }));
+    await user.click(screen.getByRole("button", { name: /confirm archetype/i }));
     await waitFor(() => {
       expect(mockSelectArchetype).toHaveBeenCalledWith("game-arch", "martial");
       // Selector gone after archetype chosen

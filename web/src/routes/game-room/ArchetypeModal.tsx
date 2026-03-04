@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ModalShell } from "@/components/ui/ModalShell";
 import type { Archetype } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { ArchetypePowerAside } from "@/routes/game-room/ArchetypePowerAside";
 import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 
 export function ArchetypeModal({ open }: { open: boolean }) {
   const { archetypePending: pending, archetypeError: error, onSelectArchetype: onSelect } = useGameRoom();
   const [activeArch, setActiveArch] = useState<Archetype>("martial");
+  const [selectedArch, setSelectedArch] = useState<Archetype | null>(null);
   const archetypes: Archetype[] = [
     "martial",
     "skulker",
@@ -15,6 +17,8 @@ export function ArchetypeModal({ open }: { open: boolean }) {
     "devout",
     "intimidate",
   ];
+  // Preview follows selection first, then hover/focus
+  const previewArch = selectedArch ?? activeArch;
 
   return (
     <ModalShell
@@ -35,12 +39,16 @@ export function ArchetypeModal({ open }: { open: boolean }) {
           {archetypes.map((arch) => (
             <Button
               key={arch}
-              variant="default"
-              className="capitalize w-full justify-start"
-              onClick={() => void onSelect(arch)}
+              variant={selectedArch === arch ? "default" : "outline"}
+              className={cn(
+                "capitalize w-full justify-start",
+                selectedArch === arch && "ring-2 ring-primary ring-offset-1",
+              )}
+              onClick={() => setSelectedArch(arch)}
               disabled={pending}
               onFocus={() => setActiveArch(arch)}
               onMouseEnter={() => setActiveArch(arch)}
+              aria-pressed={selectedArch === arch}
             >
               {arch}
             </Button>
@@ -48,12 +56,20 @@ export function ArchetypeModal({ open }: { open: boolean }) {
         </div>
         <div aria-live="polite" aria-atomic="true">
           <ArchetypePowerAside
-            archetype={activeArch}
+            archetype={previewArch}
             label="archetype power details"
             showName
           />
         </div>
       </div>
+      <Button
+        className="w-full mt-4"
+        disabled={selectedArch === null || pending}
+        onClick={() => selectedArch && void onSelect(selectedArch)}
+        aria-label="confirm archetype"
+      >
+        {pending ? "Confirming…" : "Confirm"}
+      </Button>
       {error && <p className="text-destructive text-sm mt-3">{error}</p>}
     </ModalShell>
   );

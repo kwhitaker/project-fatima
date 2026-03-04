@@ -1,80 +1,95 @@
 {
   "project": "project-fatima",
-  "branchName": "ralph/archetype-power-revamp",
-  "description": "Archetype power rebalance: buff Caster (best-of-two rolls), make Devout conditional (only consumed on Fog), buff Skulker (+2 → +3), and add CW/CCW direction choice to Martial.",
+  "branchName": "ralph/ui-polish",
+  "description": "UI polish pass: shrink chunky header chrome, add prominent board-level event feedback, declutter sidebar, redesign power activation toggle, and add confirm step to archetype selection.",
   "userStories": [
     {
-      "id": "US-PR-001",
-      "title": "Caster reroll: best of two rolls",
-      "description": "As a Caster player, I want the reroll power to use the better of two Mists rolls instead of blindly discarding the first — so the power reliably improves my outcome rather than being a coin flip.",
+      "id": "US-UP-001",
+      "title": "Shrink game room header chrome",
+      "description": "As a player, I want the game room header (title, Refresh, Back to Games) to be smaller and less dominant — so the board and hand get more visual priority.",
       "acceptanceCriteria": [
-        "In `apply_intent` (reducer.py), when `caster_reroll` is True, roll twice and keep the max: `roll = max(rng.randint(1, 6), rng.randint(1, 6))`",
-        "Higher roll is always better: 1=Fog (−2) is worst, 6=Omen (+2) is best, so `max()` is correct",
-        "Both rolls are consumed from the RNG stream (two calls to `rng.randint`)",
-        "Add/update tests in `tests/test_reducer.py` covering: Caster best-of-two picks the higher roll, Caster without power still rolls once, seeded RNG produces deterministic results",
-        "`uv run pytest` passes",
-        "`uv run ruff check . && uv run ruff format .` clean",
-        "`uv run pyright` clean"
+        "In `GameRoom.tsx`, reduce the title `h1` from `text-2xl font-bold` to `text-base font-semibold` (or similar compact size)",
+        "Reduce the 'Back to Games' link to `text-xs` styling — it should be a subtle nav link, not a prominent button",
+        "Reduce the 'Refresh' button to `text-xs` styling to match",
+        "Reduce the realtime status badge to be more compact (smaller text, less padding)",
+        "The header row and status row combined should take up noticeably less vertical space than before",
+        "All existing functionality (navigation, refresh, realtime indicator) still works",
+        "`bun run test --run` passes"
       ],
       "priority": 1,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-PR-002",
-      "title": "Devout conditional consume: only spent on Fog",
-      "description": "As a Devout player, I want my fog-negation power to only be consumed when Fog actually rolls — so I'm not punished for activating it on a non-Fog roll and can keep trying until Fog appears.",
+      "id": "US-UP-002",
+      "title": "Board-level event feedback callouts",
+      "description": "As a player, I want brief animated callouts to appear near the board when events happen (Mists roll, captures, Plus, Elemental) — so I immediately understand what happened without having to check the sidebar. The callouts should feel like part of the game: use the same Curse of Strahd flavor and animation style as VictoryOverlay/DefeatOverlay/BoardGrid captures.",
       "acceptanceCriteria": [
-        "In `apply_intent` (reducer.py), set `archetype_activated = True` only inside the `if devout_negate_fog and mists_modifier == -2:` block, not at dispatch time",
-        "At dispatch time for Devout, set `devout_negate_fog = True` but do NOT set `archetype_activated = True`",
-        "When `devout_negate_fog` is True and the roll is NOT Fog (modifier != −2), `archetype_activated` stays False and the player's `archetype_used` is not set — they can use_archetype again next turn",
-        "When `devout_negate_fog` is True and the roll IS Fog, set `archetype_activated = True` so the power is consumed",
-        "Add/update tests: Devout on non-Fog roll → power NOT consumed (archetype_used stays False), Devout on Fog roll → power consumed and modifier zeroed, Devout can retry on subsequent turns until Fog triggers",
-        "`uv run pytest` passes",
-        "`uv run ruff check . && uv run ruff format .` clean",
-        "`uv run pyright` clean"
+        "When a card is placed and Mists triggers Fog or Omen, show a floating callout overlaying the board area that auto-fades after ~2 seconds. Fog: use a cold/ominous style (blue-gray tones, e.g. 'The Mists cloud your vision… −2' or similar thematic text). Omen: use a radiant/empowered style (purple/gold tones, e.g. 'The Mists favor you! +2')",
+        "When captures occur, show a callout near the board. Single capture: something understated. Combo (2+): make it dramatic — e.g. 'Chain! ×N claimed' with a stepped scale-in animation matching the VictoryOverlay's steppedEase pattern",
+        "When Plus triggers, show a prominent 'Plus!' callout on the board area (cyan), with a brightness flash or glow similar to the capture flip's brightness burst in BoardGrid",
+        "When Elemental triggers, show the element name callout (gold/yellow) with the element's symbol from ELEMENT_SYMBOLS (e.g. '🩸 Blood Elemental!')",
+        "Use `font-heading` for callout text, `drop-shadow` or `text-shadow` for depth (match VictoryOverlay/DefeatOverlay style). Use `steppedEase` for at least the entry animation to maintain the pixel-art-inspired feel",
+        "Callouts use motion/react AnimatePresence with enter/exit animations. Entry should feel punchy (scale overshoot like the combo counter's initial scale 1.5 → 1), exit should fade smoothly",
+        "Position callouts as an absolutely-positioned overlay on the board container with `pointer-events-none` so they never block cell clicks",
+        "The sidebar retains the persistent last-move info (Mists roll, capture count, etc.) — the board callouts are supplementary, not a replacement",
+        "Add a frontend test: verify board-level callout renders when last_move has mists_effect='fog'",
+        "`bun run test --run` passes"
       ],
       "priority": 2,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-PR-003",
-      "title": "Skulker boost +2 → +3",
-      "description": "As a Skulker player, I want my side boost increased from +2 to +3 — so the power is competitive with the buffed Caster and conditional Devout.",
+      "id": "US-UP-003",
+      "title": "Declutter sidebar: archetype powers as tooltips",
+      "description": "As a player, I want the sidebar to be less information-dense — archetype power descriptions should be available on hover/tap rather than always visible.",
       "acceptanceCriteria": [
-        "In `apply_skulker_boost` (archetypes.py), change `sides_dict[side] += 2` to `sides_dict[side] += 3`",
-        "Update the docstring to say 'increased by 3'",
-        "Update any existing tests that assert the +2 value to assert +3 instead",
-        "Add a test confirming Skulker boost applies +3 to the chosen side and leaves other sides unchanged",
-        "`uv run pytest` passes",
-        "`uv run ruff check . && uv run ruff format .` clean",
-        "`uv run pyright` clean"
+        "Remove the `ArchetypePowerAside` blocks from the sidebar's always-visible content",
+        "In the archetype status section (Your archetype / Opponent archetype), make the archetype name a hover target that shows the power description in a tooltip",
+        "Tooltip should show the power title and power text from `archetypesCopy.ts`",
+        "Tooltip works on both desktop (hover) and mobile (tap/long-press or a small info icon tap)",
+        "Compact the opponent hand count + archetype status into a tighter layout (consider a single row or two-column compact grid)",
+        "The sidebar should feel noticeably less cluttered after this change",
+        "Existing archetype info (name, used/available status) remains visible without hovering",
+        "Add a frontend test: verify tooltip content appears on hover for an archetype",
+        "`bun run test --run` passes"
       ],
       "priority": 3,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-PR-004",
-      "title": "Martial rotation direction choice (CW/CCW)",
-      "description": "As a Martial player, I want to choose clockwise or counter-clockwise rotation when activating my power — so I have more tactical flexibility.",
+      "id": "US-UP-004",
+      "title": "Prominent power activation toggle",
+      "description": "As a player, I want the archetype power activation to be a large, visually distinct button instead of a subtle checkbox — so I never accidentally miss that my power is available.",
       "acceptanceCriteria": [
-        "Add `rotate_card_ccw(card: CardDefinition) -> CardDefinition` to `archetypes.py` with mapping: new.n=old.e, new.e=old.s, new.s=old.w, new.w=old.n",
-        "Add `martial_rotation_direction: str | None = field(default=None)` to `PlacementIntent` in reducer.py, accepting 'cw' or 'ccw'",
-        "Add `martial_rotation_direction: str | None = None` to `MoveRequest` in games.py router, accepting 'cw' or 'ccw'",
-        "In the reducer Martial dispatch block, validate `martial_rotation_direction` is 'cw' or 'ccw' (raise `ArchetypePowerArgumentError` otherwise), then call `rotate_card_once` for 'cw' or `rotate_card_ccw` for 'ccw'",
-        "Default to 'cw' if `martial_rotation_direction` is None for backward compatibility",
-        "Pass `martial_rotation_direction` from `MoveRequest` through to `PlacementIntent` in the router",
-        "Add `martialRotationDirection?: 'cw' | 'ccw'` to the `powerOptions` parameter in `web/src/lib/api.ts` and spread it as `martial_rotation_direction` in the request body",
-        "In `ActionPanel.tsx`, when the player's archetype is Martial and Use Power is checked, show a CW / CCW toggle (two buttons, similar to Skulker's direction picker)",
-        "Wire the selected direction through GameRoom state to the `placeCard` call",
-        "Add backend tests: CCW rotation produces correct side mapping, CW rotation still works, missing direction defaults to CW, invalid direction raises error",
-        "Add frontend test: ActionPanel renders CW/CCW toggle when Martial power is active",
-        "`uv run pytest` passes",
-        "`uv run ruff check . && uv run ruff format .` clean",
-        "`uv run pyright` clean",
+        "In `ActionPanel.tsx`, replace the checkbox `Use Power` with a prominent toggle button (e.g. '⚡ Use Power')",
+        "When power is available and not yet toggled, the button should have a subtle pulse or glow animation to draw attention",
+        "When toggled ON, the button should be visually distinct (filled/highlighted state) so the player clearly sees power is active",
+        "When power has been used (`archetype_used: true`), the button should not appear (same as current behavior)",
+        "Direction pickers (Skulker N/E/S/W, Martial CW/CCW) still appear below the button when toggled on",
+        "The button should be large enough to be clearly visible but not so large it crowds the hand panel in the side-by-side layout",
+        "Add a frontend test: verify the power toggle button renders with pulse animation class when power is available",
         "`bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": true
+      "passes": false
+    },
+    {
+      "id": "US-UP-005",
+      "title": "Archetype selection confirm button",
+      "description": "As a player, I want a confirm step when selecting my archetype — so I don't accidentally pick one by misclicking.",
+      "acceptanceCriteria": [
+        "In `ArchetypeModal.tsx`, clicking an archetype button should highlight/select it without immediately submitting",
+        "Add a 'Confirm' button at the bottom of the modal that submits the selected archetype",
+        "The confirm button should be disabled until an archetype is selected",
+        "The archetype preview panel (right side) still updates on hover/focus as before",
+        "The selected archetype button should have a visually distinct selected state (e.g. ring/outline) separate from hover",
+        "Pressing Confirm calls `onSelectArchetype` (same as the current direct-click behavior)",
+        "The pending/disabled state during submission still works (Confirm button shows loading state)",
+        "Add a frontend test: verify clicking an archetype does NOT immediately call onSelectArchetype, and clicking Confirm does",
+        "`bun run test --run` passes"
+      ],
+      "priority": 5,
+      "passes": false
     }
   ]
 }

@@ -33,3 +33,16 @@ Started: 2026-03-03
 - Learnings: straightforward value change; remember to update UI copy strings too
 ---
 
+## 2026-03-04 — US-PR-004
+- Added `rotate_card_ccw` to archetypes.py (CCW: new.n=old.e, new.e=old.s, new.s=old.w, new.w=old.n)
+- Added `martial_rotation_direction` field to PlacementIntent, MoveRequest, and game_service.submit_move
+- Reducer validates direction ('cw'/'ccw'), defaults to 'cw' for backward compat
+- Frontend: CW/CCW toggle in ActionPanel for Martial, wired through GameRoomContext → GameRoom → api.ts
+- Updated canPlace guard in ActiveGameView to require direction for Martial
+- Backend: 7 new tests (CCW unit, CW/CCW integration, default-to-CW, invalid direction error)
+- Frontend: 2 new tests (CW/CCW toggle renders, submits martial_rotation_direction)
+- Tests/validation: 575 backend passed, 247 frontend passed, ruff clean, pyright pre-existing only
+- Files changed: archetypes.py, reducer.py, games.py, game_service.py, test_martial.py, api.ts, ActionPanel.tsx, ActiveGameView.tsx, GameRoomContext.tsx, GameRoom.tsx, archetypesCopy.ts, routes.test.tsx, CLAUDE.md, GAME_RULES_OVERVIEW.md
+- Learnings: reused powerSide state for CW/CCW (strings "cw"/"ccw") to avoid adding new context fields
+---
+

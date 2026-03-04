@@ -15,10 +15,13 @@ Your task per iteration:
    - Use commands documented in `AGENTS.md`.
    - If commands are missing because the repo is early, add the correct commands to `AGENTS.md`
      as part of the story (keep it brief and operational).
-6. If checks pass, commit ALL changes with message:
+6. If checks pass, commit ALL changed files with message:
    - `feat: [Story ID] - [Story Title]`
 7. Update `ralph/prd.json`: set `passes: true` for the completed story.
 8. Append to `ralph/progress.txt` using the format below.
+9. Commit the progress updates (`ralph/prd.json` and `ralph/progress.txt`) with message:
+   - `Updates progress`
+   - This MUST be a separate commit AFTER the feat commit. Do NOT skip this step.
 
 Progress log format (append-only):
 

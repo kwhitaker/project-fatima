@@ -36,7 +36,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-UP-003",

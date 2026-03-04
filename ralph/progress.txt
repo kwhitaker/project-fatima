@@ -17,3 +17,12 @@ Started: 2026-03-04
 - Learnings: Game room route is /g/:gameId (not /games/:gameId)
 ---
 
+## 2026-03-04 08:20 - US-UP-002
+- Created BoardCallouts component with auto-fading animated callouts for Mists (fog/omen), captures (single/combo), Plus!, and Elemental events
+- Used steppedEase(4) entry animation matching VictoryOverlay pixel-art style, pointer-events-none overlay
+- Integrated into ActiveGameView board area with relative positioning
+- Tests/validation: 6 new tests in up002.test.tsx, all 257 frontend + 575 backend pass
+- Files changed: web/src/routes/game-room/BoardCallouts.tsx (new), web/src/routes/game-room/ActiveGameView.tsx, web/src/__tests__/up002.test.tsx (new)
+- Learnings: motion/react mock pattern — proxy for motion elements + passthrough AnimatePresence
+---
+

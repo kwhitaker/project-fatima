@@ -366,12 +366,16 @@ def apply_intent(
     # second player ends with 1 in hand (they place only 4 of 5 cards).
     # Conservative bound: opponent fills all empty cells + captures `empty_cells`
     # existing cells → player's min cells = current_cells - empty_cells.
+    # Skip if the losing player still has an unspent archetype (could swing the game).
     empty_cells = sum(1 for cell in new_board if cell is None)
     if empty_cells > 0 and state.players:
         p0_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 0)
         p1_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 1)
         first_player = state.starting_player_index
         for pi, count in ((0, p0_cells), (1, p1_cells)):
+            opponent = 1 - pi
+            if not state.players[opponent].archetype_used:
+                continue
             hand_end = 0 if pi == first_player else 1
             min_score = (count - empty_cells) + hand_end
             if min_score >= 6:

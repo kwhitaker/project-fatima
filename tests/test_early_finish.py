@@ -6,6 +6,9 @@ with 0 hand cards, the second player ends with 1.
 
 First player clinch:  cells >= 6 + empty_cells  (hand_end=0)
 Second player clinch: cells >= 5 + empty_cells  (hand_end=1)
+
+Early finish is suppressed when the losing player still has an unspent
+archetype power (they might use it to swing captures on their remaining turn).
 """
 
 from app.models.cards import CardDefinition, CardSides
@@ -36,8 +39,16 @@ def cell(key: str, owner: int) -> BoardCell:
 CARDS = {f"c{i}": make_card(f"c{i}") for i in range(10)}
 
 
-def _make_state(board: list[BoardCell | None], current_player: int = 0) -> GameState:
-    """Build an ACTIVE game state with two players and the given board."""
+def _make_state(
+    board: list[BoardCell | None],
+    current_player: int = 0,
+    archetypes_used: bool = True,
+) -> GameState:
+    """Build an ACTIVE game state with two players and the given board.
+
+    archetypes_used defaults to True so the early-finish check is eligible.
+    Set to False to test that unspent archetypes suppress early finish.
+    """
     # Figure out which cards are on the board and which remain in hand
     p0_on_board = [b.card_key for b in board if b is not None and b.owner == 0]
     p1_on_board = [b.card_key for b in board if b is not None and b.owner == 1]
@@ -49,8 +60,8 @@ def _make_state(board: list[BoardCell | None], current_player: int = 0) -> GameS
         game_id="test-early",
         status=GameStatus.ACTIVE,
         players=[
-            PlayerState(player_id="p0", hand=p0_hand),
-            PlayerState(player_id="p1", hand=p1_hand),
+            PlayerState(player_id="p0", hand=p0_hand, archetype_used=archetypes_used),
+            PlayerState(player_id="p1", hand=p1_hand, archetype_used=archetypes_used),
         ],
         board=board,
         current_player_index=current_player,
@@ -97,8 +108,8 @@ class TestEarlyFinish:
             game_id="test-early",
             status=GameStatus.ACTIVE,
             players=[
-                PlayerState(player_id="p0", hand=["c8"]),
-                PlayerState(player_id="p1", hand=["c9", "c7"]),
+                PlayerState(player_id="p0", hand=["c8"], archetype_used=True),
+                PlayerState(player_id="p1", hand=["c9", "c7"], archetype_used=True),
             ],
             board=board,
             current_player_index=0,
@@ -132,8 +143,8 @@ class TestEarlyFinish:
             game_id="test-early",
             status=GameStatus.ACTIVE,
             players=[
-                PlayerState(player_id="p0", hand=["c8"]),
-                PlayerState(player_id="p1", hand=["c9"]),
+                PlayerState(player_id="p0", hand=["c8"], archetype_used=True),
+                PlayerState(player_id="p1", hand=["c9"], archetype_used=True),
             ],
             board=board,
             current_player_index=1,
@@ -170,8 +181,8 @@ class TestEarlyFinish:
             game_id="test-early",
             status=GameStatus.ACTIVE,
             players=[
-                PlayerState(player_id="p0", hand=["c8"]),
-                PlayerState(player_id="p1", hand=["c9"]),
+                PlayerState(player_id="p0", hand=["c8"], archetype_used=True),
+                PlayerState(player_id="p1", hand=["c9"], archetype_used=True),
             ],
             board=board,
             current_player_index=0,
@@ -271,8 +282,8 @@ class TestEarlyFinish:
             game_id="test-capture-clinch",
             status=GameStatus.ACTIVE,
             players=[
-                PlayerState(player_id="p0", hand=["high"]),
-                PlayerState(player_id="p1", hand=["c8"]),
+                PlayerState(player_id="p0", hand=["high"], archetype_used=True),
+                PlayerState(player_id="p1", hand=["c8"], archetype_used=True),
             ],
             board=board,
             current_player_index=0,
@@ -286,3 +297,80 @@ class TestEarlyFinish:
         assert result.result is not None
         assert result.result.early_finish is True
         assert result.result.winner == 0
+
+    def test_no_early_finish_when_opponent_has_unspent_archetype(self):
+        """Early finish is suppressed when the losing player has an unspent archetype.
+
+        Same board as test_early_finish_first_player_clinches (p0 would clinch
+        with 7 cells + 1 empty), but p1 still has their archetype power.
+        The archetype could swing captures, so the game must continue.
+        """
+        board: list[BoardCell | None] = [
+            cell("c0", 0),
+            cell("c1", 0),
+            cell("c2", 0),
+            cell("c3", 0),
+            cell("c4", 0),
+            cell("c5", 0),
+            cell("c6", 1),
+            None,
+            None,
+        ]
+        state = GameState(
+            game_id="test-early",
+            status=GameStatus.ACTIVE,
+            players=[
+                PlayerState(player_id="p0", hand=["c8"], archetype_used=True),
+                PlayerState(player_id="p1", hand=["c9", "c7"], archetype_used=False),
+            ],
+            board=board,
+            current_player_index=0,
+            starting_player_index=0,
+            seed=42,
+        )
+        extra_cards = {**CARDS, "c7": make_card("c7"), "c8": make_card("c8"), "c9": make_card("c9")}
+        result = apply_intent(
+            state, PlacementIntent(player_index=0, card_key="c8", cell_index=7), extra_cards
+        )
+        # p1 still has archetype → mercy suppressed, game continues
+        assert result.status == GameStatus.ACTIVE
+        assert result.result is None
+
+    def test_early_finish_when_winner_has_unspent_archetype(self):
+        """Early finish still triggers when only the *winning* player has an unspent archetype.
+
+        The losing player (opponent of the clincher) has already used their power,
+        so there's no possible swing — mercy is valid.
+        """
+        board: list[BoardCell | None] = [
+            cell("c0", 0),
+            cell("c1", 0),
+            cell("c2", 0),
+            cell("c3", 0),
+            cell("c4", 0),
+            cell("c5", 0),
+            cell("c6", 1),
+            None,
+            None,
+        ]
+        state = GameState(
+            game_id="test-early",
+            status=GameStatus.ACTIVE,
+            players=[
+                PlayerState(player_id="p0", hand=["c8"], archetype_used=False),
+                PlayerState(player_id="p1", hand=["c9", "c7"], archetype_used=True),
+            ],
+            board=board,
+            current_player_index=0,
+            starting_player_index=0,
+            seed=42,
+        )
+        extra_cards = {**CARDS, "c7": make_card("c7"), "c8": make_card("c8"), "c9": make_card("c9")}
+        result = apply_intent(
+            state, PlacementIntent(player_index=0, card_key="c8", cell_index=7), extra_cards
+        )
+        # p1 (the loser) has used their archetype → mercy triggers
+        assert result.status == GameStatus.COMPLETE
+        assert result.result is not None
+        assert result.result.winner == 0
+        assert result.result.early_finish is True

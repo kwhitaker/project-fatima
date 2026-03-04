@@ -24,3 +24,12 @@ Started: 2026-03-03
 - Learnings: conditional consume pattern — set flag at dispatch, consume at effect site
 ---
 
+## 2026-03-04 — US-PR-003
+- Changed Skulker boost from +2 to +3 in `apply_skulker_boost`
+- Updated docstring, test assertions, test names, and comments to reflect +3
+- Updated docs (CLAUDE.md, GAME_RULES_OVERVIEW.md) and frontend copy (archetypesCopy.ts)
+- Tests/validation: 568 passed, ruff clean on changed files, pyright pre-existing only
+- Files changed: `app/rules/archetypes.py`, `tests/test_skulker.py`, `CLAUDE.md`, `GAME_RULES_OVERVIEW.md`, `web/src/routes/game-room/archetypesCopy.ts`
+- Learnings: straightforward value change; remember to update UI copy strings too
+---
+

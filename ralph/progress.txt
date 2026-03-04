@@ -45,3 +45,11 @@ Started: 2026-03-04
 - Learnings: When changing element roles, update all existing tests that query by old role
 ---
 
+## 2026-03-04 08:39 - US-UP-005
+- Added confirm step to ArchetypeModal: click selects (ring-2 highlight), Confirm button submits
+- Confirm button disabled until archetype selected; shows "Confirming…" during pending
+- Updated existing test to add confirm click step
+- Tests/validation: 4 new tests in up005.test.tsx, all 267 frontend tests pass
+- Files changed: web/src/routes/game-room/ArchetypeModal.tsx, web/src/__tests__/up005.test.tsx (new), web/src/__tests__/routes.test.tsx
+---
+

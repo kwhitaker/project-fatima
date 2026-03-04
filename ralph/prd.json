@@ -83,7 +83,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 5,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-006",
@@ -97,7 +97,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 6,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-007",
@@ -111,7 +111,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 7,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-008",
@@ -130,7 +130,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 8,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-009",
@@ -146,7 +146,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 9,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-010",
@@ -159,7 +159,7 @@
         "No stale references to '10-card deck' or 'hand of 10' remain in documentation files"
       ],
       "priority": 10,
-      "passes": false
+      "passes": true
     }
   ]
 }

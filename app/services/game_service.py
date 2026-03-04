@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from random import Random
 
 from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
-from app.rules.deck import generate_matched_decks
+from app.rules.deck import generate_matched_deals
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
@@ -76,7 +76,7 @@ def join_game(
     extra_updates: dict[str, object] = {}
     if len(new_players) == 2:
         cards = card_store.list_cards()
-        deck_a, deck_b = generate_matched_decks(cards, seed=state.seed)
+        deck_a, deck_b = generate_matched_deals(cards, seed=state.seed)
         new_players[0] = new_players[0].model_copy(update={"hand": [c.card_key for c in deck_a]})
         new_players[1] = new_players[1].model_copy(update={"hand": [c.card_key for c in deck_b]})
         new_status = GameStatus.ACTIVE

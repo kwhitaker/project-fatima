@@ -59,8 +59,8 @@ def test_full_happy_path(client: TestClient) -> None:
     assert len(data["players"]) == 2
     alice_hand = data["players"][0]["hand"]
     bob_hand = data["players"][1]["hand"]
-    assert len(alice_hand) == 10
-    assert len(bob_hand) == 10
+    assert len(alice_hand) == 7
+    assert len(bob_hand) == 7
 
     # Determine who goes first (depends on seed)
     first_player_index = data["current_player_index"]

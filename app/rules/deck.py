@@ -32,11 +32,11 @@ COPY_LIMITS: dict[str, int] = {
 }
 
 
-def validate_deck(cards: list[CardDefinition]) -> list[str]:
-    """Validate a 10-card deck against deck-composition rules.
+def validate_deal(cards: list[CardDefinition]) -> list[str]:
+    """Validate a deal against composition rules.
 
     Checks:
-    - Exactly 10 cards.
+    - Exactly DEAL_SIZE (7) cards.
     - Named uniqueness: at most one card per character_key when is_named is True.
     - Rarity slots: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
 
@@ -44,9 +44,9 @@ def validate_deck(cards: list[CardDefinition]) -> list[str]:
     """
     errors: list[str] = []
 
-    # --- deck size ---
-    if len(cards) != 10:
-        errors.append(f"Deck must contain exactly 10 cards; got {len(cards)}")
+    # --- deal size ---
+    if len(cards) != DEAL_SIZE:
+        errors.append(f"Deal must contain exactly {DEAL_SIZE} cards; got {len(cards)}")
 
     # --- named character uniqueness ---
     named_counts: dict[str, int] = {}
@@ -120,42 +120,42 @@ class DeckGenerationError(Exception):
     """Raised when deck generation fails (pool insufficient or costs out of tolerance)."""
 
 
-def _can_add_to_deck(deck: list[CardDefinition], card: CardDefinition) -> bool:
-    """Return True if adding card to deck would not violate composition rules."""
-    if len(deck) >= 10:
+def _can_add_to_deal(deal: list[CardDefinition], card: CardDefinition) -> bool:
+    """Return True if adding card to deal would not violate composition rules."""
+    if len(deal) >= DEAL_SIZE:
         return False
 
     # Named character uniqueness
-    if card.is_named and any(c.character_key == card.character_key for c in deck):
+    if card.is_named and any(c.character_key == card.character_key for c in deal):
         return False
 
     # Rarity slot limit (ultra ≤ 1, very_rare ≤ 2, rare ≤ 3)
     bucket = rarity_bucket(card.rarity)
     if bucket in _RARITY_SLOT_LIMITS:
-        if sum(1 for c in deck if rarity_bucket(c.rarity) == bucket) >= _RARITY_SLOT_LIMITS[bucket]:
+        if sum(1 for c in deal if rarity_bucket(c.rarity) == bucket) >= _RARITY_SLOT_LIMITS[bucket]:
             return False
 
     # Copy limit per card_key
     limit = COPY_LIMITS[bucket]
-    if sum(1 for c in deck if c.card_key == card.card_key) >= limit:
+    if sum(1 for c in deal if c.card_key == card.card_key) >= limit:
         return False
 
     return True
 
 
-def generate_matched_decks(
+def generate_matched_deals(
     pool: list[CardDefinition],
     seed: int,
     tolerance: int = DEFAULT_COST_TOLERANCE,
 ) -> tuple[list[CardDefinition], list[CardDefinition]]:
-    """Generate two 10-card decks from pool that pass validation and are cost-balanced.
+    """Generate two DEAL_SIZE-card deals from pool that pass validation and are cost-balanced.
 
     Shuffles the pool with the given seed, then sorts by card cost descending so
     higher-value cards are distributed evenly.  Cards are assigned alternately to
-    each deck, respecting deck-composition rules (slot limits, copy limits, named
+    each deal, respecting composition rules (slot limits, copy limits, named
     uniqueness).
 
-    Raises DeckGenerationError if the pool cannot fill both decks or if the
+    Raises DeckGenerationError if the pool cannot fill both deals or if the
     resulting cost difference exceeds tolerance.
     """
     rng = random.Random(seed)
@@ -164,28 +164,28 @@ def generate_matched_decks(
     # Stable sort: higher-cost cards processed first for even distribution.
     shuffled.sort(key=card_cost, reverse=True)
 
-    decks: list[list[CardDefinition]] = [[], []]
+    deals: list[list[CardDefinition]] = [[], []]
     target = 0
 
     for card in shuffled:
-        if len(decks[0]) == 10 and len(decks[1]) == 10:
+        if len(deals[0]) == DEAL_SIZE and len(deals[1]) == DEAL_SIZE:
             break
         for idx in (target, 1 - target):
-            if _can_add_to_deck(decks[idx], card):
-                decks[idx].append(card)
+            if _can_add_to_deal(deals[idx], card):
+                deals[idx].append(card)
                 target = 1 - idx
                 break
 
-    deck_a, deck_b = decks[0], decks[1]
+    deal_a, deal_b = deals[0], deals[1]
 
-    if len(deck_a) != 10 or len(deck_b) != 10:
+    if len(deal_a) != DEAL_SIZE or len(deal_b) != DEAL_SIZE:
         raise DeckGenerationError(
-            f"Could not fill both decks from pool of {len(pool)} cards "
-            f"(filled {len(deck_a)} and {len(deck_b)})"
+            f"Could not fill both deals from pool of {len(pool)} cards "
+            f"(filled {len(deal_a)} and {len(deal_b)})"
         )
 
-    cost_diff = abs(deck_cost(deck_a) - deck_cost(deck_b))
+    cost_diff = abs(deck_cost(deal_a) - deck_cost(deal_b))
     if cost_diff > tolerance:
         raise DeckGenerationError(f"Deck cost imbalance {cost_diff} exceeds tolerance {tolerance}")
 
-    return deck_a, deck_b
+    return deal_a, deal_b

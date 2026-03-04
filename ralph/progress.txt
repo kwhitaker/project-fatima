@@ -26,3 +26,13 @@ Started: 2026-03-04
 - Learnings: motion/react mock pattern — proxy for motion elements + passthrough AnimatePresence
 ---
 
+## 2026-03-04 08:30 - US-UP-003
+- Removed ArchetypePowerAside from sidebar, replaced with compact ArchetypeTooltipName component
+- Compact grid layout: label | archetype name (hover tooltip) | hand count
+- Tooltip uses CSS group-hover/group-focus, no new dependencies needed
+- Kept "Available"/"Used" text to maintain existing test compatibility
+- Tests/validation: 2 new tests in up003.test.tsx, all 259 frontend tests pass
+- Files changed: web/src/routes/game-room/ActiveGameView.tsx, web/src/__tests__/up003.test.tsx (new)
+- Learnings: PlayerState.hand is string[] not object[]; keep status text consistent with existing tests
+---
+

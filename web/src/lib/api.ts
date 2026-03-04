@@ -147,6 +147,31 @@ export async function selectArchetype(
   return res.json() as Promise<GameState>;
 }
 
+export async function submitDraft(
+  gameId: string,
+  selectedCards: string[]
+): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch(`/api/games/${gameId}/draft`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ selected_cards: selectedCards }),
+  });
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to submit draft: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
+  return res.json() as Promise<GameState>;
+}
+
 export async function leaveGame(
   gameId: string,
   stateVersion: number

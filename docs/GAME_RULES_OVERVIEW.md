@@ -37,12 +37,14 @@ MVP balance approach (subject to tuning):
 
 ## Match Setup
 
-- Each player brings a 10-card deck.
-- Each match uses a 5-card hand per player.
-- When the second player joins, 9 board elements are generated deterministically from the game seed (one per cell).
+- When the second player joins, each player is dealt 7 cards from a balanced pool.
+- Each player drafts (picks) 5 of those 7 cards to keep; the other 2 are discarded.
+- When both players have drafted, the match begins.
+- 9 board elements are generated deterministically from the game seed (one per cell).
+- The first player places all 5 cards; the second player places 4 and keeps 1 in hand (which counts toward their score).
 
 MVP note (scope): deck building + card inventory management is out of scope. We can ship MVP with
-prebuilt decks, but still implement deck-validation rules so future deck building uses the same
+generated deals, but still implement deal-validation rules so future deck building uses the same
 constraints.
 
 ## Turn Structure
@@ -124,12 +126,15 @@ Thematic element assignments (from `ralph/card_elements.json`):
 
 ## Win Condition
 
-- When the board is full, the player controlling more cards wins.
-- If tied, optional "Sudden Death": replay using the 9 cards you ended the previous game owning.
+- When the board is full, each player's score = cards they control on the board + cards remaining in their hand.
+- With 5-card hands: the first player places 5 (ends with 0 in hand), the second player places 4 (ends with 1 in hand). Total points = 10.
+- Ties are possible (5-5) and trigger Sudden Death.
 
 ## Sudden Death
 
-- Same `game_id`, `round_number++`; each player's deck = the 9 cards they owned at board-full.
+- On a tie, each player gets back the cards they own on the board plus any cards still in their hand.
+- On the standard 5-5 tie (first player: 5 cells + 0 hand, second player: 4 cells + 1 hand), both players receive exactly 5 cards back.
+- Same `game_id`, `round_number++`; the board resets.
 - Cap: 3 Sudden Death rounds, then declare a draw.
 
 ## Player Archetypes (Once-Per-Game Power)

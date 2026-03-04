@@ -31,7 +31,16 @@ export function GameRulesDialog({
           <section className="space-y-2">
             <h3 className="font-semibold text-base">Goal</h3>
             <p className="text-muted-foreground">
-              Take more cards than your opponent by the time the 3x3 board is full.
+              Your score is the number of cards you control on the board plus cards remaining in your hand.
+              The player with the higher score when the board is full wins.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="font-semibold text-base">Draft Phase</h3>
+            <p className="text-muted-foreground">
+              Each player is dealt 7 cards and picks 5 to keep. The 2 cards you don't
+              pick are discarded. Choose wisely — your hand shapes your entire match.
             </p>
           </section>
 
@@ -42,6 +51,7 @@ export function GameRulesDialog({
               <li>Place it on any empty square.</li>
               <li>The Mists roll happens (a small random bonus or penalty).</li>
               <li>Fights happen and cards may flip.</li>
+              <li>The player who goes first places all 5 cards. The second player places 4 and keeps 1 in hand (which adds to their score).</li>
             </ul>
           </section>
 
@@ -121,7 +131,19 @@ export function GameRulesDialog({
           <section className="space-y-2">
             <h3 className="font-semibold text-base">Winning</h3>
             <p className="text-muted-foreground">
-              When all 9 squares are filled, the player who controls more cards wins.
+              When all 9 squares are filled, your score equals cards you control on the
+              board plus cards remaining in your hand. Highest score wins. Ties are
+              possible and trigger Sudden Death.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="font-semibold text-base">Sudden Death</h3>
+            <p className="text-muted-foreground">
+              On a tie, each player gets back the cards they own on the board plus any
+              cards still in their hand. The board resets and a new round begins. If
+              it ties again, Sudden Death can repeat up to 3 times before the match
+              ends in a draw.
             </p>
           </section>
         </div>

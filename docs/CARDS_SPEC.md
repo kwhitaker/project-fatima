@@ -121,7 +121,7 @@ Even if MVP ships with prebuilt decks, implement these rules in a deck validator
 
 ### Named Character Uniqueness
 
-- If `is_named == true`, only one card per `character_key` may appear in a 10-card deck.
+- If `is_named == true`, only one card per `character_key` may appear in a 7-card deal.
 - This prevents running multiple tiers/versions of the same named character.
 
 ### Copy Limits (By Exact Card Version)

@@ -1,14 +1,13 @@
 """Tests for US-012: Sudden Death rounds with cap.
 
 A full-board tie triggers a Sudden Death round: players' new hands are
-built from the cards they own on the board, the board resets, and round
-counters increment.  After 3 Sudden Death rounds the game ends as a draw.
+built from the cards they own on the board plus cards remaining in their
+hand, the board resets, and round counters increment.  After 3 Sudden
+Death rounds the game ends as a draw.
 
-NOTE: With 9 cells and integer ownership, a genuine tie at board-full is
-mathematically impossible in normal play (9 is odd → one player always has
-at least 5 cells).  The SD transition logic is therefore tested by calling
-begin_sudden_death_round directly with constructed states rather than
-driving it through apply_intent.
+With hand-in-score (score = cells + hand), ties are naturally reachable:
+first player owns 5 cells + 0 hand = 5, second player owns 4 cells + 1
+hand = 5 → tie → Sudden Death.
 """
 
 import pytest
@@ -35,6 +34,8 @@ def make_full_board_state(
     *,
     p0_cells: int = 5,
     p1_cells: int = 4,
+    p0_hand: list[str] | None = None,
+    p1_hand: list[str] | None = None,
     sudden_death_rounds_used: int = 0,
     round_number: int = 1,
     p0_archetype_used: bool = False,
@@ -44,6 +45,9 @@ def make_full_board_state(
 
     Cards are named c0..c8; the first p0_cells belong to player 0,
     the remainder to player 1.  Requires p0_cells + p1_cells == 9.
+
+    p0_hand/p1_hand default to empty but can include remaining hand cards
+    for hand-in-score tests.
     """
     assert p0_cells + p1_cells == 9, "Total cells must equal 9"
     p0_board: list[BoardCell | None] = [cell(f"c{i}", 0) for i in range(p0_cells)]
@@ -56,13 +60,13 @@ def make_full_board_state(
         players=[
             PlayerState(
                 player_id="p0",
-                hand=[],
+                hand=p0_hand or [],
                 archetype=Archetype.MARTIAL,
                 archetype_used=p0_archetype_used,
             ),
             PlayerState(
                 player_id="p1",
-                hand=[],
+                hand=p1_hand or [],
                 archetype=Archetype.SKULKER,
                 archetype_used=p1_archetype_used,
             ),
@@ -129,41 +133,72 @@ class TestBeginSuddenDeathRound:
 
 
 class TestCardCarryover:
-    def test_player0_hand_matches_owned_cells(self):
-        """p0 owned c0..c4 (5 cells) → new hand contains exactly those keys."""
+    def test_player0_hand_from_board_only(self):
+        """p0 owned c0..c4 (5 cells), 0 in hand → new hand = 5 board cards."""
         state = make_full_board_state(p0_cells=5, p1_cells=4)
         new_state = begin_sudden_death_round(state)
         assert sorted(new_state.players[0].hand) == [f"c{i}" for i in range(5)]
 
-    def test_player1_hand_matches_owned_cells(self):
-        """p1 owned c5..c8 (4 cells) → new hand contains exactly those keys."""
+    def test_player1_hand_from_board_only(self):
+        """p1 owned c5..c8 (4 cells), 0 in hand → new hand = 4 board cards."""
         state = make_full_board_state(p0_cells=5, p1_cells=4)
         new_state = begin_sudden_death_round(state)
         assert sorted(new_state.players[1].hand) == [f"c{i}" for i in range(5, 9)]
 
-    def test_all_9_cards_distributed(self):
-        """All 9 board cards appear across the two new hands (no card lost)."""
-        state = make_full_board_state(p0_cells=5, p1_cells=4)
+    def test_hand_rebuild_includes_hand_cards(self):
+        """Cards remaining in hand are included in the SD rebuild.
+
+        Standard tie scenario: p0 has 5 cells + 0 hand, p1 has 4 cells + 1 hand.
+        After rebuild: p0 gets 5 board cards, p1 gets 4 board cards + 1 hand card = 5.
+        """
+        state = make_full_board_state(
+            p0_cells=5, p1_cells=4,
+            p0_hand=[],
+            p1_hand=["extra_card"],
+        )
+        new_state = begin_sudden_death_round(state)
+        assert len(new_state.players[0].hand) == 5
+        assert len(new_state.players[1].hand) == 5
+        assert "extra_card" in new_state.players[1].hand
+
+    def test_both_players_5_cards_on_standard_tie(self):
+        """On the standard 5-5 tie, both players get exactly 5 cards for the next round."""
+        state = make_full_board_state(
+            p0_cells=5, p1_cells=4,
+            p0_hand=[],
+            p1_hand=["kept"],
+        )
+        new_state = begin_sudden_death_round(state)
+        assert len(new_state.players[0].hand) == 5
+        assert len(new_state.players[1].hand) == 5
+
+    def test_all_cards_distributed(self):
+        """All board cards + hand cards appear across the two new hands (no card lost)."""
+        state = make_full_board_state(
+            p0_cells=5, p1_cells=4,
+            p0_hand=[],
+            p1_hand=["extra"],
+        )
         new_state = begin_sudden_death_round(state)
         combined = set(new_state.players[0].hand) | set(new_state.players[1].hand)
-        assert combined == {f"c{i}" for i in range(9)}
+        assert combined == {f"c{i}" for i in range(9)} | {"extra"}
 
     def test_no_cards_duplicated_across_players(self):
         """No card appears in both hands."""
-        state = make_full_board_state(p0_cells=5, p1_cells=4)
+        state = make_full_board_state(p0_cells=5, p1_cells=4, p1_hand=["extra"])
         new_state = begin_sudden_death_round(state)
         p0 = set(new_state.players[0].hand)
         p1 = set(new_state.players[1].hand)
         assert p0.isdisjoint(p1)
 
     def test_asymmetric_ownership_p0_sweeps(self):
-        """If p0 owns all 9 cards, p0 gets all 9, p1 gets none."""
+        """If p0 owns all 9 cards, p0 gets all 9, p1 gets only hand cards."""
         board: list[BoardCell | None] = [cell(f"c{i}", 0) for i in range(9)]
-        state = make_full_board_state(p0_cells=5, p1_cells=4)
+        state = make_full_board_state(p0_cells=5, p1_cells=4, p1_hand=["extra"])
         state = state.model_copy(update={"board": board})
         new_state = begin_sudden_death_round(state)
         assert len(new_state.players[0].hand) == 9
-        assert new_state.players[1].hand == []
+        assert new_state.players[1].hand == ["extra"]
 
     def test_archetype_used_not_reset(self):
         """archetype_used is preserved (once-per-game power persists across SD rounds)."""

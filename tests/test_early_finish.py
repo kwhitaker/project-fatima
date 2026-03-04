@@ -1,7 +1,11 @@
 """Tests for US-UXP-023: auto-complete statistically decided games.
 
-When one player owns enough cells that the opponent cannot reach majority (5+)
-even by capturing all remaining cells, the game ends early with early_finish=True.
+With hand-in-score (total 10 points = 9 cells + hand cards), a player wins
+early when their minimum possible final score >= 6.  The first player ends
+with 0 hand cards, the second player ends with 1.
+
+First player clinch:  cells >= 6 + empty_cells  (hand_end=0)
+Second player clinch: cells >= 5 + empty_cells  (hand_end=1)
 """
 
 from app.models.cards import CardDefinition, CardSides
@@ -76,34 +80,32 @@ class TestEarlyFinish:
         assert result.status == GameStatus.ACTIVE
         assert result.result is None
 
-    def test_early_finish_p0_clinches(self):
-        """P0 owns 6 cells with 1 empty → 6 >= 5+1 → clinched."""
-        # p0 has 5 cells, p1 has 2, 2 empty. p0 places → 6 owned, 1 empty.
-        # 6 >= 5 + 1 = 6 → clinched!
+    def test_early_finish_first_player_clinches(self):
+        """First player (p0) owns 7 cells with 1 empty → min_score = 7-1+0 = 6 → clinched."""
         board: list[BoardCell | None] = [
             cell("c0", 0),
             cell("c1", 0),
             cell("c2", 0),
             cell("c3", 0),
             cell("c4", 0),
-            cell("c5", 1),
+            cell("c5", 0),
             cell("c6", 1),
             None,
             None,
         ]
-        # p0 needs a card not on board — use c9 (we'll add to hand)
         state = GameState(
             game_id="test-early",
             status=GameStatus.ACTIVE,
             players=[
                 PlayerState(player_id="p0", hand=["c8"]),
-                PlayerState(player_id="p1", hand=["c9"]),
+                PlayerState(player_id="p1", hand=["c9", "c7"]),
             ],
             board=board,
             current_player_index=0,
+            starting_player_index=0,
             seed=42,
         )
-        extra_cards = {**CARDS, "c8": make_card("c8"), "c9": make_card("c9")}
+        extra_cards = {**CARDS, "c7": make_card("c7"), "c8": make_card("c8"), "c9": make_card("c9")}
         result = apply_intent(
             state, PlacementIntent(player_index=0, card_key="c8", cell_index=7), extra_cards
         )
@@ -113,8 +115,8 @@ class TestEarlyFinish:
         assert result.result.early_finish is True
         assert result.result.is_draw is False
 
-    def test_early_finish_p1_clinches(self):
-        """Player 1 clinches when they own enough cells."""
+    def test_early_finish_second_player_clinches(self):
+        """Second player (p1) owns 6 cells with 1 empty → min_score = 6-1+1 = 6 → clinched."""
         board: list[BoardCell | None] = [
             cell("c0", 1),
             cell("c1", 1),
@@ -135,6 +137,7 @@ class TestEarlyFinish:
             ],
             board=board,
             current_player_index=1,
+            starting_player_index=0,  # p1 is second player → hand_end=1
             seed=42,
         )
         extra_cards = {**CARDS, "c8": make_card("c8"), "c9": make_card("c9")}
@@ -146,8 +149,45 @@ class TestEarlyFinish:
         assert result.result.winner == 1
         assert result.result.early_finish is True
 
+    def test_first_player_6_cells_1_empty_not_clinched(self):
+        """First player has 6 cells, 1 empty: min_score = 6-1+0 = 5 < 6 → not clinched.
+
+        The hand bonus for the second player means the first player needs 7+ cells
+        with 1 empty to clinch.
+        """
+        board: list[BoardCell | None] = [
+            cell("c0", 0),
+            cell("c1", 0),
+            cell("c2", 0),
+            cell("c3", 0),
+            cell("c4", 0),
+            cell("c5", 1),
+            cell("c6", 1),
+            None,
+            None,
+        ]
+        state = GameState(
+            game_id="test-early",
+            status=GameStatus.ACTIVE,
+            players=[
+                PlayerState(player_id="p0", hand=["c8"]),
+                PlayerState(player_id="p1", hand=["c9"]),
+            ],
+            board=board,
+            current_player_index=0,
+            starting_player_index=0,
+            seed=42,
+        )
+        extra_cards = {**CARDS, "c8": make_card("c8"), "c9": make_card("c9")}
+        result = apply_intent(
+            state, PlacementIntent(player_index=0, card_key="c8", cell_index=7), extra_cards
+        )
+        # 6 cells, 1 empty: min_score = 6-1+0 = 5, opponent could tie → not clinched
+        assert result.status == GameStatus.ACTIVE
+        assert result.result is None
+
     def test_no_early_finish_when_not_clinched(self):
-        """5 cells for one player with 3 empty is not enough: 5 < 5+3=8."""
+        """5 cells for first player with 3 empty: min_score = 5-3+0 = 2 → not clinched."""
         board: list[BoardCell | None] = [
             cell("c0", 0),
             cell("c1", 0),
@@ -163,13 +203,11 @@ class TestEarlyFinish:
         result = apply_intent(
             state, PlacementIntent(player_index=0, card_key="c4", cell_index=5), CARDS
         )
-        # p0 now has 5 cells, 3 empty: 5 < 5+3 = 8, not clinched
         assert result.status == GameStatus.ACTIVE
         assert result.result is None
 
     def test_normal_finish_has_early_finish_false(self):
         """When the board fills normally, early_finish defaults to False."""
-        # Fill 8 cells, place the 9th
         board: list[BoardCell | None] = [
             cell("c0", 0),
             cell("c1", 0),
@@ -181,38 +219,35 @@ class TestEarlyFinish:
             cell("c7", 1),
             None,
         ]
+        # First player (p0) places the 9th card, second player (p1) keeps 1 in hand
         state = GameState(
             game_id="test-early",
             status=GameStatus.ACTIVE,
             players=[
-                PlayerState(player_id="p0", hand=[]),
-                PlayerState(player_id="p1", hand=["c9"]),
+                PlayerState(player_id="p0", hand=["c9"]),
+                PlayerState(player_id="p1", hand=["kept"]),
             ],
             board=board,
-            current_player_index=1,
+            current_player_index=0,
+            starting_player_index=0,
             seed=42,
         )
-        extra_cards = {**CARDS, "c7": make_card("c7"), "c9": make_card("c9")}
+        extra_cards = {**CARDS, "c9": make_card("c9"), "kept": make_card("kept")}
         result = apply_intent(
-            state, PlacementIntent(player_index=1, card_key="c9", cell_index=8), extra_cards
+            state, PlacementIntent(player_index=0, card_key="c9", cell_index=8), extra_cards
         )
         assert result.status == GameStatus.COMPLETE
         assert result.result is not None
         assert result.result.early_finish is False
-        # p0: 5, p1: 4 → p0 wins
+        # p0: 6 cells + 0 hand = 6, p1: 3 cells + 1 hand = 4 → p0 wins
         assert result.result.winner == 0
 
     def test_early_finish_with_capture_creating_clinch(self):
-        """A capture can push the placing player over the clinch threshold."""
-        # p0 places a card that captures one of p1's cards, reaching the clinch
-        # Board: p0 has 4 cells, p1 has 2, 3 empty.
-        # p0 places and captures 1 of p1's → p0 has 6, p1 has 1, 2 empty
-        # 6 >= 5 + 2 = 7? No.
-        # p0 has 4, p1 has 3, 2 empty. p0 places + captures 2
-        # → p0 has 7, p1 has 1, 1 empty
-        # 7 >= 5 + 1 = 6 → clinched!
+        """A capture can push the placing player over the clinch threshold.
 
-        # Use cards where p0's card has high sides to capture p1's cards
+        p0 (first player) places at cell 4, captures cells 5 and 7.
+        After: p0 has 7 cells, 1 empty. min_score = 7-1+0 = 6 → clinched.
+        """
         high_card = make_card("high", n=3, e=3, s=3, w=3)
         low_card = make_card("low", n=1, e=1, s=1, w=1)
         lookup = {
@@ -221,11 +256,6 @@ class TestEarlyFinish:
             **{f"c{i}": make_card(f"c{i}") for i in range(10)},
         }
 
-        # Layout (3x3):
-        # [p0:c0] [p0:c1] [p0:c2]
-        # [p0:c3] [empty]  [p1:low]  ← p0 places "high" at cell 4, captures cell 5 (east)
-        # [empty]  [p1:low] [p1:c9]
-        # After: p0 has 5+captured, check if clinch
         board: list[BoardCell | None] = [
             cell("c0", 0),
             cell("c1", 0),
@@ -237,11 +267,6 @@ class TestEarlyFinish:
             cell("low", 1),
             cell("c9", 1),
         ]
-        # Actually this might not work because cell 7 also has p1 low card.
-        # Let me make high card beat low card: high.e=3 vs low.w=1 → capture cell 5
-        # Also high.s=3 vs low(cell7).n=1 → capture cell 7
-        # After: p0 has 4+1(placed)+2(captured)=7, p1 has 1, 1 empty
-        # 7 >= 5 + 1 = 6 → clinched!
         state = GameState(
             game_id="test-capture-clinch",
             status=GameStatus.ACTIVE,
@@ -251,6 +276,7 @@ class TestEarlyFinish:
             ],
             board=board,
             current_player_index=0,
+            starting_player_index=0,
             seed=42,
         )
         result = apply_intent(

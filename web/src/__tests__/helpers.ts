@@ -46,6 +46,7 @@ export function makePlayer(id: string, email?: string): PlayerState {
     player_id: id,
     email: email ?? `${id}@example.com`,
     archetype: null,
+    deal: [],
     hand: [],
     archetype_used: false,
   };

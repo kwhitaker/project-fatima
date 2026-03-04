@@ -11,7 +11,7 @@ from random import Random
 from typing import NamedTuple
 
 from app.models.cards import CardDefinition
-from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo
+from app.models.game import Archetype, BoardCell, GameResult, GameState, GameStatus, LastMoveInfo, PlayerState
 from app.rules.archetypes import apply_skulker_boost, rotate_card_ccw, rotate_card_once
 from app.rules.board import get_adjacent_indices
 from app.rules.captures import resolve_captures
@@ -61,14 +61,22 @@ def _mists_effect_label(roll: int, modifier: int) -> str:
     return "none"
 
 
-def compute_round_result(board: list[BoardCell | None]) -> GameResult:
-    """Return the result of a completed round from the current board state.
+def compute_round_result(
+    board: list[BoardCell | None],
+    players: list[PlayerState] | None = None,
+) -> GameResult:
+    """Return the result of a completed round.
 
-    Counts cells owned by each player. The player with more cells wins.
-    Equal counts resolve as a draw (triggers Sudden Death in the next story).
+    Score = cells owned on board + cards remaining in hand (hand-in-score).
+    When players is None (legacy/tests), only board cells are counted.
+    Equal scores resolve as a draw (triggers Sudden Death).
     """
-    p0 = sum(1 for cell in board if cell is not None and cell.owner == 0)
-    p1 = sum(1 for cell in board if cell is not None and cell.owner == 1)
+    p0_cells = sum(1 for cell in board if cell is not None and cell.owner == 0)
+    p1_cells = sum(1 for cell in board if cell is not None and cell.owner == 1)
+    p0_hand = len(players[0].hand) if players else 0
+    p1_hand = len(players[1].hand) if players else 0
+    p0 = p0_cells + p0_hand
+    p1 = p1_cells + p1_hand
     if p0 > p1:
         return GameResult(winner=0, is_draw=False, completion_reason="normal")
     if p1 > p0:
@@ -96,7 +104,10 @@ def begin_sudden_death_round(state: GameState) -> GameState:
             }
         )
 
-    sd_hands: list[list[str]] = [[], []]
+    # Rebuild hands: cards owned on board + cards remaining in hand.
+    # On a standard tie (P1 owns 5 cells + 0 hand, P2 owns 4 cells + 1 hand),
+    # both players get exactly 5 cards back.
+    sd_hands: list[list[str]] = [list(p.hand) for p in state.players]
     for bcel in state.board:
         if bcel is not None:
             sd_hands[bcel.owner].append(bcel.card_key)
@@ -349,14 +360,21 @@ def apply_intent(
         updates["current_player_index"] = (intent.player_index + 1) % 2
 
     # --- Early finish check (mathematically decided) ---
-    # After capture resolution, check if one player owns enough cells that
-    # the opponent cannot reach majority (5+) even by capturing all remaining.
+    # With hand-in-score, total points = 9 cells + hand cards.  A player wins
+    # early when their minimum possible final score >= 6 (strictly more than
+    # half of the 10 total points).  The first player ends with 0 in hand, the
+    # second player ends with 1 in hand (they place only 4 of 5 cards).
+    # Conservative bound: opponent fills all empty cells + captures `empty_cells`
+    # existing cells → player's min cells = current_cells - empty_cells.
     empty_cells = sum(1 for cell in new_board if cell is None)
-    if empty_cells > 0:
+    if empty_cells > 0 and state.players:
         p0_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 0)
         p1_cells = sum(1 for cell in new_board if cell is not None and cell.owner == 1)
+        first_player = state.starting_player_index
         for pi, count in ((0, p0_cells), (1, p1_cells)):
-            if count >= 5 + empty_cells:
+            hand_end = 0 if pi == first_player else 1
+            min_score = (count - empty_cells) + hand_end
+            if min_score >= 6:
                 updates["result"] = GameResult(
                     winner=pi, is_draw=False, completion_reason="normal", early_finish=True
                 )
@@ -365,7 +383,11 @@ def apply_intent(
 
     # --- End-of-round check ---
     if all(cell is not None for cell in new_board):
-        round_result = compute_round_result(new_board)
+        updated_players = updates.get("players")
+        round_result = compute_round_result(
+            new_board,
+            updated_players,  # type: ignore[arg-type]
+        )
         if round_result.is_draw and state.players:
             # Sudden Death: apply all placement updates first, then reset for the new round.
             # begin_sudden_death_round rebuilds hands from the board and handles the SD cap.

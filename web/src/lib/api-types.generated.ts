@@ -391,7 +391,7 @@ export interface components {
          * GameStatus
          * @enum {string}
          */
-        GameStatus: "waiting" | "active" | "complete";
+        GameStatus: "waiting" | "drafting" | "active" | "complete";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -455,6 +455,11 @@ export interface components {
             email?: string | null;
             archetype?: components["schemas"]["Archetype"] | null;
             /**
+             * Deal
+             * @default []
+             */
+            deal: string[];
+            /**
              * Hand
              * @default []
              */
@@ -464,6 +469,11 @@ export interface components {
              * @default false
              */
             archetype_used: boolean;
+        };
+        /** DraftRequest */
+        DraftRequest: {
+            /** Selected Cards */
+            selected_cards: string[];
         };
         /** SelectArchetypeRequest */
         SelectArchetypeRequest: {

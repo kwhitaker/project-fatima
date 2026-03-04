@@ -4,12 +4,13 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
-import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
+import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, submitDraft, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
 import { initAudio } from "@/lib/sounds";
 
 import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
 import { ActiveGameView } from "@/routes/game-room/ActiveGameView";
 import { CompleteGameView } from "@/routes/game-room/CompleteGameView";
+import { DraftingGameView } from "@/routes/game-room/DraftingGameView";
 import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
 import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
 import { GameRoomProvider } from "@/routes/game-room/GameRoomContext";
@@ -162,6 +163,12 @@ export default function GameRoom() {
     }
   };
 
+  const handleSubmitDraft = async (selectedCards: string[]) => {
+    if (!gameId) return;
+    const updated = await submitDraft(gameId, selectedCards);
+    setGame(updated);
+  };
+
   const handleSelectArchetype = async (archetype: Archetype) => {
     if (!gameId || !game) return;
     setArchetypePending(true);
@@ -202,19 +209,23 @@ export default function GameRoom() {
   const myPlayer = myIndex >= 0 ? game.players[myIndex] : undefined;
   const opponentPlayer = myIndex >= 0 ? game.players[opponentIndex] : undefined;
 
-  // Score: count board cells owned by each player
+  // Score: cells owned on board + cards remaining in hand (hand-in-score)
   const board = game.board ?? [];
-  const myScore = myIndex >= 0
+  const myCells = myIndex >= 0
     ? board.filter((c) => c !== null && c.owner === myIndex).length
     : 0;
-  const opponentScore = myIndex >= 0
+  const opponentCells = myIndex >= 0
     ? board.filter((c) => c !== null && c.owner === opponentIndex).length
     : 0;
+  const myScore = myCells + (myPlayer?.hand.length ?? 0);
+  const opponentScore = opponentCells + (opponentPlayer?.hand.length ?? 0);
 
   const titleText =
     game.status === "waiting"
       ? "Waiting for opponent"
-      : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
+      : game.status === "drafting"
+        ? "Draft Phase"
+        : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
 
   return (
     <div className="container py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -262,7 +273,14 @@ export default function GameRoom() {
         </Button>
       </div>
 
-      {game.status === "active" ? (
+      {game.status === "drafting" ? (
+        <DraftingGameView
+          game={game}
+          myIndex={myIndex}
+          cardDefs={cardDefs}
+          onSubmitDraft={handleSubmitDraft}
+        />
+      ) : game.status === "active" ? (
         <GameRoomProvider
           value={{
             selectedCard,

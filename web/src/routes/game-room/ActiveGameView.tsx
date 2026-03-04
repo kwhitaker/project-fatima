@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import type { Archetype, CardDefinition, GameState, PlayerState } from "@/lib/api";
+import type {
+  Archetype,
+  CardDefinition,
+  GameState,
+  PlayerState,
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
@@ -66,7 +71,8 @@ export function ActiveGameView({
     !movePending &&
     (!usePower ||
       myPlayer?.archetype === "intimidate" ||
-      (myPlayer?.archetype !== "skulker" && myPlayer?.archetype !== "martial") ||
+      (myPlayer?.archetype !== "skulker" &&
+        myPlayer?.archetype !== "martial") ||
       powerSide !== null);
 
   const isMyTurn = game.current_player_index === myIndex;
@@ -340,10 +346,13 @@ export function ActiveGameView({
             <BoardCallouts
               mistsEffect={
                 placedCells.size > 0
-                  ? (game.last_move?.mists_effect as "none" | "fog" | "omen" | null)
+                  ? (game.last_move?.mists_effect as
+                      | "none"
+                      | "fog"
+                      | "omen"
+                      | null)
                   : null
               }
-              mistsRoll={game.last_move?.mists_roll ?? null}
               captureCount={capturedCells.size}
               plusTriggered={game.last_move?.plus_triggered === true}
               elementalTriggered={game.last_move?.elemental_triggered === true}
@@ -448,7 +457,10 @@ function ArchetypeTooltipName({
     <>
       <span className="text-xs text-muted-foreground">{label}</span>
       {archetype && copy ? (
-        <span className="group relative cursor-help" aria-label={`${label} archetype`}>
+        <span
+          className="group relative cursor-help"
+          aria-label={`${label} archetype`}
+        >
           <span className="capitalize underline decoration-dotted underline-offset-2">
             {archetype}
           </span>

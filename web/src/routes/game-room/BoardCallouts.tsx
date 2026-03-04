@@ -28,7 +28,6 @@ function useAutoFade(triggerKey: string | null, durationMs = 2000): boolean {
  */
 export function BoardCallouts({
   mistsEffect,
-  mistsRoll,
   captureCount,
   plusTriggered,
   elementalTriggered,
@@ -36,7 +35,6 @@ export function BoardCallouts({
   changeKey,
 }: {
   mistsEffect: "fog" | "omen" | "none" | null;
-  mistsRoll: number | null;
   captureCount: number;
   plusTriggered: boolean;
   elementalTriggered: boolean;
@@ -74,13 +72,21 @@ export function BoardCallouts({
           <motion.div
             key={`fog-${changeKey}`}
             className="font-heading text-lg sm:text-xl font-bold text-blue-300 drop-shadow-lg"
-            style={{ textShadow: "0 0 12px rgba(147,197,253,0.7), 0 2px 0 rgba(30,58,138,0.5)" }}
+            style={{
+              textShadow:
+                "0 0 12px rgba(147,197,253,0.7), 0 2px 0 rgba(30,58,138,0.5)",
+            }}
             aria-label="board mists callout"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.3, 1], opacity: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{
-              scale: { type: "tween", times: [0, 0.5, 1], duration: 0.4, ease: steppedEase(4) },
+              scale: {
+                type: "tween",
+                times: [0, 0.5, 1],
+                duration: 0.4,
+                ease: steppedEase(4),
+              },
               opacity: { duration: 0.2 },
             }}
           >
@@ -92,13 +98,21 @@ export function BoardCallouts({
           <motion.div
             key={`omen-${changeKey}`}
             className="font-heading text-lg sm:text-xl font-bold text-purple-300 drop-shadow-lg"
-            style={{ textShadow: "0 0 16px rgba(192,132,252,0.7), 0 2px 0 rgba(88,28,135,0.5)" }}
+            style={{
+              textShadow:
+                "0 0 16px rgba(192,132,252,0.7), 0 2px 0 rgba(88,28,135,0.5)",
+            }}
             aria-label="board mists callout"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.3, 1], opacity: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{
-              scale: { type: "tween", times: [0, 0.5, 1], duration: 0.4, ease: steppedEase(4) },
+              scale: {
+                type: "tween",
+                times: [0, 0.5, 1],
+                duration: 0.4,
+                ease: steppedEase(4),
+              },
               opacity: { duration: 0.2 },
             }}
           >
@@ -130,7 +144,12 @@ export function BoardCallouts({
             animate={{ scale: [1.5, 0.9, 1], opacity: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{
-              scale: { type: "tween", times: [0, 0.6, 1], duration: 0.5, ease: steppedEase(4) },
+              scale: {
+                type: "tween",
+                times: [0, 0.6, 1],
+                duration: 0.5,
+                ease: steppedEase(4),
+              },
               opacity: { duration: 0.2 },
             }}
           >
@@ -143,13 +162,21 @@ export function BoardCallouts({
           <motion.div
             key={`plus-${changeKey}`}
             className="font-heading text-2xl sm:text-3xl font-bold text-cyan-300 drop-shadow-lg"
-            style={{ textShadow: "0 0 20px rgba(103,232,249,0.8), 0 2px 0 rgba(8,145,178,0.5)" }}
+            style={{
+              textShadow:
+                "0 0 20px rgba(103,232,249,0.8), 0 2px 0 rgba(8,145,178,0.5)",
+            }}
             aria-label="board plus callout"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.4, 1], opacity: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
             transition={{
-              scale: { type: "tween", times: [0, 0.5, 1], duration: 0.4, ease: steppedEase(4) },
+              scale: {
+                type: "tween",
+                times: [0, 0.5, 1],
+                duration: 0.4,
+                ease: steppedEase(4),
+              },
               opacity: { duration: 0.15 },
             }}
           >
@@ -162,13 +189,21 @@ export function BoardCallouts({
           <motion.div
             key={`elem-${changeKey}`}
             className="font-heading text-xl sm:text-2xl font-bold text-yellow-300 drop-shadow-lg"
-            style={{ textShadow: "0 0 16px rgba(253,224,71,0.7), 0 2px 0 rgba(161,98,7,0.5)" }}
+            style={{
+              textShadow:
+                "0 0 16px rgba(253,224,71,0.7), 0 2px 0 rgba(161,98,7,0.5)",
+            }}
             aria-label="board elemental callout"
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: [0, 1.3, 1], opacity: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             transition={{
-              scale: { type: "tween", times: [0, 0.5, 1], duration: 0.4, ease: steppedEase(4) },
+              scale: {
+                type: "tween",
+                times: [0, 0.5, 1],
+                duration: 0.4,
+                ease: steppedEase(4),
+              },
               opacity: { duration: 0.15 },
             }}
           >

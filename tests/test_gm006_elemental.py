@@ -328,7 +328,7 @@ class TestBoardElementsGeneration:
                 character_key=f"char_{i:03d}",
                 name=f"Test Card {i}",
                 version="v1",
-                tier=1,
+                tier=(i % 3) + 1,
                 rarity=15,
                 is_named=False,
                 sides=CardSides(n=4, e=4, s=3, w=5),

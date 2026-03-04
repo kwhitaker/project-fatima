@@ -46,8 +46,13 @@ def _card(
 
 
 def _make_pool(n: int, prefix: str = "c") -> list[CardDefinition]:
-    """Return n unique common T1 cards (all cost = 16)."""
-    return [_card(f"{prefix}{i:03d}") for i in range(n)]
+    """Return n unique cards spread across tiers 1-3 for deal generation.
+
+    Cycles through tiers so the MAX_PER_TIER constraint is satisfiable.
+    All cards are common rarity (no rarity-slot pressure).
+    """
+    tiers = [1, 2, 3]
+    return [_card(f"{prefix}{i:03d}", tier=tiers[i % 3]) for i in range(n)]
 
 
 # ---------------------------------------------------------------------------
@@ -101,10 +106,10 @@ def test_cost_within_default_tolerance() -> None:
     assert abs(deck_cost(a) - deck_cost(b)) <= DEFAULT_COST_TOLERANCE
 
 
-def test_uniform_pool_costs_are_equal() -> None:
-    # All same-cost cards → both decks have identical cost
+def test_balanced_pool_costs_are_equal() -> None:
+    # Multi-tier pool with equal tier counts → alternating assignment keeps costs equal
     pool = _make_pool(25)
-    a, b = generate_matched_deals(pool, seed=42, tolerance=0)
+    a, b = generate_matched_deals(pool, seed=42)
     assert deck_cost(a) == deck_cost(b)
 
 
@@ -161,6 +166,17 @@ def test_rare_slot_limit_honored() -> None:
     a, b = generate_matched_deals(pool, seed=42)
     assert sum(1 for c in a if rarity_bucket(c.rarity) == "rare") <= 3
     assert sum(1 for c in b if rarity_bucket(c.rarity) == "rare") <= 3
+
+
+def test_tier_diversity_honored() -> None:
+    # No single tier may exceed MAX_PER_TIER (3) cards per deal
+    from app.rules.deck import MAX_PER_TIER
+
+    pool = _make_pool(30)
+    a, b = generate_matched_deals(pool, seed=42)
+    for tier in [1, 2, 3]:
+        assert sum(1 for c in a if c.tier == tier) <= MAX_PER_TIER
+        assert sum(1 for c in b if c.tier == tier) <= MAX_PER_TIER
 
 
 def test_named_uniqueness_honored() -> None:

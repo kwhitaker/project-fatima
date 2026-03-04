@@ -13,6 +13,7 @@ from app.rules.cards import STAT_BUDGETS, rarity_bucket
 # Hand/deal sizing constants.
 DEAL_SIZE = 7   # Cards dealt to each player before draft
 HAND_SIZE = 5   # Cards kept after draft selection
+MAX_PER_TIER = 3  # Max cards of any single tier in a deal
 
 # Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
 _RARITY_SLOT_LIMITS: dict[str, int] = {
@@ -138,6 +139,10 @@ def _can_add_to_deal(deal: list[CardDefinition], card: CardDefinition) -> bool:
     # Copy limit per card_key
     limit = COPY_LIMITS[bucket]
     if sum(1 for c in deal if c.card_key == card.card_key) >= limit:
+        return False
+
+    # Tier diversity: no single tier may dominate a deal
+    if sum(1 for c in deal if c.tier == card.tier) >= MAX_PER_TIER:
         return False
 
     return True

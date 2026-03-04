@@ -17,7 +17,7 @@ def _make_card(idx: int) -> CardDefinition:
         character_key=f"char_{idx:03d}",
         name=f"Card {idx}",
         version="v1",
-        tier=1,
+        tier=(idx % 3) + 1,
         rarity=15,
         is_named=False,
         sides=CardSides(n=4, e=4, s=4, w=4),

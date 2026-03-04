@@ -24,13 +24,14 @@ from app.store.memory import MemoryCardStore, MemoryGameStore
 
 
 def _make_card(idx: int) -> CardDefinition:
-    """Minimal valid test card: sides 4/4/4/4, tier-1, common rarity."""
+    """Minimal valid test card: sides 4/4/4/4, common rarity, cycling tiers 1-3."""
+    tier = (idx % 3) + 1  # Cycle through tiers for deal-generation diversity
     return CardDefinition(
         card_key=f"test_card_{idx:03d}",
         character_key=f"char_{idx:03d}",
         name=f"Test Card {idx}",
         version="v1",
-        tier=1,
+        tier=tier,
         rarity=15,
         is_named=False,
         sides=CardSides(n=4, e=4, s=4, w=4),

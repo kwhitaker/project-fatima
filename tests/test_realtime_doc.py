@@ -3,7 +3,7 @@ the key topics required by US-027."""
 
 from pathlib import Path
 
-DOC_PATH = Path(__file__).parent.parent / "docs" / "realtime.md"
+DOC_PATH = Path(__file__).parent.parent / "docs" / "REALTIME.md"
 
 
 def _doc() -> str:

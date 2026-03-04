@@ -1017,7 +1017,7 @@ describe("archetype power UX (US-UI-009)", () => {
     mockGetGame.mockResolvedValue(makePowerGame("martial"));
     renderAt("/g/game-power");
     await waitFor(() => {
-      expect(screen.getByRole("checkbox", { name: /use power/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /use power/i })).toBeInTheDocument();
     });
   });
 
@@ -1028,7 +1028,7 @@ describe("archetype power UX (US-UI-009)", () => {
     await waitFor(() => {
       expect(screen.getByText(/your turn/i)).toBeInTheDocument();
     });
-    expect(screen.queryByRole("checkbox", { name: /use power/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /use power/i })).not.toBeInTheDocument();
   });
 
   it("skulker: shows side selector (n/e/s/w) after Use Power is toggled", async () => {
@@ -1036,8 +1036,8 @@ describe("archetype power UX (US-UI-009)", () => {
     mockGetGame.mockResolvedValue(makePowerGame("skulker"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
-    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
-    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: /use power/i }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^n$/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /^e$/i })).toBeInTheDocument();
@@ -1051,8 +1051,8 @@ describe("archetype power UX (US-UI-009)", () => {
     mockGetGame.mockResolvedValue(makePowerGame("intimidate"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
-    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
-    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: /use power/i }));
     // Intimidate uses cell picker on the board, not direction buttons
     expect(screen.queryByRole("button", { name: /^n$/i })).not.toBeInTheDocument();
   });
@@ -1062,8 +1062,8 @@ describe("archetype power UX (US-UI-009)", () => {
     mockGetGame.mockResolvedValue(makePowerGame("martial"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
-    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
-    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: /use power/i }));
     await waitFor(() => {
       expect(screen.getByRole("button", { name: /^CW$/i })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: /^CCW$/i })).toBeInTheDocument();
@@ -1076,8 +1076,8 @@ describe("archetype power UX (US-UI-009)", () => {
     mockPlaceCard.mockResolvedValue(makePowerGame("martial"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
-    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
-    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: /use power/i }));
     await waitFor(() => screen.getByRole("button", { name: /^CW$/i }));
     await user.click(screen.getByRole("button", { name: /^CW$/i }));
     await user.click(screen.getByRole("button", { name: "card-a" }));
@@ -1097,8 +1097,8 @@ describe("archetype power UX (US-UI-009)", () => {
     mockPlaceCard.mockResolvedValue(makePowerGame("skulker"));
     const user = userEvent.setup();
     renderAt("/g/game-power");
-    await waitFor(() => screen.getByRole("checkbox", { name: /use power/i }));
-    await user.click(screen.getByRole("checkbox", { name: /use power/i }));
+    await waitFor(() => screen.getByRole("button", { name: /use power/i }));
+    await user.click(screen.getByRole("button", { name: /use power/i }));
     await waitFor(() => screen.getByRole("button", { name: /^n$/i }));
     await user.click(screen.getByRole("button", { name: /^n$/i }));
     await user.click(screen.getByRole("button", { name: "card-a" }));

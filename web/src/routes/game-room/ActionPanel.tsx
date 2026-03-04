@@ -101,16 +101,22 @@ export function ActionPanel({
       {/* Archetype power controls */}
       {powerAvailable && (
         <div className="space-y-2">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              aria-label="Use Power"
-              checked={usePower}
-              onChange={(e) => onUsePowerChange(e.target.checked)}
-              disabled={movePending}
-            />
-            Use Power
-          </label>
+          <button
+            type="button"
+            aria-label="Use Power"
+            aria-pressed={usePower}
+            disabled={movePending}
+            onClick={() => onUsePowerChange(!usePower)}
+            className={cn(
+              "w-full py-1.5 px-3 rounded border-2 text-sm font-heading font-semibold cursor-pointer transition-colors",
+              usePower
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 text-foreground border-border hover:border-primary/50",
+              !usePower && "animate-pulse",
+            )}
+          >
+            ⚡ Use Power
+          </button>
           {needsSkulkerDirection && (
             <div className="flex gap-2">
               {(["n", "e", "s", "w"] as const).map((side) => (

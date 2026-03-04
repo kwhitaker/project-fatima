@@ -51,9 +51,11 @@ function makeDraftingGame(): { game: GameState; cardDefs: Map<string, CardDefini
 
 describe("DraftingGameView", () => {
   let onSubmitDraft: ReturnType<typeof vi.fn>;
+  let onLeave: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     onSubmitDraft = vi.fn().mockResolvedValue(undefined);
+    onLeave = vi.fn();
   });
 
   it("renders 7 dealt cards", () => {
@@ -64,6 +66,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -81,6 +85,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -103,6 +109,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -127,6 +135,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -160,6 +170,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -174,6 +186,8 @@ describe("DraftingGameView", () => {
         myIndex={-1}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 
@@ -189,6 +203,8 @@ describe("DraftingGameView", () => {
         myIndex={0}
         cardDefs={cardDefs}
         onSubmitDraft={onSubmitDraft}
+        leaving={false}
+        onLeave={onLeave}
       />
     );
 

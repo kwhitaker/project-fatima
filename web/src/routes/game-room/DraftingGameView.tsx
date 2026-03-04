@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { ELEMENT_SYMBOLS } from "@/routes/game-room/BoardGrid";
 import { cardEmoji, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
+import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 
 const HAND_SIZE = 5;
 
@@ -14,15 +15,20 @@ export function DraftingGameView({
   myIndex,
   cardDefs,
   onSubmitDraft,
+  leaving,
+  onLeave,
 }: {
   game: GameState;
   myIndex: number;
   cardDefs: Map<string, CardDefinition>;
   onSubmitDraft: (selectedCards: string[]) => Promise<void>;
+  leaving: boolean;
+  onLeave: () => void;
 }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const myPlayer = myIndex >= 0 ? game.players[myIndex] : undefined;
   const deal = myPlayer?.deal ?? [];
@@ -40,8 +46,22 @@ export function DraftingGameView({
   // Already submitted draft, waiting for opponent
   if (alreadyDrafted) {
     return (
-      <div className="flex-1 flex items-center justify-center" aria-label="draft waiting view">
+      <div className="flex-1 flex flex-col items-center justify-center gap-4" aria-label="draft waiting view">
         <p className="text-muted-foreground text-sm">Waiting for opponent to draft...</p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLeaveConfirm(true)}
+          className="cursor-pointer"
+        >
+          Leave Game
+        </Button>
+        <ForfeitDialog
+          open={showLeaveConfirm}
+          leaving={leaving}
+          onCancel={() => setShowLeaveConfirm(false)}
+          onConfirm={() => { setShowLeaveConfirm(false); onLeave(); }}
+        />
       </div>
     );
   }
@@ -142,13 +162,29 @@ export function DraftingGameView({
 
       {error && <p className="text-destructive text-xs">{error}</p>}
 
-      <Button
-        onClick={() => void handleConfirm()}
-        disabled={!canConfirm}
-        className="cursor-pointer"
-      >
-        {submitting ? "Submitting..." : `Confirm ${HAND_SIZE} cards`}
-      </Button>
+      <div className="flex gap-2 items-center">
+        <Button
+          onClick={() => void handleConfirm()}
+          disabled={!canConfirm}
+          className="cursor-pointer"
+        >
+          {submitting ? "Submitting..." : `Confirm ${HAND_SIZE} cards`}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowLeaveConfirm(true)}
+          className="cursor-pointer"
+        >
+          Leave Game
+        </Button>
+      </div>
+      <ForfeitDialog
+        open={showLeaveConfirm}
+        leaving={leaving}
+        onCancel={() => setShowLeaveConfirm(false)}
+        onConfirm={() => { setShowLeaveConfirm(false); onLeave(); }}
+      />
     </div>
   );
 }

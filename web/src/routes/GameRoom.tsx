@@ -279,6 +279,8 @@ export default function GameRoom() {
           myIndex={myIndex}
           cardDefs={cardDefs}
           onSubmitDraft={handleSubmitDraft}
+          leaving={leaving}
+          onLeave={() => void handleLeave()}
         />
       ) : game.status === "active" ? (
         <GameRoomProvider

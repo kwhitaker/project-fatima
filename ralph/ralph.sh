@@ -182,7 +182,10 @@ for i in $(seq 1 "$MAX_ITERATIONS"); do
 
   log_info "Claude is working… (log: ${LOGFILE})"
 
-  claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" > "$LOGFILE" 2>&1 || true
+  # Run claude in a new session (setsid -w) so it has no controlling terminal.
+  # Without this, claude writes progress/status directly to /dev/tty, which
+  # bypasses stdout/stderr redirection and overwrites the script's output.
+  setsid -w claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" > "$LOGFILE" 2>&1 || true
 
   ITER_END=$(date +%s)
   ELAPSED=$((ITER_END - ITER_START))

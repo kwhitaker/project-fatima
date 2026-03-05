@@ -1,5 +1,7 @@
 """Game orchestration: create, join, archetype selection, and move submission."""
 
+import asyncio
+import logging
 import uuid
 from datetime import UTC, datetime
 from random import Random
@@ -448,3 +450,85 @@ def submit_move(
         idempotency_key=idempotency_key,
     )
     return new_state
+
+
+# ---------------------------------------------------------------------------
+# AI turn delay ranges per difficulty (seconds)
+# ---------------------------------------------------------------------------
+_AI_DELAY_RANGES: dict[AIDifficulty, tuple[float, float]] = {
+    AIDifficulty.EASY: (0.3, 0.8),
+    AIDifficulty.MEDIUM: (0.5, 1.0),
+    AIDifficulty.HARD: (0.8, 1.5),
+    AIDifficulty.NIGHTMARE: (1.5, 2.5),
+}
+
+logger = logging.getLogger(__name__)
+
+
+def is_ai_turn(state: GameState) -> bool:
+    """Return True if the current turn belongs to an AI player and the game is ACTIVE."""
+    if state.status != GameStatus.ACTIVE:
+        return False
+    current = state.players[state.current_player_index]
+    return current.player_type == "ai"
+
+
+async def execute_ai_turn(
+    game_id: str,
+    game_store: GameStore,
+    card_store: CardStore,
+) -> None:
+    """Load game state, compute AI move, and submit it.
+
+    Called as a background task after a human move or draft transition.
+    """
+    from app.rules.ai import choose_move
+
+    state = game_store.get_game(game_id)
+    if state is None:
+        return
+    if state.status != GameStatus.ACTIVE:
+        return
+
+    ai_index = state.current_player_index
+    ai_player = state.players[ai_index]
+    if ai_player.player_type != "ai":
+        return
+
+    difficulty = ai_player.ai_difficulty
+    if difficulty is None:
+        return
+
+    # Delay before AI moves (randomized from seed for determinism)
+    delay_rng = Random(state.seed + state.state_version + 1000)
+    lo, hi = _AI_DELAY_RANGES[difficulty]
+    delay = delay_rng.uniform(lo, hi)
+    await asyncio.sleep(delay)
+
+    # Re-fetch state after delay to check it's still valid
+    state = game_store.get_game(game_id)
+    if state is None or state.status != GameStatus.ACTIVE:
+        return
+    if state.players[state.current_player_index].player_type != "ai":
+        return
+
+    card_lookup = {c.card_key: c for c in card_store.list_cards()}
+    move_rng = Random(state.seed + state.state_version)
+    intent = choose_move(state, ai_index, difficulty, card_lookup, move_rng)
+
+    try:
+        submit_move(
+            game_store=game_store,
+            card_store=card_store,
+            game_id=game_id,
+            player_id=ai_player.player_id,
+            card_key=intent.card_key,
+            cell_index=intent.cell_index,
+            expected_version=state.state_version,
+            use_archetype=intent.use_archetype,
+            skulker_boost_side=intent.skulker_boost_side,
+            intimidate_target_cell=intent.intimidate_target_cell,
+            martial_rotation_direction=intent.martial_rotation_direction,
+        )
+    except Exception:
+        logger.exception("AI turn failed for game %s", game_id)

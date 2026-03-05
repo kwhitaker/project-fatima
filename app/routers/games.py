@@ -2,7 +2,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from pydantic import BaseModel
 
 from app.auth import get_caller_email, get_caller_id
@@ -118,15 +118,22 @@ def submit_draft(
     body: DraftRequest,
     caller_id: CallerIdDep,
     game_store: GameStoreDep,
+    card_store: CardStoreDep,
+    background_tasks: BackgroundTasks,
 ) -> GameState:
     try:
-        return game_service.submit_draft(game_store, game_id, caller_id, body.selected_cards)
+        state = game_service.submit_draft(game_store, game_id, caller_id, body.selected_cards)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    if game_service.is_ai_turn(state):
+        background_tasks.add_task(
+            game_service.execute_ai_turn, state.game_id, game_store, card_store
+        )
+    return state
 
 
 @router.post("/{game_id}/archetype", response_model=GameState)
@@ -165,6 +172,7 @@ def submit_move(
     caller_id: CallerIdDep,
     game_store: GameStoreDep,
     card_store: CardStoreDep,
+    background_tasks: BackgroundTasks,
 ) -> GameState:
     # Idempotency check must happen before version/auth validation so that
     # retries with a stale state_version are still recognised as duplicates.
@@ -177,7 +185,7 @@ def submit_move(
         return state
 
     try:
-        return game_service.submit_move(
+        state = game_service.submit_move(
             game_store,
             card_store,
             game_id,
@@ -205,6 +213,12 @@ def submit_move(
         if state is None:
             raise HTTPException(status_code=404, detail=f"Game {game_id!r} not found")
         return state
+
+    if game_service.is_ai_turn(state):
+        background_tasks.add_task(
+            game_service.execute_ai_turn, state.game_id, game_store, card_store
+        )
+    return state
 
 
 @router.post("/{game_id}/leave", response_model=GameState)

@@ -315,8 +315,8 @@ def _weighted_choice(weights: list[float], rng: Random) -> int:
 # Expectimax (Strahd / hard) — multi-ply with opponent hand inference
 # ---------------------------------------------------------------------------
 
-_EXPECTIMAX_HAND_SAMPLES = 25  # number of sampled opponent hands
-_EXPECTIMAX_MAX_DEPTH = 4  # max search depth when >4 empty cells
+_EXPECTIMAX_HAND_SAMPLES = 10  # number of sampled opponent hands
+_EXPECTIMAX_MAX_DEPTH = 2  # max search depth when >4 empty cells (1 AI ply + 1 opp response)
 _EXPECTIMAX_FULL_DEPTH_THRESHOLD = 4  # search to terminal when ≤ this many empties
 
 
@@ -467,9 +467,15 @@ def _expectimax_search(
                 valid_samples += 1
                 continue
 
+            # Inject sampled hand into state so apply_intent validation passes
+            opp_player = state.players[opp_index]
+            patched_players = list(state.players)
+            patched_players[opp_index] = opp_player.model_copy(update={"hand": usable})
+            patched_state = state.model_copy(update={"players": patched_players})
+
             # Opponent plays greedily: pick the move that maximizes opponent cells
             best_opp_score = -1
-            best_opp_state = state
+            best_opp_state = patched_state
             for card_key in usable:
                 for cell_index in empty_cells:
                     intent = PlacementIntent(
@@ -477,7 +483,7 @@ def _expectimax_search(
                     )
                     sim_rng = Random(rng.randint(0, 2**31))
                     try:
-                        next_state = apply_intent(state, intent, card_lookup, sim_rng)
+                        next_state = apply_intent(patched_state, intent, card_lookup, sim_rng)
                     except Exception:
                         continue
                     opp_cells = _count_owned(next_state.board, opp_index)
@@ -524,7 +530,7 @@ def _expectimax_move(
     # Determine search depth
     n_empty = len(empty_cells)
     if n_empty <= _EXPECTIMAX_FULL_DEPTH_THRESHOLD:
-        depth = n_empty * 2  # full depth (both players' moves)
+        depth = n_empty  # full depth (each move = 1 depth level)
     else:
         depth = _EXPECTIMAX_MAX_DEPTH
 

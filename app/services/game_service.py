@@ -618,6 +618,12 @@ async def execute_ai_turn(
             )
         finally:
             _nightmare_semaphore.release()
+    elif difficulty == AIDifficulty.HARD:
+        # Hard (Expectimax): run in executor to avoid blocking the event loop
+        loop = asyncio.get_event_loop()
+        intent = await loop.run_in_executor(
+            None, choose_move, state, ai_index, difficulty, card_lookup, move_rng
+        )
     else:
         intent = choose_move(state, ai_index, difficulty, card_lookup, move_rng)
 

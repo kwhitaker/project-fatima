@@ -120,6 +120,10 @@ export default function Games() {
     g.players.some((p) => p.player_id === myId),
   );
 
+  const hasActiveGame = myGames.some(
+    (g) => g.status !== "complete",
+  );
+
   const openGames = games.filter(
     (g) =>
       g.status === "waiting" &&
@@ -183,13 +187,15 @@ export default function Games() {
               <button
                 key={difficulty}
                 data-testid={`ai-${difficulty}`}
-                disabled={creatingAi !== null}
+                disabled={creatingAi !== null || hasActiveGame}
                 onClick={() => void handleCreateAi(difficulty)}
                 className="hover:bg-accent/20 hover:border-accent cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 title={
-                  difficulty === "nightmare"
-                    ? "Only 2 players can face Nightmare difficulty at a time. Try again shortly if unavailable."
-                    : undefined
+                  hasActiveGame
+                    ? "Finish or forfeit your current game first"
+                    : difficulty === "nightmare"
+                      ? "Only 2 players can face Nightmare difficulty at a time. Try again shortly if unavailable."
+                      : undefined
                 }
               >
                 <div className="mb-1 font-semibold">
@@ -283,7 +289,11 @@ export default function Games() {
       <section className="mb-8">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Open Games</h2>
-          <Button onClick={() => void handleCreate()} disabled={creating}>
+          <Button
+            onClick={() => void handleCreate()}
+            disabled={creating || hasActiveGame}
+            title={hasActiveGame ? "Finish or forfeit your current game first" : undefined}
+          >
             {creating ? "Creating..." : "Create Game"}
           </Button>
         </div>
@@ -312,26 +322,49 @@ export default function Games() {
                   }}
                   transition={{ duration: 0.15 }}
                 >
-                  <Link
-                    to={`/g/${game.game_id}`}
-                    className="hover:bg-accent/20 hover:border-accent block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">
-                          {hostEmail}
-                        </span>
-                        {game.created_at && (
-                          <span className="text-muted-foreground text-xs">
-                            {new Date(game.created_at).toLocaleString()}
+                  {hasActiveGame ? (
+                    <div
+                      className="block w-full rounded-none border-2 border-border p-4 text-left opacity-50 cursor-not-allowed"
+                      title="Finish or forfeit your current game first"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">
+                            {hostEmail}
                           </span>
-                        )}
+                          {game.created_at && (
+                            <span className="text-muted-foreground text-xs">
+                              {new Date(game.created_at).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-muted-foreground">
+                          Join
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-emerald-400">
-                        Join
-                      </span>
                     </div>
-                  </Link>
+                  ) : (
+                    <Link
+                      to={`/g/${game.game_id}`}
+                      className="hover:bg-accent/20 hover:border-accent block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate font-medium">
+                            {hostEmail}
+                          </span>
+                          {game.created_at && (
+                            <span className="text-muted-foreground text-xs">
+                              {new Date(game.created_at).toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-emerald-400">
+                          Join
+                        </span>
+                      </div>
+                    </Link>
+                  )}
                 </motion.li>
               );
             })}

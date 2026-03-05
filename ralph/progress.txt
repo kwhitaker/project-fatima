@@ -156,3 +156,13 @@ Started: 2026-03-05
 - Learnings: `uxp017` style audit test disallows `zinc` colors in TSX files — use `stone` instead for muted tones
 ---
 
+## 2026-03-05 18:15 - US-SP-017
+- Added `game_won` and `game_lost` comment pools (5 lines each × 4 characters = 40 new lines) to `ai_comments.py`
+- Updated `detect_ai_move_triggers` and `detect_human_move_triggers` to emit `game_won`/`game_lost` instead of `game_ending` when result is clear (non-draw); `game_ending` remains for draws
+- Made `game_won`/`game_lost` guaranteed triggers (100% comment chance) via `_GUARANTEED_TRIGGERS` set
+- 24 new tests: pool existence, trigger detection (win/loss/draw for both AI and human moves), guaranteed comment generation, character flavor verification, no comments in PvP
+- Tests/validation: `uv run pytest` 786 passed
+- Files changed: `app/rules/ai_comments.py`, `tests/test_sp017_win_loss_comments.py`
+- Learnings: Guaranteed triggers bypass the RNG threshold check entirely, simplifying the logic
+---
+

@@ -16,3 +16,12 @@ Started: 2026-03-05
 - Learnings: PlayerState defaults safely for old snapshots; Literal types validated by Pydantic
 ---
 
+## 2026-03-05 13:00 - US-SP-002
+- Added `create_game_vs_ai` service function with AI auto-draft (easy=random, medium=highest total, hard/nightmare=best coverage) and auto-archetype selection (easy=random, medium+=strategic Skulker/Martial)
+- Added `_ai_auto_draft` and `_ai_auto_archetype` helper functions in `game_service.py`
+- AI exempt from `_check_no_active_game` (uses `AI_PLAYER_ID` constant, different humans can play AI concurrently)
+- Tests/validation: 19 new tests in `test_sp002_create_vs_ai.py`, `uv run pytest` 630 passed, `uv run pyright` 0 errors
+- Files changed: `app/services/game_service.py`, `tests/test_sp002_create_vs_ai.py`
+- Learnings: Used helper `_create()` in tests to keep lines under 100 chars; pre-existing E402 lint errors in game_service.py from imports after AI_DISPLAY_NAMES dict
+---
+

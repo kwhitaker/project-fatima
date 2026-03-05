@@ -4,6 +4,7 @@ import uuid
 from datetime import UTC, datetime
 from random import Random
 
+from app.models.cards import CardDefinition
 from app.models.game import AIDifficulty, Archetype, GameResult, GameState, GameStatus, PlayerState
 
 AI_PLAYER_ID = "00000000-0000-0000-0000-000000000001"
@@ -37,6 +38,123 @@ def _check_no_active_game(game_store: GameStore, player_id: str) -> None:
     for g in games:
         if g.status != GameStatus.COMPLETE:
             raise ActiveGameExistsError(g.game_id)
+
+
+def _ai_auto_draft(
+    deal: list[CardDefinition],
+    difficulty: AIDifficulty,
+    rng: Random,
+) -> list[str]:
+    """Pick HAND_SIZE cards from the AI's deal based on difficulty strategy."""
+    if difficulty == AIDifficulty.EASY:
+        picked = rng.sample(deal, HAND_SIZE)
+        return [c.card_key for c in picked]
+    elif difficulty == AIDifficulty.MEDIUM:
+        # Pick 5 with highest total side values
+        def _total(c: CardDefinition) -> int:
+            return c.sides.n + c.sides.e + c.sides.s + c.sides.w
+
+        sorted_deal = sorted(deal, key=_total, reverse=True)
+        return [c.card_key for c in sorted_deal[:HAND_SIZE]]
+    else:
+        # Hard/Nightmare: best defensive+offensive coverage (highest min-side sum)
+        def _coverage(c: CardDefinition) -> int:
+            s = c.sides
+            return min(s.n, s.e, s.s, s.w) + s.n + s.e + s.s + s.w
+
+        sorted_deal = sorted(deal, key=_coverage, reverse=True)
+        return [c.card_key for c in sorted_deal[:HAND_SIZE]]
+
+
+def _ai_auto_archetype(
+    hand: list[CardDefinition],
+    difficulty: AIDifficulty,
+    rng: Random,
+) -> Archetype:
+    """Pick an archetype for the AI based on difficulty."""
+    if difficulty == AIDifficulty.EASY:
+        return rng.choice(list(Archetype))
+    # Medium/hard/nightmare: Skulker if hand has a card with weak side adjacent to strong side
+    for card in hand:
+        sides = [card.sides.n, card.sides.e, card.sides.s, card.sides.w]
+        for i in range(4):
+            adjacent = sides[(i + 1) % 4]
+            if sides[i] <= 3 and adjacent >= 7:
+                return Archetype.SKULKER
+            if adjacent <= 3 and sides[i] >= 7:
+                return Archetype.SKULKER
+    return Archetype.MARTIAL
+
+
+def create_game_vs_ai(
+    game_store: GameStore,
+    card_store: CardStore,
+    player_id: str,
+    email: str | None,
+    difficulty: AIDifficulty,
+    seed: int | None = None,
+) -> GameState:
+    """Create a new single-player game against an AI opponent.
+
+    The AI auto-drafts and auto-selects archetype. The human player still
+    needs to draft and pick archetype.
+    """
+    _check_no_active_game(game_store, player_id)
+    game_id = str(uuid.uuid4())
+    if seed is None:
+        seed = Random().randint(0, 2**31 - 1)
+
+    rng = Random(seed)
+
+    # Generate deals
+    cards = card_store.list_cards()
+    deal_a, deal_b = generate_matched_deals(cards, seed=seed)
+
+    # Build card lookup for AI draft
+    card_lookup = {c.card_key: c for c in cards}
+
+    # AI auto-draft
+    ai_hand_keys = _ai_auto_draft(deal_b, difficulty, rng)
+    ai_hand_cards = [card_lookup[k] for k in ai_hand_keys]
+
+    # AI auto-archetype
+    ai_archetype = _ai_auto_archetype(ai_hand_cards, difficulty, rng)
+
+    # Pick starting player deterministically
+    starting = Random(seed).randint(0, 1)
+
+    # Generate board elements
+    board_elements = Random(seed).choices(
+        ["blood", "holy", "arcane", "shadow", "nature"], k=9
+    )
+
+    human_player = PlayerState(
+        player_id=player_id,
+        email=email,
+        deal=[c.card_key for c in deal_a],
+    )
+    ai_player = PlayerState(
+        player_id=AI_PLAYER_ID,
+        email=AI_DISPLAY_NAMES[difficulty],
+        player_type="ai",
+        ai_difficulty=difficulty,
+        hand=ai_hand_keys,
+        deal=[],
+        archetype=ai_archetype,
+    )
+
+    initial_state = GameState(
+        game_id=game_id,
+        seed=seed,
+        status=GameStatus.DRAFTING,
+        players=[human_player, ai_player],
+        starting_player_index=starting,
+        current_player_index=starting,
+        board_elements=board_elements,
+        created_at=datetime.now(UTC).isoformat(),
+    )
+    game_store.create_game(game_id, initial_state)
+    return initial_state
 
 
 def create_game(

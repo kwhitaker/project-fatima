@@ -9,6 +9,7 @@ import type {
 } from "@/lib/api";
 import { AI_DISPLAY_NAMES } from "@/lib/ai-constants";
 import { cn } from "@/lib/utils";
+import { AiCommentBubble } from "@/routes/game-room/AiCommentBubble";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
 import { ArchetypeModal } from "@/routes/game-room/ArchetypeModal";
@@ -318,6 +319,14 @@ export function ActiveGameView({
             </p>
             <MuteToggle />
           </div>
+
+          {/* AI comment bubble */}
+          {opponentPlayer?.player_type === "ai" && (
+            <AiCommentBubble
+              comment={game.last_move?.ai_comment}
+              difficulty={opponentPlayer.ai_difficulty}
+            />
+          )}
 
           {/* Board: centered, takes remaining vertical space */}
           <div className="flex-1 min-h-0 flex items-center justify-center overflow-hidden relative">

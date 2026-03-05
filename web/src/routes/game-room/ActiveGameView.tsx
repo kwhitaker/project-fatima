@@ -18,6 +18,7 @@ import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 import { HandPanel } from "@/routes/game-room/HandPanel";
 import { ActionPanel } from "@/routes/game-room/ActionPanel";
 import { MuteToggle } from "@/routes/game-room/MuteToggle";
+import { SuddenDeathBanner } from "@/routes/game-room/SuddenDeathBanner";
 import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { motion, AnimatePresence } from "motion/react";
 import { playPlus, playElemental, playTurnStart } from "@/lib/sounds";
@@ -449,6 +450,7 @@ export function ActiveGameView({
       </div>
 
       <ArchetypeModal open={!!myPlayer && !myPlayer.archetype} />
+      <SuddenDeathBanner roundNumber={game.round_number} />
     </>
   );
 }

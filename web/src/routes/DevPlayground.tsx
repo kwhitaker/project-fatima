@@ -13,20 +13,102 @@ import { DefeatOverlay } from "@/routes/game-room/DefeatOverlay";
 // Mock card definitions
 // ---------------------------------------------------------------------------
 
-function mockCard(card_key: string, character_key: string, name: string, tier: number, sides: { n: number; e: number; s: number; w: number }, element: CardDefinition["element"]): CardDefinition {
-  return { card_key, character_key, name, version: "1.0", tier, rarity: 50, is_named: true, sides, set: "core", tags: [], element };
+function mockCard(
+  card_key: string,
+  character_key: string,
+  name: string,
+  tier: number,
+  sides: { n: number; e: number; s: number; w: number },
+  element: CardDefinition["element"],
+): CardDefinition {
+  return {
+    card_key,
+    character_key,
+    name,
+    version: "1.0",
+    tier,
+    rarity: 50,
+    is_named: true,
+    sides,
+    set: "core",
+    tags: [],
+    element,
+  };
 }
 
 const MOCK_CARDS: CardDefinition[] = [
-  mockCard("c-wolf", "werewolf-alpha", "Werewolf Alpha", 3, { n: 8, e: 6, s: 3, w: 7 }, "nature"),
-  mockCard("c-strahd", "strahd", "Count Strahd", 3, { n: 9, e: 8, s: 7, w: 3 }, "blood"),
-  mockCard("c-zombie", "zombie-guard", "Zombie Guard", 1, { n: 2, e: 3, s: 5, w: 4 }, "shadow"),
-  mockCard("c-cleric", "cleric-dawn", "Cleric of Dawn", 2, { n: 6, e: 3, s: 4, w: 7 }, "holy"),
-  mockCard("c-raven", "wereraven", "Wereraven", 1, { n: 4, e: 5, s: 3, w: 2 }, "nature"),
-  mockCard("c-mage", "amber-mage", "Amber Mage", 2, { n: 5, e: 7, s: 3, w: 6 }, "arcane"),
-  mockCard("c-bat", "vampire-spawn", "Vampire Spawn", 1, { n: 3, e: 4, s: 6, w: 2 }, "blood"),
-  mockCard("c-ghost", "ghost-knight", "Ghost Knight", 2, { n: 7, e: 3, s: 5, w: 6 }, "shadow"),
-  mockCard("c-druid", "forest-druid", "Forest Druid", 1, { n: 3, e: 5, s: 4, w: 3 }, "nature"),
+  mockCard(
+    "c-wolf",
+    "werewolf-alpha",
+    "Werewolf Alpha",
+    3,
+    { n: 8, e: 6, s: 3, w: 7 },
+    "nature",
+  ),
+  mockCard(
+    "c-strahd",
+    "strahd",
+    "Count Strahd",
+    3,
+    { n: 9, e: 8, s: 7, w: 3 },
+    "blood",
+  ),
+  mockCard(
+    "c-zombie",
+    "zombie-guard",
+    "Zombie Guard",
+    1,
+    { n: 2, e: 3, s: 5, w: 4 },
+    "shadow",
+  ),
+  mockCard(
+    "c-cleric",
+    "cleric-dawn",
+    "Cleric of Dawn",
+    2,
+    { n: 6, e: 3, s: 4, w: 7 },
+    "holy",
+  ),
+  mockCard(
+    "c-raven",
+    "wereraven",
+    "Wereraven",
+    1,
+    { n: 4, e: 5, s: 3, w: 2 },
+    "nature",
+  ),
+  mockCard(
+    "c-mage",
+    "amber-mage",
+    "Amber Mage",
+    2,
+    { n: 5, e: 7, s: 3, w: 6 },
+    "arcane",
+  ),
+  mockCard(
+    "c-bat",
+    "vampire-spawn",
+    "Vampire Spawn",
+    1,
+    { n: 3, e: 4, s: 6, w: 2 },
+    "blood",
+  ),
+  mockCard(
+    "c-ghost",
+    "ghost-knight",
+    "Ghost Knight",
+    2,
+    { n: 7, e: 3, s: 5, w: 6 },
+    "shadow",
+  ),
+  mockCard(
+    "c-druid",
+    "forest-druid",
+    "Forest Druid",
+    1,
+    { n: 3, e: 5, s: 4, w: 3 },
+    "nature",
+  ),
 ];
 
 const CARD_DEFS = new Map<string, CardDefinition>(
@@ -34,9 +116,15 @@ const CARD_DEFS = new Map<string, CardDefinition>(
 );
 
 const BOARD_ELEMENTS = [
-  "blood", "arcane", "holy",
-  "shadow", "nature", "blood",
-  "arcane", "shadow", "holy",
+  "blood",
+  "arcane",
+  "holy",
+  "shadow",
+  "nature",
+  "blood",
+  "arcane",
+  "shadow",
+  "holy",
 ];
 
 // ---------------------------------------------------------------------------
@@ -60,8 +148,22 @@ function makeGame(overrides: Partial<GameState> = {}): GameState {
     game_id: "dev-playground",
     status: "active",
     players: [
-      { player_id: "me", archetype: "skulker", deal: [], hand: ["c-wolf", "c-cleric"], archetype_used: false },
-      { player_id: "opp", archetype: "caster", deal: [], hand: ["c-zombie", "c-bat"], archetype_used: false },
+      {
+        player_id: "me",
+        archetype: "skulker",
+        deal: [],
+        hand: ["c-wolf", "c-cleric"],
+        archetype_used: false,
+        player_type: "human",
+      },
+      {
+        player_id: "opp",
+        archetype: "caster",
+        deal: [],
+        hand: ["c-zombie", "c-bat"],
+        archetype_used: false,
+        player_type: "ai",
+      },
     ],
     board: emptyBoard(),
     current_player_index: 0,
@@ -86,17 +188,44 @@ interface Scenario {
 }
 
 const SCENARIOS: Scenario[] = [
-  { label: "Card placement", description: "Card placed at center with slam animation" },
-  { label: "Single capture", description: "One card captured with flip animation" },
-  { label: "Combo chain (4)", description: "4-card combo chain with escalating brightness" },
-  { label: "Plus trigger", description: "Plus rule triggered with cyan callout" },
-  { label: "Elemental trigger", description: "Elemental match with gold callout" },
-  { label: "Plus + Elemental", description: "Both Plus and Elemental on same move" },
+  {
+    label: "Card placement",
+    description: "Card placed at center with slam animation",
+  },
+  {
+    label: "Single capture",
+    description: "One card captured with flip animation",
+  },
+  {
+    label: "Combo chain (4)",
+    description: "4-card combo chain with escalating brightness",
+  },
+  {
+    label: "Plus trigger",
+    description: "Plus rule triggered with cyan callout",
+  },
+  {
+    label: "Elemental trigger",
+    description: "Elemental match with gold callout",
+  },
+  {
+    label: "Plus + Elemental",
+    description: "Both Plus and Elemental on same move",
+  },
   { label: "Fog (Mists)", description: "Fog mists effect on placement" },
   { label: "Omen (Mists)", description: "Omen mists effect on placement" },
-  { label: "Victory screen", description: "Victory overlay with bats and confetti" },
-  { label: "Defeat screen", description: "Defeat overlay with fog and vignette" },
-  { label: "Early finish", description: "Game ends with clinch (empty cells marked \u2715)" },
+  {
+    label: "Victory screen",
+    description: "Victory overlay with bats and confetti",
+  },
+  {
+    label: "Defeat screen",
+    description: "Defeat overlay with fog and vignette",
+  },
+  {
+    label: "Early finish",
+    description: "Game ends with clinch (empty cells marked \u2715)",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -112,7 +241,9 @@ export default function DevPlayground() {
   const [game, setGame] = useState<GameState>(makeGame());
   const [lastMove, setLastMove] = useState<LastMoveInfo | null>(null);
   const [victoryCells, setVictoryCells] = useState<number[]>([]);
-  const [mistsEffect, setMistsEffect] = useState<"fog" | "omen" | "none" | null>(null);
+  const [mistsEffect, setMistsEffect] = useState<
+    "fog" | "omen" | "none" | null
+  >(null);
   const [earlyFinish, setEarlyFinish] = useState(false);
 
   const reset = useCallback(() => {
@@ -142,7 +273,15 @@ export default function DevPlayground() {
             board[4] = { card_key: "c-strahd", owner: 0 };
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 3, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+            });
             break;
           }
           case 1: {
@@ -153,7 +292,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([5]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 4, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+            });
             break;
           }
           case 2: {
@@ -167,7 +314,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([1, 3, 5, 7]));
-            setLastMove({ player_index: 0, card_key: "c-strahd", cell_index: 4, mists_roll: 5, mists_effect: "none", plus_triggered: false, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 5,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+            });
             break;
           }
           case 3: {
@@ -179,7 +334,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setCapturedCells(new Set([1, 5]));
-            setLastMove({ player_index: 0, card_key: "c-cleric", cell_index: 4, mists_roll: 3, mists_effect: "none", plus_triggered: true, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-cleric",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: true,
+              elemental_triggered: false,
+            });
             break;
           }
           case 4: {
@@ -190,7 +353,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board, board_elements: BOARD_ELEMENTS }));
             setPlacedCells(new Set([0]));
             setCapturedCells(new Set([1]));
-            setLastMove({ player_index: 0, card_key: "c-bat", cell_index: 0, mists_roll: 4, mists_effect: "none", plus_triggered: false, elemental_triggered: true });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-bat",
+              cell_index: 0,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: true,
+            });
             break;
           }
           case 5: {
@@ -202,7 +373,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board, board_elements: BOARD_ELEMENTS }));
             setPlacedCells(new Set([0]));
             setCapturedCells(new Set([1, 3]));
-            setLastMove({ player_index: 0, card_key: "c-bat", cell_index: 0, mists_roll: 2, mists_effect: "none", plus_triggered: true, elemental_triggered: true });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-bat",
+              cell_index: 0,
+              mists_roll: 2,
+              mists_effect: "none",
+              plus_triggered: true,
+              elemental_triggered: true,
+            });
             break;
           }
           case 6: {
@@ -212,7 +391,15 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setMistsEffect("fog");
-            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 1, mists_effect: "fog", plus_triggered: false, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-wolf",
+              cell_index: 4,
+              mists_roll: 1,
+              mists_effect: "fog",
+              plus_triggered: false,
+              elemental_triggered: false,
+            });
             break;
           }
           case 7: {
@@ -222,17 +409,32 @@ export default function DevPlayground() {
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
             setMistsEffect("omen");
-            setLastMove({ player_index: 0, card_key: "c-wolf", cell_index: 4, mists_roll: 6, mists_effect: "omen", plus_triggered: false, elemental_triggered: false });
+            setLastMove({
+              player_index: 0,
+              card_key: "c-wolf",
+              cell_index: 4,
+              mists_roll: 6,
+              mists_effect: "omen",
+              plus_triggered: false,
+              elemental_triggered: false,
+            });
             break;
           }
           case 8: {
             // Victory
             const board = filledBoard(0);
-            setGame(makeGame({
-              status: "complete",
-              board,
-              result: { winner: 0, is_draw: false, completion_reason: "board_full", early_finish: false },
-            }));
+            setGame(
+              makeGame({
+                status: "complete",
+                board,
+                result: {
+                  winner: 0,
+                  is_draw: false,
+                  completion_reason: "board_full",
+                  early_finish: false,
+                },
+              }),
+            );
             setVictoryCells([0, 2, 4, 6, 8]);
             setShowVictory(true);
             break;
@@ -240,11 +442,18 @@ export default function DevPlayground() {
           case 9: {
             // Defeat
             const board = filledBoard(0);
-            setGame(makeGame({
-              status: "complete",
-              board,
-              result: { winner: 1, is_draw: false, completion_reason: "board_full", early_finish: false },
-            }));
+            setGame(
+              makeGame({
+                status: "complete",
+                board,
+                result: {
+                  winner: 1,
+                  is_draw: false,
+                  completion_reason: "board_full",
+                  early_finish: false,
+                },
+              }),
+            );
             setShowDefeat(true);
             break;
           }
@@ -258,11 +467,13 @@ export default function DevPlayground() {
             board[4] = { card_key: "c-ghost", owner: 0 };
             board[6] = { card_key: "c-zombie", owner: 1 };
             // cells 5, 7, 8 empty — clinch
-            setGame(makeGame({
-              status: "complete",
-              board,
-              result: { winner: 0, is_draw: false, early_finish: true },
-            }));
+            setGame(
+              makeGame({
+                status: "complete",
+                board,
+                result: { winner: 0, is_draw: false, early_finish: true },
+              }),
+            );
             setVictoryCells([0, 1, 2, 3, 4]);
             setEarlyFinish(true);
             break;
@@ -319,9 +530,7 @@ export default function DevPlayground() {
         {showVictory && (
           <VictoryOverlay onDismiss={() => setShowVictory(false)} />
         )}
-        {showDefeat && (
-          <DefeatOverlay onDismiss={() => setShowDefeat(false)} />
-        )}
+        {showDefeat && <DefeatOverlay onDismiss={() => setShowDefeat(false)} />}
 
         {/* Board */}
         <div className="flex justify-center">
@@ -344,7 +553,10 @@ export default function DevPlayground() {
 
         {/* Last move info */}
         {lastMove && (
-          <div className="p-3 border-2 border-border bg-card font-body text-sm space-y-1" data-testid="last-move-info">
+          <div
+            className="p-3 border-2 border-border bg-card font-body text-sm space-y-1"
+            data-testid="last-move-info"
+          >
             <p>
               <span className="text-muted-foreground">Card:</span>{" "}
               {CARD_DEFS.get(lastMove.card_key)?.name ?? lastMove.card_key}

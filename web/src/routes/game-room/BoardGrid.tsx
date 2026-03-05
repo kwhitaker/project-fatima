@@ -37,6 +37,7 @@ export function BoardGrid({
   victoryCells,
   intimidatePendingCell,
   earlyFinish,
+  archetypeUsedName,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -53,6 +54,7 @@ export function BoardGrid({
   victoryCells?: number[];
   intimidatePendingCell?: number | null;
   earlyFinish?: boolean;
+  archetypeUsedName?: string | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -136,6 +138,7 @@ export function BoardGrid({
             selectedCardElement != null &&
             elementLabel != null &&
             elementLabel === selectedCardElement;
+          const isArchetypeCell = isLastMove && !!archetypeUsedName;
 
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
 
@@ -150,7 +153,8 @@ export function BoardGrid({
                 ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
             isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
-            isLastMove && "ring-2 ring-yellow-400 dark:ring-yellow-300",
+            isArchetypeCell && "ring-2 ring-amber-400 dark:ring-amber-300 animate-pulse",
+            isLastMove && !isArchetypeCell && "ring-2 ring-yellow-400 dark:ring-yellow-300",
             cell && tierClass(def?.tier)
           );
 

@@ -1,0 +1,133 @@
+/**
+ * US-SP-018: Frontend archetype power visual feedback on cards
+ */
+import { render, screen } from "@testing-library/react";
+import { vi, describe, it, expect } from "vitest";
+import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
+import { BoardGrid } from "@/routes/game-room/BoardGrid";
+
+// Mock motion/react
+vi.mock("motion/react", () => {
+  const React = require("react");
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_target: unknown, prop: string) =>
+          React.forwardRef((props: Record<string, unknown>, ref: unknown) =>
+            React.createElement(prop, { ...props, ref }),
+          ),
+      },
+    ),
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
+  };
+});
+
+// Mock sounds
+vi.mock("@/lib/sounds", () => ({
+  playPlace: vi.fn(),
+  playCapture: vi.fn(),
+  playCombo: vi.fn(),
+  playPlus: vi.fn(),
+  playElemental: vi.fn(),
+  playTurnStart: vi.fn(),
+  isMuted: () => false,
+  toggleMute: vi.fn(),
+  initAudio: vi.fn(),
+}));
+
+describe("US-SP-018: Archetype power visual feedback", () => {
+  describe("BoardCallouts — archetype callout", () => {
+    it.each(["martial", "skulker", "intimidate", "caster", "devout"])(
+      "renders callout for %s archetype",
+      (archName) => {
+        render(
+          <BoardCallouts
+            mistsEffect={null}
+            captureCount={0}
+            plusTriggered={false}
+            elementalTriggered={false}
+            elementKey={null}
+            archetypeUsedName={archName}
+            changeKey="0-c1"
+          />,
+        );
+        const callout = screen.getByLabelText("board archetype callout");
+        expect(callout).toBeInTheDocument();
+        const expected =
+          archName.charAt(0).toUpperCase() + archName.slice(1) + "!";
+        expect(callout.textContent).toBe(expected);
+      },
+    );
+
+    it("does not render archetype callout when archetypeUsedName is null", () => {
+      render(
+        <BoardCallouts
+          mistsEffect={null}
+          captureCount={0}
+          plusTriggered={false}
+          elementalTriggered={false}
+          elementKey={null}
+          archetypeUsedName={null}
+          changeKey="0-c1"
+        />,
+      );
+      expect(
+        screen.queryByLabelText("board archetype callout"),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe("BoardGrid — gold ring on archetype use", () => {
+    it("applies amber ring to last-move cell when archetypeUsedName is set", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          archetypeUsedName="skulker"
+        />,
+      );
+      // The cell at index 0 should have the amber ring class
+      const cell = screen.getByTitle("c1");
+      expect(cell.className).toContain("ring-amber-400");
+      expect(cell.className).toContain("animate-pulse");
+    });
+
+    it("applies standard yellow ring when no archetype used", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          archetypeUsedName={null}
+        />,
+      );
+      const cell = screen.getByTitle("c1");
+      expect(cell.className).toContain("ring-yellow-400");
+      expect(cell.className).not.toContain("ring-amber-400");
+    });
+  });
+});

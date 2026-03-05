@@ -341,6 +341,12 @@ def apply_intent(
     }
 
     if mists_roll is not None:
+        # Determine archetype name if power was activated this move
+        _arch_name: str | None = None
+        if archetype_activated and state.players:
+            _arch_name = state.players[intent.player_index].archetype
+            if _arch_name is not None:
+                _arch_name = _arch_name.value if hasattr(_arch_name, "value") else str(_arch_name)
         updates["last_move"] = LastMoveInfo(
             player_index=intent.player_index,
             card_key=intent.card_key,
@@ -349,6 +355,8 @@ def apply_intent(
             mists_effect=_mists_effect_label(mists_roll, mists_modifier),
             plus_triggered=plus_triggered,
             elemental_triggered=elemental_bonus > 0,
+            archetype_used_name=_arch_name,
+            intimidate_target_cell=intimidate_target if archetype_activated else None,
         )
 
     if state.players:

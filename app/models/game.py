@@ -59,6 +59,8 @@ class LastMoveInfo(BaseModel):
     plus_triggered: bool = False  # True when the Plus rule fired this placement
     elemental_triggered: bool = False  # True when elemental bonus (+1) was applied
     ai_comment: str | None = None  # In-character AI comment (single-player only)
+    archetype_used_name: str | None = None  # Archetype name when power was used this move
+    intimidate_target_cell: int | None = None  # Cell targeted by Intimidate (for UI highlight)
 
 
 class GameState(BaseModel):

@@ -505,6 +505,10 @@ export interface components {
             elemental_triggered: boolean;
             /** Ai Comment */
             ai_comment?: string | null;
+            /** Archetype Used Name */
+            archetype_used_name?: string | null;
+            /** Intimidate Target Cell */
+            intimidate_target_cell?: number | null;
         };
         /** LeaveGameRequest */
         LeaveGameRequest: {

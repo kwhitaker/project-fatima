@@ -355,6 +355,7 @@ export function ActiveGameView({
                   : null
               }
               intimidatePendingCell={intimidatePendingCell}
+              archetypeUsedName={game.last_move?.archetype_used_name ?? null}
             />
             <BoardCallouts
               mistsEffect={
@@ -374,6 +375,7 @@ export function ActiveGameView({
                   ? (boardElements?.[game.last_move.cell_index] ?? null)
                   : null
               }
+              archetypeUsedName={game.last_move?.archetype_used_name ?? null}
               changeKey={
                 game.last_move
                   ? `${game.last_move.cell_index}-${game.last_move.card_key}`

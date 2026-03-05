@@ -32,6 +32,7 @@ export function BoardCallouts({
   plusTriggered,
   elementalTriggered,
   elementKey,
+  archetypeUsedName,
   changeKey,
 }: {
   mistsEffect: "fog" | "omen" | "none" | null;
@@ -39,6 +40,7 @@ export function BoardCallouts({
   plusTriggered: boolean;
   elementalTriggered: boolean;
   elementKey: string | null;
+  archetypeUsedName: string | null;
   /** Unique key per move to trigger fresh animations. */
   changeKey: string | null;
 }) {
@@ -58,6 +60,10 @@ export function BoardCallouts({
   );
   const showElemental = useAutoFade(
     elementalTriggered && changeKey ? `${changeKey}-elem` : null,
+    2500,
+  );
+  const showArchetype = useAutoFade(
+    archetypeUsedName && changeKey ? `${changeKey}-arch` : null,
     2500,
   );
 
@@ -210,6 +216,34 @@ export function BoardCallouts({
             {elementKey
               ? `${ELEMENT_SYMBOLS[elementKey] ?? ""} ${elementKey.charAt(0).toUpperCase() + elementKey.slice(1)} Elemental!`
               : "Elemental!"}
+          </motion.div>
+        )}
+        {/* Archetype callout */}
+        {showArchetype && archetypeUsedName && (
+          <motion.div
+            key={`arch-${changeKey}`}
+            className="font-heading text-xl sm:text-2xl font-bold text-amber-300 drop-shadow-lg"
+            style={{
+              textShadow:
+                "0 0 16px rgba(251,191,36,0.7), 0 2px 0 rgba(146,64,14,0.5)",
+            }}
+            aria-label="board archetype callout"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.3, 1], opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{
+              scale: {
+                type: "tween",
+                times: [0, 0.5, 1],
+                duration: 0.4,
+                ease: steppedEase(4),
+              },
+              opacity: { duration: 0.15 },
+            }}
+          >
+            {archetypeUsedName.charAt(0).toUpperCase() +
+              archetypeUsedName.slice(1)}
+            !
           </motion.div>
         )}
       </AnimatePresence>

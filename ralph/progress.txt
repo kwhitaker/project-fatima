@@ -54,3 +54,12 @@ Started: 2026-03-05
 - Learnings: `[] or default` is falsy in Python — use `x if x is not None else default` for list params; cell adjacency matters when asserting score comparisons (cell 6 adj to 3)
 ---
 
+## 2026-03-05 17:00 - US-SP-006
+- Implemented greedy (Rahadin/medium) AI strategy in `app/rules/ai.py`: one-ply simulation via `apply_intent`, picks move maximizing owned cells, breaks ties randomly
+- Evaluates all archetype variants per move: Skulker (4 sides), Martial (CW/CCW), Intimidate (all valid adjacent targets), Caster/Devout (single variant)
+- 7 new tests: capture preference, double vs single capture, Skulker usage, no-archetype-when-used, tiebreaking (deterministic + varied), Martial rotation
+- Tests/validation: `uv run pytest` 680 passed, `uv run pyright` 0 errors, `uv run ruff check` clean
+- Files changed: `app/rules/ai.py`, `tests/test_sp006_greedy_ai.py`, `tests/test_sp005_novice_ai.py` (renamed dispatch test)
+- Learnings: Skulker +3 boost can exceed CardSides max (10) — test cards must have side values ≤7 for boosted sides; board setup for archetype tests needs constrained empty cells to force specific placements
+---
+

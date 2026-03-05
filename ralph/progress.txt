@@ -25,3 +25,12 @@ Started: 2026-03-05
 - Learnings: Used helper `_create()` in tests to keep lines under 100 chars; pre-existing E402 lint errors in game_service.py from imports after AI_DISPLAY_NAMES dict
 ---
 
+## 2026-03-05 14:00 - US-SP-003
+- Added `POST /games/vs-ai` endpoint with `CreateGameVsAiRequest` (difficulty field) in `app/routers/games.py`
+- Added `createGameVsAi(difficulty)` function to `web/src/lib/api.ts` following existing error-handling pattern
+- 10 new tests: 201 for all 4 difficulties, response status/fields validation, 409 when player has active game (AI or multiplayer)
+- Tests/validation: `uv run pytest` 640 passed, `uv run pyright` 0 errors, `uv run ruff check` clean on changed files
+- Files changed: `app/routers/games.py`, `tests/test_sp003_vs_ai_endpoint.py`, `web/src/lib/api.ts`
+- Learnings: Endpoint must be registered before `/{game_id}` routes to avoid path param matching; test_ux002 pattern shows how to override `get_caller_email` in test fixtures
+---
+

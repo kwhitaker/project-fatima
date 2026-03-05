@@ -307,7 +307,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 19,
-      "passes": false
+      "passes": true
     }
   ]
 }

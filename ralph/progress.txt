@@ -176,3 +176,12 @@ Started: 2026-03-05
 - Learnings: Archetype enum `.value` needed to get string name from Enum; Devout only activates on fog so archetype_used_name may be null even with use_archetype=True
 ---
 
+## 2026-03-05 18:20 - US-SP-019
+- Added availability notice to Nightmare card: italic amber text "Few may commune with The Dark Powers at once." + title tooltip explaining the 2-player concurrency cap
+- Added 503 error handling specific to Nightmare: shows inline "The Dark Powers are occupied with another mortal." on the card instead of navigating away
+- 3 new tests: availability text renders only on nightmare card, tooltip text present, 503 error displays themed message
+- Tests/validation: `bun run test --run` 322 passed (44 files), `uv run pytest` 797 passed
+- Files changed: `web/src/routes/Games.tsx`, `web/src/__tests__/sp019.test.tsx`
+- Learnings: Error objects from API must have `.status` property for status-based branching; `nightmareError` state separate from general `error` to scope display to nightmare card only
+---
+

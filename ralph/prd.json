@@ -1,165 +1,220 @@
 {
   "project": "project-fatima",
-  "branchName": "feature/drafting",
-  "description": "5-card hand system: deal 7, keep 5, with hand-in-score tie condition. Reduces hand from 10 to 5 cards, adds a lightweight draft phase (pick 5 of 7 dealt cards), and introduces hand-in-score (owned cells + cards in hand) so ties are naturally reachable and Sudden Death becomes a real game mechanic. Player who goes first places all 5 cards; player who goes second places 4 and keeps 1 in hand (+1 to their score). Tie at 5-5 triggers Sudden Death. Includes backend rules, draft endpoint, frontend draft UI, and updated rules dialog.",
+  "branchName": "feature/single-player",
+  "description": "Single-player mode: play against AI opponents at four difficulty levels themed as Curse of Strahd characters (Ireena, Rahadin, Strahd, The Dark Powers). Includes AI identity and game creation, novice and greedy strategy engines, expectimax and MCTS advanced strategies, AI commentary/trash talk, games list rework to distinguish single-player vs multiplayer, and frontend AI opponent experience.",
   "userStories": [
     {
-      "id": "US-DR-001",
-      "title": "Add DRAFTING game status and PlayerState.deal field",
-      "description": "As a developer, I want the game model to support a drafting phase — so the system can track the 7 dealt cards separately from the 5-card hand the player keeps.",
+      "id": "US-SP-001",
+      "title": "AI difficulty enum and PlayerState model changes",
+      "description": "As a developer, I want the game model to distinguish human and AI players with a difficulty level — so the system knows when to trigger AI behavior.",
       "acceptanceCriteria": [
-        "Add `DRAFTING = \"drafting\"` to `GameStatus` enum in `app/models/game.py`",
-        "Add `deal: list[str] = []` field to `PlayerState` in `app/models/game.py` — holds the 7 dealt card keys before draft selection",
-        "Add constants `DEAL_SIZE = 7` and `HAND_SIZE = 5` to `app/rules/deck.py`",
-        "Existing serialization/deserialization of `GameState` still works (deal defaults to empty list for old snapshots)",
+        "Add `AIDifficulty` enum to `app/models/game.py` with values: `easy`, `medium`, `hard`, `nightmare`",
+        "Add `player_type: Literal['human', 'ai'] = 'human'` field to `PlayerState`",
+        "Add `ai_difficulty: AIDifficulty | None = None` field to `PlayerState` (only set for AI players)",
+        "Existing serialization/deserialization of `GameState` still works (new fields default safely for old snapshots)",
+        "Add `AI_PLAYER_ID = '00000000-0000-0000-0000-000000000001'` constant and `AI_DISPLAY_NAMES` dict mapping each difficulty to a character name (Ireena Kolyana, Rahadin, Strahd von Zarovich, The Dark Powers) in `app/services/game_service.py`",
         "`uv run pytest` passes with no regressions",
         "`uv run pyright` passes"
       ],
       "priority": 1,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-002",
-      "title": "Change deck generation from 10-card decks to 7-card deals",
-      "description": "As a game system, I want to generate two balanced 7-card deals instead of 10-card decks — so each player gets 7 cards to draft from.",
+      "id": "US-SP-002",
+      "title": "create_game_vs_ai service function",
+      "description": "As a player, I want to start a game against an AI opponent at a chosen difficulty — so I can play without waiting for another human.",
       "acceptanceCriteria": [
-        "Rename `generate_matched_decks` to `generate_matched_deals` in `app/rules/deck.py`; update all call sites",
-        "Change generation target from 10 cards per side to `DEAL_SIZE` (7) cards per side",
-        "Update `_can_add_to_deck` cap from 10 to `DEAL_SIZE`",
-        "Rename `validate_deck` to `validate_deal`; change size check from 10 to `DEAL_SIZE`; update all call sites",
-        "Keep rarity slot limits unchanged (ultra≤1, very_rare≤2, rare≤3 — all valid for 7 cards)",
-        "Update `tests/test_deck_generation.py` and `tests/test_deck_validator.py` for 7-card deals",
+        "New `create_game_vs_ai(game_store, card_store, player_id, email, difficulty, seed=None)` function in `game_service.py`",
+        "Creates game with human as player 0 and AI as player 1 (`player_type='ai'`, `ai_difficulty` set, `player_id=AI_PLAYER_ID`, email from `AI_DISPLAY_NAMES`)",
+        "Generates deals for both players (same `generate_matched_deals`)",
+        "AI auto-drafts: easy picks 5 randomly, medium picks 5 with highest total side values, hard/nightmare pick 5 with best defensive+offensive coverage (highest min-side sum)",
+        "AI auto-selects archetype: easy picks randomly, medium/hard/nightmare pick strategically (Skulker if hand has a card with a weak side adjacent to a strong side, otherwise Martial)",
+        "Game enters `DRAFTING` status — human still needs to draft and pick archetype",
+        "AI player is exempt from `_check_no_active_game` (AI can be in many games at once)",
+        "Add tests: game creation succeeds, AI player fields are correct, AI deal is auto-drafted, AI archetype is auto-selected, human still needs to draft",
         "`uv run pytest` passes"
       ],
       "priority": 2,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-003",
-      "title": "Draft phase: join_game sets DRAFTING, new submit_draft service",
-      "description": "As a player, when I join a game I want to receive 7 cards and choose 5 to keep — so I have a meaningful decision before the match begins.",
+      "id": "US-SP-003",
+      "title": "POST /games/vs-ai endpoint",
+      "description": "As a frontend client, I want an API endpoint to create a game against an AI opponent — so I can start single-player games over HTTP.",
       "acceptanceCriteria": [
-        "In `game_service.py` `join_game`: when 2nd player joins, generate 7-card deals, assign to each player's `deal` field, and set status to `DRAFTING` (not `ACTIVE`)",
-        "Board elements and starting player are still determined at join time (same as current behavior)",
-        "New `submit_draft(game_store, game_id, player_id, selected_cards)` function in `game_service.py`",
-        "Validates `selected_cards` is exactly 5 card keys, all present in that player's `deal`",
-        "Sets the player's `hand` to the 5 selected cards and clears their `deal` to `[]`",
-        "When both players have submitted drafts (both `hand` lengths == 5 and both `deal` lengths == 0), transition status to `ACTIVE`",
-        "Emits `draft_submitted` event via `game_store.append_event`",
-        "Raises appropriate errors: game not in DRAFTING status, player not in game, wrong number of cards, cards not in deal",
-        "New tests in `tests/test_draft.py`: valid submission, both-submitted transition to ACTIVE, invalid card count, card not in deal, duplicate submission",
+        "New `POST /games/vs-ai` endpoint in `app/routers/games.py`",
+        "Request body: `{ \"difficulty\": \"easy\" | \"medium\" | \"hard\" | \"nightmare\" }`",
+        "Calls `create_game_vs_ai` from game_service; returns the `GameState` with status 201",
+        "Returns 409 if player already has a non-complete game",
+        "Auth: requires valid JWT (same pattern as existing endpoints)",
+        "Add `createGameVsAi(difficulty)` to `web/src/lib/api.ts`",
+        "Add router-level tests verifying status codes (201, 409)",
         "`uv run pytest` passes"
       ],
       "priority": 3,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-004",
-      "title": "Draft endpoint: POST /games/{game_id}/draft",
-      "description": "As a frontend client, I want an API endpoint to submit my 5-card draft selection — so the drafting phase can be completed over HTTP.",
+      "id": "US-SP-004",
+      "title": "AI turn trigger: background task after human moves",
+      "description": "As a player, I want the AI to automatically take its turn after I play — so the game flows without manual intervention.",
       "acceptanceCriteria": [
-        "New `POST /games/{game_id}/draft` endpoint in `app/routers/games.py`",
-        "Request body: `{ \"selected_cards\": [\"key1\", \"key2\", \"key3\", \"key4\", \"key5\"] }`",
-        "Calls `submit_draft` from game_service; returns the updated `GameState`",
-        "Returns 404 if game not found, 403 if player not in game, 422 if validation fails, 409 on version conflict",
-        "Auth: requires valid JWT (same pattern as existing endpoints)",
-        "Add router-level tests or integration tests verifying status codes",
+        "After `submit_draft` transitions an AI game to ACTIVE, if it's the AI's turn, schedule an AI move",
+        "After `submit_move` in an AI game, if the next turn belongs to the AI and the game is still ACTIVE, schedule an AI move",
+        "New `execute_ai_turn(game_id, game_store, card_store)` async function that loads state, computes the AI move via `choose_move`, and calls `submit_move` internally",
+        "AI moves use the same `apply_intent` path as human moves — no special game logic",
+        "Add a small delay before AI move: easy 0.3-0.8s, medium 0.5-1.0s, hard 0.8-1.5s, nightmare 1.5-2.5s (randomized within range from game seed)",
+        "Use FastAPI `BackgroundTasks` to schedule AI turns without blocking the response",
+        "If the game completes (board full, early finish, or Sudden Death draw) before AI turn executes, the AI turn is a no-op",
+        "Add tests: AI turn fires after human move, AI move is valid, game progresses correctly, no AI turn when game is complete",
         "`uv run pytest` passes"
       ],
       "priority": 4,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-005",
-      "title": "Hand-in-score: update scoring to include cards in hand",
-      "description": "As a player, I want the final score to count owned board cells plus cards remaining in my hand — so ties are possible and going second has a built-in compensation.",
+      "id": "US-SP-005",
+      "title": "AI strategy: Novice (Ireena) — semi-random placement",
+      "description": "As a player on Easy difficulty, I want the AI to play like a beginner who makes some reasonable moves but plenty of mistakes — so the game is fun and forgiving.",
       "acceptanceCriteria": [
-        "Update `compute_round_result` in `app/rules/reducer.py` to accept `players` parameter",
-        "New scoring: player score = cells owned on board + len(player.hand)",
-        "Update the call site in `apply_intent` to pass the updated players list (after hand removal) to `compute_round_result`",
-        "Tie (equal scores) still returns `is_draw=True`",
-        "With 5-card hands: P1 (goes first, places 5) ends with 0 in hand; P2 (goes second, places 4) ends with 1 in hand; tie occurs when P1 owns 5 cells and P2 owns 4 cells",
-        "Update `tests/test_scoring.py` with hand-in-score test cases: P1 wins at 6+ cells, P2 wins at 5+ cells, tie at P1=5/P2=4",
+        "New `app/rules/ai.py` module with `choose_move(state, ai_index, difficulty, card_lookup, rng) -> PlacementIntent`",
+        "Novice strategy: scores each (card, cell) pair based on: +1 per adjacent opponent card where attacking side > facing side, +1 for elemental match, plus random noise uniform(0, 1.5). Picks via weighted random choice from top candidates",
+        "Novice does not consider defense (exposed weak sides) or Plus setups",
+        "Novice archetype usage: 50% chance to activate on first or second placement regardless of board state. When activating: Skulker boosts a random side, Martial picks random direction, Intimidate targets random adjacent opponent card, Caster/Devout used even on non-Fog/non-Omen turns. 20% chance to never use archetype at all (checked once at game start, stored as a flag)",
+        "All legal move enumeration: each card in hand x each empty cell",
+        "Add tests: novice returns valid moves, novice prefers obvious captures most of the time, novice sometimes makes suboptimal choices (noise), archetype usage is inconsistent",
         "`uv run pytest` passes"
       ],
       "priority": 5,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-006",
-      "title": "Update early finish check for hand-in-score",
-      "description": "As the rules engine, I want the early finish optimization to account for hand-in-score — so games are correctly called early with the new scoring model.",
+      "id": "US-SP-006",
+      "title": "AI strategy: Greedy (Rahadin) — one-ply evaluation",
+      "description": "As a player on Medium difficulty, I want the AI to always pick the move that captures the most cards this turn — so it feels competent but predictable.",
       "acceptanceCriteria": [
-        "In `apply_intent`, update the early finish check to account for cards remaining in each player's hand",
-        "A player has won early if their minimum possible final score exceeds the opponent's maximum possible final score",
-        "The second player (who will end with 1 card in hand) gets +1 factored into the calculation",
-        "Add test cases: early finish triggers correctly under hand-in-score, early finish does NOT trigger when hand bonus could change the outcome",
+        "Greedy strategy in `app/rules/ai.py`: for each legal (card, cell) pair, simulate via `apply_intent` and count cells owned by AI in the resulting state. Pick the move with the highest count; break ties randomly",
+        "Also evaluates `use_archetype=True` variants for each move (Skulker tests all 4 sides, Martial tests CW/CCW, Intimidate tests all valid adjacent targets) and picks the best overall across archetype/no-archetype",
+        "Greedy does not reason about future opponent moves or hidden hand",
+        "Add tests: greedy picks capture over non-capture, greedy uses archetype when it would flip an extra card, greedy breaks ties randomly (seeded)",
         "`uv run pytest` passes"
       ],
       "priority": 6,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-007",
-      "title": "Update Sudden Death hand rebuild for hand-in-score",
-      "description": "As the rules engine, I want Sudden Death to rebuild hands correctly — each player gets back the board cards they own plus any cards still in their hand, giving both players 5 cards for the next round.",
+      "id": "US-SP-007",
+      "title": "AI strategy: Expectimax (Strahd) — opponent hand inference",
+      "description": "As a player on Hard difficulty, I want the AI to reason about what I might be holding and plan multiple moves ahead — so it feels like a genuinely challenging opponent.",
       "acceptanceCriteria": [
-        "In `begin_sudden_death_round`, rebuild each player's hand as: cards they own on the board + cards remaining in their hand",
-        "On a tie (P1 owns 5 cells + 0 in hand, P2 owns 4 cells + 1 in hand), both players get exactly 5 cards back",
-        "Update `tests/test_sudden_death.py`: remove the 'mathematically impossible' note, add tests that verify hand rebuild includes hand cards, verify both players get 5 cards on a standard tie",
-        "SD cap at 3 rounds still works",
+        "Expectimax strategy in `app/rules/ai.py`: infers possible opponent hands by excluding known cards (board + AI hand) from the game's card pool, then samples 20-30 likely opponent hands",
+        "Search: AI turn nodes maximize over legal moves; opponent turn nodes average over sampled hands (opponent assumed to play greedily). Full depth when <=4 empty cells; depth 3-4 with heuristic eval (cell ownership + side strength of placed cards) otherwise",
+        "Evaluates archetype use at every AI node — picks path with higher expected value",
+        "Opponent hand inference sharpens as game progresses (pool shrinks with each played card)",
+        "Add tests: expectimax finds winning move in near-endgame setup, expectimax narrows opponent hand as cards are played, stays within reasonable compute time (<2s for any board state)",
         "`uv run pytest` passes"
       ],
       "priority": 7,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-008",
-      "title": "Frontend: drafting phase UI",
-      "description": "As a player, I want a card selection screen after joining a game — so I can pick 5 of my 7 dealt cards before the match begins.",
+      "id": "US-SP-008",
+      "title": "AI strategy: MCTS (The Dark Powers) — Monte Carlo tree search",
+      "description": "As a player on Nightmare difficulty, I want the AI to use advanced search with information warfare tactics — so it feels like an oppressive, insurmountable challenge.",
       "acceptanceCriteria": [
-        "In `GameRoom.tsx`, add a `\"drafting\"` status branch that renders a `DraftingGameView` component",
-        "New `DraftingGameView` component shows the player's 7 dealt cards (reuse card styling from HandPanel)",
-        "Player can toggle cards on/off; maximum 5 selected, minimum 5 required to confirm",
-        "Selected cards have a distinct visual state (e.g. highlighted border, lifted); unselected cards appear dimmed",
-        "A 'Confirm' button submits the 5 selected cards via `POST /games/{game_id}/draft`",
-        "After submission, show a waiting state ('Waiting for opponent to draft...')",
-        "If the opponent has already drafted, the game transitions to ACTIVE automatically (realtime subscription picks up the event)",
-        "Non-participant viewers in DRAFTING see a 'Players are drafting...' message",
-        "Add a frontend test: render DraftingGameView, verify 7 cards shown, select 5, confirm button enabled",
-        "`bun run test --run` passes"
+        "MCTS strategy in `app/rules/ai.py` (or separate `app/rules/mcts.py` if >200 lines): runs 2000-3000 simulated playouts per move using UCB1 selection, random rollouts to terminal state, and backpropagation",
+        "Each playout samples a fresh opponent hand from the remaining card pool (same inference as Strahd but integrated into MCTS)",
+        "Lightweight simulation board (`SimBoard`) that bypasses Pydantic for speed: operates on raw tuples `(card_key, owner)` per cell, ~5-10x faster than full `apply_intent`",
+        "Concealment layer: when two moves have similar visit counts (within 10%), prefer the one that plays a mid-strength card over the strongest card (sandbagging early game)",
+        "Concurrency limiter: `asyncio.Semaphore(2)` gates concurrent Nightmare move computations. Third concurrent request queues with 10s timeout, then returns 503 with themed message 'The Dark Powers are occupied with another mortal.'",
+        "All AI compute offloaded via `run_in_executor` to avoid blocking the event loop",
+        "Add tests: MCTS returns valid move within time budget, SimBoard produces same captures as full apply_intent for a suite of positions, semaphore limits concurrency, 503 on timeout",
+        "`uv run pytest` passes"
       ],
       "priority": 8,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-009",
-      "title": "Update rules dialog and scoring display for new system",
-      "description": "As a player, I want the in-game rules dialog and score display to reflect the new 5-card hand and hand-in-score system — so the rules I read match how the game actually works.",
+      "id": "US-SP-009",
+      "title": "AI commentary system: model and backend",
+      "description": "As a player, I want the AI to make in-character comments during the game — so single-player matches feel alive and thematic.",
       "acceptanceCriteria": [
-        "In `GameRulesDialog.tsx`, update the 'Goal' section to explain hand-in-score: 'Your score is the number of cards you control on the board plus cards remaining in your hand'",
-        "Add a 'Draft Phase' section explaining deal 7, keep 5",
-        "Update the 'Winning' section to mention ties are possible and trigger Sudden Death",
-        "Add a 'Sudden Death' section explaining: on tie, each player gets back their owned cards + hand cards, board resets, max 3 SD rounds then draw",
-        "Update the 'Your Turn' section to mention the second player keeps 1 card in hand as a score bonus",
-        "If the game room shows a score counter, update it to reflect hand-in-score (owned cells + hand size)",
-        "`bun run test --run` passes"
+        "Add `ai_comment: str | None = None` field to `LastMoveInfo` in `app/models/game.py`",
+        "New `app/rules/ai_comments.py` module with comment pools per difficulty/character (10-20 lines each)",
+        "Comment trigger conditions: ai_captured_cards (AI captures 1+ cards), ai_got_captured (opponent captured AI's card on their turn), plus_triggered, elemental_triggered, archetype_used (AI uses its power), game_ending (last move of game). Each trigger has a 30-50% chance of producing a comment (rolled from game RNG)",
+        "Ireena: encouraging, naive ('Oh, clever move!', 'I think I'm getting the hang of this!', 'Wait, that was mine!')",
+        "Rahadin: cold, tactical ('Predictable.', 'You waste my time.', 'Efficient.')",
+        "Strahd: menacing, theatrical ('You amuse me, mortal.', 'Did you truly believe that would work?', 'Your struggle is... entertaining.')",
+        "Dark Powers: cryptic, ominous ('The mists remember what you have forgotten.', 'Every choice narrows the path.', 'We have seen this ending before.')",
+        "After `execute_ai_turn` computes and submits a move, evaluate comment triggers against the resulting state and attach `ai_comment` to `last_move` if triggered",
+        "After a human move in an AI game, also evaluate 'reaction' triggers (ai_got_captured, opponent used archetype) and attach `ai_comment` to the human's `last_move`",
+        "Add tests: comments are generated for capture triggers, comments match the correct character personality, comment chance is roughly 30-50% over many runs, no comments in human-vs-human games",
+        "`uv run pytest` passes"
       ],
       "priority": 9,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-010",
-      "title": "Documentation refresh: CLAUDE.md and game rules docs",
-      "description": "As a developer, I want CLAUDE.md and GAME_RULES_OVERVIEW.md updated to reflect the new 5-card hand system — so documentation matches the implementation.",
+      "id": "US-SP-010",
+      "title": "Games list rework: separate My Games, Open Games, and Play vs AI",
+      "description": "As a player, I want the games list to clearly distinguish between my games, open multiplayer lobbies, and single-player options — so I can quickly find what I want.",
       "acceptanceCriteria": [
-        "Update `CLAUDE.md` 'Key Domain Concepts' section: change 'Deck (10 cards)' to describe deal 7, keep 5",
-        "Update `CLAUDE.md` Sudden Death description to note it is now reachable via hand-in-score ties",
-        "Update `docs/GAME_RULES_OVERVIEW.md` to reflect new hand size, draft phase, and scoring",
-        "No stale references to '10-card deck' or 'hand of 10' remain in documentation files"
+        "Rework `web/src/routes/Games.tsx` into sections/tabs: 'My Games' (in-progress and recent completed, both AI and human), 'Open Games' (joinable multiplayer lobbies from other players), and a prominent 'Play vs AI' entry point",
+        "My Games section: shows opponent name (character name for AI, email for human), difficulty badge for AI games, status badge, result for completed games",
+        "Open Games section: shows creator email, 'Join' button, created_at timestamp. Only shows WAITING games with 1 player",
+        "'Play vs AI' section: four cards/buttons for each difficulty with character name, difficulty label, and a one-line flavor description. Clicking calls `POST /games/vs-ai` and navigates to the game room",
+        "AI difficulty flavor text: Easy/Ireena 'A sheltered noble still learning the game.', Medium/Rahadin 'Strahd\\'s chamberlain plays with cold precision.', Hard/Strahd 'The lord of Barovia does not lose.', Nightmare/Dark Powers 'Ancient forces that see through every stratagem.'",
+        "The 'Create Game' button for multiplayer moves to the Open Games section",
+        "Add frontend tests: Play vs AI section renders four difficulty options, My Games shows AI opponent name, Open Games shows joinable lobbies",
+        "`bun run test --run` passes"
       ],
       "priority": 10,
-      "passes": true
+      "passes": false
+    },
+    {
+      "id": "US-SP-011",
+      "title": "Frontend: AI opponent display in game room",
+      "description": "As a player, I want the game room to show the AI character name and themed 'thinking' indicator — so single-player games feel distinct from multiplayer.",
+      "acceptanceCriteria": [
+        "In `ActiveGameView.tsx` and related components, display the AI character name (from `AI_DISPLAY_NAMES` mapping, keyed by `ai_difficulty`) instead of the AI player's email/ID",
+        "During the AI's turn, show a themed thinking indicator: 'Ireena is thinking...', 'Rahadin calculates...', 'Strahd contemplates...', 'The Dark Powers stir...'",
+        "The thinking indicator replaces the standard 'Opponent's turn' text when the opponent is AI",
+        "In `DraftingGameView.tsx`, after the human submits their draft in an AI game, show 'Waiting for game to begin...' instead of 'Waiting for opponent to draft...' (since AI auto-drafts)",
+        "Add frontend tests: AI character name displayed, thinking indicator shown during AI turn, correct flavor text per difficulty",
+        "`bun run test --run` passes"
+      ],
+      "priority": 11,
+      "passes": false
+    },
+    {
+      "id": "US-SP-012",
+      "title": "Frontend: AI commentary display",
+      "description": "As a player, I want to see the AI's comments displayed as speech bubbles during the game — so the AI feels like a real opponent with personality.",
+      "acceptanceCriteria": [
+        "When `last_move.ai_comment` is present, display it as a speech bubble or toast near the opponent's name/info area in `ActiveGameView.tsx`",
+        "Speech bubble auto-fades after 3-4 seconds (use AnimatePresence with enter/exit animations)",
+        "Style per difficulty: Ireena uses a warm/friendly style (light background), Rahadin uses a cold/neutral style (slate), Strahd uses a dark/menacing style (deep red/purple), Dark Powers use an eerie style (dark with subtle glow)",
+        "Speech bubble should not block board interaction (use `pointer-events-none` or position it outside the board area)",
+        "If a new comment arrives before the previous one fades, replace it immediately",
+        "Add frontend tests: speech bubble renders when ai_comment is set, bubble fades after timeout, no bubble when ai_comment is null",
+        "`bun run test --run` passes"
+      ],
+      "priority": 12,
+      "passes": false
+    },
+    {
+      "id": "US-SP-013",
+      "title": "Documentation refresh: CLAUDE.md, GAME_RULES_OVERVIEW.md, plan-single-player.md",
+      "description": "As a developer, I want documentation updated to reflect the single-player system — so docs match the implementation.",
+      "acceptanceCriteria": [
+        "Update `CLAUDE.md` Key Domain Concepts: add 'Single Player' section describing AI opponents, difficulty levels, and the AI turn trigger mechanism",
+        "Update `docs/GAME_RULES_OVERVIEW.md`: add 'Single Player Mode' section describing the four AI opponents with their character names and strategies",
+        "Archive `ralph/plan-single-player.md` to `ralph/archive/` (the plan is now implemented)",
+        "No stale references to 'multiplayer only' or 'two human players required' remain in documentation",
+        "Update `web/src/lib/api.ts` JSDoc comments if any reference only human opponents"
+      ],
+      "priority": 13,
+      "passes": false
     }
   ]
 }

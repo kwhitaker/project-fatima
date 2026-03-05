@@ -66,6 +66,20 @@ _IREENA_COMMENTS: dict[str, list[str]] = {
         "I had such a good time!",
         "Thank you for playing with me!",
     ],
+    "game_won": [
+        "I won? I actually won!",
+        "I can't believe it — I did it!",
+        "Father would be so proud!",
+        "That was my first real victory!",
+        "I'm getting better at this!",
+    ],
+    "game_lost": [
+        "You were wonderful!",
+        "I had fun even though I lost!",
+        "You'll have to teach me your secrets!",
+        "Next time I'll do better, I promise!",
+        "That was a great game, thank you!",
+    ],
 }
 
 _RAHADIN_COMMENTS: dict[str, list[str]] = {
@@ -120,6 +134,20 @@ _RAHADIN_COMMENTS: dict[str, list[str]] = {
         "Your performance was... adequate.",
         "The outcome was never in doubt.",
         "Report to Lord Strahd: task complete.",
+    ],
+    "game_won": [
+        "The outcome was never in question.",
+        "Dismissed.",
+        "Another task completed for Lord Strahd.",
+        "Efficiency. Nothing more.",
+        "You were outmatched from the start.",
+    ],
+    "game_lost": [
+        "...Noted.",
+        "This changes nothing.",
+        "A statistical anomaly. Nothing more.",
+        "I will not forget this.",
+        "Lord Strahd will hear of this. Not from me.",
     ],
 }
 
@@ -176,6 +204,20 @@ _STRAHD_COMMENTS: dict[str, list[str]] = {
         "I expected more. Perhaps next time.",
         "The lord of Barovia does not lose.",
     ],
+    "game_won": [
+        "Kneel.",
+        "Did you expect anything less?",
+        "All who challenge me meet this fate.",
+        "I am the land. The land never loses.",
+        "Your defeat was written before you were born.",
+    ],
+    "game_lost": [
+        "Enjoy this. It will not happen again.",
+        "A momentary lapse. Nothing more.",
+        "You have made a powerful enemy today.",
+        "This changes nothing about your fate.",
+        "I let you win. Remember that.",
+    ],
 }
 
 _DARK_POWERS_COMMENTS: dict[str, list[str]] = {
@@ -231,6 +273,20 @@ _DARK_POWERS_COMMENTS: dict[str, list[str]] = {
         "This ending was the only one.",
         "The mists part. For now.",
     ],
+    "game_won": [
+        "As it was always meant to be.",
+        "The pattern completes. Again.",
+        "You were never meant to win this.",
+        "All roads led here. All roads lead here.",
+        "The dark is patient. The dark prevails.",
+    ],
+    "game_lost": [
+        "This outcome changes nothing.",
+        "A thread unravels. The tapestry holds.",
+        "You believe you won. How quaint.",
+        "We have already forgotten this moment.",
+        "Victory is an illusion we permit.",
+    ],
 }
 
 _COMMENT_POOLS: dict[AIDifficulty, dict[str, list[str]]] = {
@@ -244,6 +300,9 @@ _COMMENT_POOLS: dict[AIDifficulty, dict[str, list[str]]] = {
 _COMMENT_CHANCE_LO = 0.30
 _COMMENT_CHANCE_HI = 0.50
 
+# Triggers that always produce a comment (100% chance)
+_GUARANTEED_TRIGGERS = {"game_won", "game_lost"}
+
 
 def evaluate_ai_comment(
     state: GameState,
@@ -254,7 +313,8 @@ def evaluate_ai_comment(
     """Evaluate comment triggers and return a comment if one fires.
 
     ``triggers`` is a list of trigger names that apply to the current move.
-    Each trigger has a 30-50% chance (rolled from rng) of producing a comment.
+    Each trigger has a 30-50% chance (rolled from rng) of producing a comment,
+    except ``game_won`` and ``game_lost`` which always fire (100%).
     If multiple triggers fire, the first one that passes the chance check wins.
 
     Returns None if no comment is produced or if this is not an AI game.
@@ -274,6 +334,8 @@ def evaluate_ai_comment(
         pool = pools.get(trigger)
         if not pool:
             continue
+        if trigger in _GUARANTEED_TRIGGERS:
+            return rng.choice(pool)
         # Each trigger has its own chance threshold (30-50%)
         threshold = rng.uniform(_COMMENT_CHANCE_LO, _COMMENT_CHANCE_HI)
         if rng.random() < threshold:
@@ -323,10 +385,17 @@ def detect_ai_move_triggers(
     if not ai_before.archetype_used and ai_after.archetype_used:
         triggers.append("archetype_used")
 
-    # game_ending: this was the last move
+    # game ending: use game_won/game_lost for clear outcomes, game_ending for draws
     empty_after = sum(1 for c in state_after.board if c is None)
     if empty_after == 0 or state_after.status != state_before.status:
-        triggers.append("game_ending")
+        result = state_after.result
+        if result is not None and not result.is_draw:
+            if result.winner == ai_index:
+                triggers.append("game_won")
+            else:
+                triggers.append("game_lost")
+        else:
+            triggers.append("game_ending")
 
     return triggers
 
@@ -364,9 +433,16 @@ def detect_human_move_triggers(
     if last_move.elemental_triggered:
         triggers.append("elemental_triggered")
 
-    # game_ending
+    # game ending: use game_won/game_lost for clear outcomes, game_ending for draws
     empty_after = sum(1 for c in state_after.board if c is None)
     if empty_after == 0 or state_after.status != state_before.status:
-        triggers.append("game_ending")
+        result = state_after.result
+        if result is not None and not result.is_draw:
+            if result.winner == ai_index:
+                triggers.append("game_won")
+            else:
+                triggers.append("game_lost")
+        else:
+            triggers.append("game_ending")
 
     return triggers

@@ -50,6 +50,30 @@ export async function createGame(): Promise<GameState> {
   return res.json() as Promise<GameState>;
 }
 
+export async function createGameVsAi(
+  difficulty: "easy" | "medium" | "hard" | "nightmare"
+): Promise<GameState> {
+  const headers = await authHeaders();
+  const res = await fetch("/api/games/vs-ai", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ difficulty }),
+  });
+  if (!res.ok) {
+    let detail: string | undefined;
+    try {
+      const body = (await res.json()) as { detail?: string };
+      detail = body.detail;
+    } catch {
+      // ignore parse error
+    }
+    const err = new Error(detail ?? `Failed to create AI game: ${res.status}`);
+    Object.assign(err, { status: res.status });
+    throw err;
+  }
+  return res.json() as Promise<GameState>;
+}
+
 export async function getGame(gameId: string): Promise<GameState> {
   const headers = await authHeaders();
   const res = await fetch(`/api/games/${gameId}`, { headers });

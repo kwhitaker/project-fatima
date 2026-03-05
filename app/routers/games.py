@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from app.auth import get_caller_email, get_caller_id
 from app.dependencies import get_card_store, get_game_store
-from app.models.game import Archetype, GameState, GameStatus
+from app.models.game import AIDifficulty, Archetype, GameState, GameStatus
 from app.rules.errors import InvalidMoveError
 from app.services import game_service
 from app.services.game_service import ActiveGameExistsError
@@ -23,6 +23,10 @@ CallerEmailDep = Annotated[str | None, Depends(get_caller_email)]
 
 class CreateGameRequest(BaseModel):
     seed: int | None = None
+
+
+class CreateGameVsAiRequest(BaseModel):
+    difficulty: AIDifficulty
 
 
 class SelectArchetypeRequest(BaseModel):
@@ -70,6 +74,22 @@ def create_game(
 ) -> GameState:
     try:
         return game_service.create_game(game_store, card_store, caller_id, body.seed, caller_email)
+    except ActiveGameExistsError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.post("/vs-ai", response_model=GameState, status_code=201)
+def create_game_vs_ai(
+    body: CreateGameVsAiRequest,
+    caller_id: CallerIdDep,
+    caller_email: CallerEmailDep,
+    game_store: GameStoreDep,
+    card_store: CardStoreDep,
+) -> GameState:
+    try:
+        return game_service.create_game_vs_ai(
+            game_store, card_store, caller_id, caller_email, body.difficulty
+        )
     except ActiveGameExistsError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
 

@@ -200,11 +200,11 @@ class TestCardCarryover:
         assert len(new_state.players[0].hand) == 9
         assert new_state.players[1].hand == ["extra"]
 
-    def test_archetype_used_not_reset(self):
-        """archetype_used is preserved (once-per-game power persists across SD rounds)."""
-        state = make_full_board_state(p0_archetype_used=True, p1_archetype_used=False)
+    def test_archetype_used_reset(self):
+        """archetype_used resets to False each SD round (per-round power)."""
+        state = make_full_board_state(p0_archetype_used=True, p1_archetype_used=True)
         new_state = begin_sudden_death_round(state)
-        assert new_state.players[0].archetype_used is True
+        assert new_state.players[0].archetype_used is False
         assert new_state.players[1].archetype_used is False
 
     def test_archetype_preserved(self):

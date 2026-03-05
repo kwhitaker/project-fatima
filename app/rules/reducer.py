@@ -92,7 +92,8 @@ def begin_sudden_death_round(state: GameState) -> GameState:
 
     Rebuilds each player's hand from the cards they own on the current board.
     Resets the board; starting player alternates each SD round based on
-    starting_player_index. Preserves archetype_used (once-per-game).
+    starting_player_index. Resets archetype_used so each player can use
+    their archetype power again in the new round.
 
     Does NOT bump state_version — the caller is responsible for that.
     """
@@ -112,7 +113,10 @@ def begin_sudden_death_round(state: GameState) -> GameState:
         if bcel is not None:
             sd_hands[bcel.owner].append(bcel.card_key)
 
-    new_players = [p.model_copy(update={"hand": sd_hands[i]}) for i, p in enumerate(state.players)]
+    new_players = [
+        p.model_copy(update={"hand": sd_hands[i], "archetype_used": False})
+        for i, p in enumerate(state.players)
+    ]
     empty_board: list[BoardCell | None] = [None] * 9
     new_round_number = state.round_number + 1
     # Alternate starting player each SD round: round 1 → starting_player_index,

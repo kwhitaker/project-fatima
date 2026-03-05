@@ -53,6 +53,12 @@ class TestApplySkulkerBoost:
         apply_skulker_boost(card, "n")
         assert card.sides.n == 5
 
+    def test_boost_can_exceed_ten(self):
+        """Skulker +3 on a high side (e.g. 9) should produce 12, not fail validation."""
+        card = make_card("c", n=9, e=10, s=8, w=9)
+        boosted = apply_skulker_boost(card, "w")
+        assert boosted.sides.w == 12
+
     def test_preserves_metadata(self):
         card = make_card("my_card", n=3, e=4, s=5, w=6)
         boosted = apply_skulker_boost(card, "e")

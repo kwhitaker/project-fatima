@@ -55,4 +55,5 @@ def apply_skulker_boost(card: CardDefinition, side: str) -> CardDefinition:
     """
     sides_dict = card.sides.model_dump()
     sides_dict[side] += 3
-    return card.model_copy(update={"sides": CardSides(**sides_dict)})
+    boosted_sides = CardSides.model_construct(**sides_dict)
+    return card.model_copy(update={"sides": boosted_sides})

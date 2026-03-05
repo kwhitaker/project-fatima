@@ -72,3 +72,13 @@ Started: 2026-03-05
 - Learnings: Mists randomness in simulation can negate skulker boosts — test card side values must account for fog (-2); multi-ply search may prefer different cells than greedy so tests need deterministic board setups (e.g. single empty cell)
 ---
 
+## 2026-03-05 19:00 - US-SP-008
+- Implemented MCTS (The Dark Powers/nightmare) strategy in `app/rules/mcts.py`: 2000 playouts, UCB1 selection, random rollouts to terminal, SimBoard lightweight simulation
+- SimBoard bypasses Pydantic for speed: raw `(card_key, owner)` tuples per cell, BFS capture with cached side values
+- Concealment layer: when visit counts within 10%, prefers mid-strength cards over strongest (sandbagging early game)
+- Concurrency limiter: `asyncio.Semaphore(2)` gates concurrent nightmare computations; `run_in_executor` offloads compute
+- Tests/validation: 12 new tests in `test_sp008_mcts_ai.py`, `uv run pytest` 700 passed, `uv run pyright` 0 errors, `uv run ruff check` clean
+- Files changed: `app/rules/mcts.py`, `app/rules/ai.py`, `app/services/game_service.py`, `tests/test_sp008_mcts_ai.py`
+- Learnings: SimBoard skips elemental bonus in rollouts for speed (minor accuracy tradeoff); MCTS completes 2000 iterations in <1s for typical board states; semaphore `_value` attr useful for testing
+---
+

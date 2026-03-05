@@ -44,3 +44,13 @@ Started: 2026-03-05
 - Learnings: MemoryGameStore uses `_states` dict (not `_games`); `asyncio.sleep` must be patched with `AsyncMock` for sync test runners; no pytest-asyncio in deps so used `asyncio.new_event_loop().run_until_complete()` wrapper
 ---
 
+## 2026-03-05 16:00 - US-SP-005
+- Implemented novice (Ireena/easy) AI strategy in `app/rules/ai.py`: score-based placement with capture awareness (+1 per capturable neighbor, +1 elemental match) plus uniform noise [0, 1.5], weighted random from top candidates
+- Added archetype usage: 20% chance to skip entirely (deterministic from seed), 50% chance on 1st/2nd placement, random params per archetype type
+- Refactored `choose_move` to dispatch by difficulty (novice for easy, random fallback for others)
+- 21 new tests: valid moves, capture preference, noise suboptimality, elemental awareness, archetype usage patterns, all archetype types, dispatch
+- Tests/validation: `uv run pytest` 673 passed, `uv run pyright` 0 errors, `uv run ruff check` clean
+- Files changed: `app/rules/ai.py`, `tests/test_sp005_novice_ai.py`
+- Learnings: `[] or default` is falsy in Python — use `x if x is not None else default` for list params; cell adjacency matters when asserting score comparisons (cell 6 adj to 3)
+---
+

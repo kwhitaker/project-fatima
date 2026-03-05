@@ -63,3 +63,12 @@ Started: 2026-03-05
 - Learnings: Skulker +3 boost can exceed CardSides max (10) — test cards must have side values ≤7 for boosted sides; board setup for archetype tests needs constrained empty cells to force specific placements
 ---
 
+## 2026-03-05 18:00 - US-SP-007
+- Implemented expectimax (Strahd/hard) AI strategy: multi-ply search with opponent hand inference, sampling 25 opponent hands from the remaining card pool
+- Search depth: full depth when ≤4 empty cells, capped at 4 otherwise; opponent nodes assume greedy play; heuristic eval uses cell ownership + side strength
+- Evaluates archetype variants at every AI node (reuses `_greedy_archetype_variants`)
+- Tests/validation: 8 new tests in `test_sp007_expectimax_ai.py`, `uv run pytest` 688 passed, `uv run pyright` 0 errors, `uv run ruff check` clean
+- Files changed: `app/rules/ai.py`, `tests/test_sp007_expectimax_ai.py`
+- Learnings: Mists randomness in simulation can negate skulker boosts — test card side values must account for fog (-2); multi-ply search may prefer different cells than greedy so tests need deterministic board setups (e.g. single empty cell)
+---
+

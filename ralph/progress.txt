@@ -138,3 +138,12 @@ Started: 2026-03-05
 - Learnings: `_make_ai_state` helpers in tests must include archetype fields now; draft endpoint no longer needs card_store or background_tasks deps
 ---
 
+## 2026-03-05 18:00 - US-SP-015
+- Reset `archetype_used=False` on both players in `begin_sudden_death_round()` so archetype powers refresh each SD round
+- Updated existing `test_archetype_used_not_reset` → `test_archetype_used_reset` to match new per-round behavior
+- 8 new tests: both/one/neither used reset, archetype identity preserved, consecutive SD resets, SD cap preserves used state, AI player archetype reset
+- Tests/validation: `uv run pytest` 762 passed, `uv run ruff check` clean on changed files (pre-existing E501/I001 in reducer.py)
+- Files changed: `app/rules/reducer.py`, `tests/test_sudden_death.py`, `tests/test_sp015_archetype_sd_reset.py`
+- Learnings: `PlacementIntent` is a dataclass in `reducer.py` (not in `models/game.py`); existing SD tests had `make_full_board_state` helper with `p0_archetype_used`/`p1_archetype_used` params — reuse it
+---
+

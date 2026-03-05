@@ -118,3 +118,13 @@ Started: 2026-03-05
 - Learnings: `vi.useFakeTimers()` + `act(() => vi.advanceTimersByTime())` needed for testing auto-fade; AnimatePresence mock must pass children through for exit animations to be testable
 ---
 
+## 2026-03-05 17:30 - US-SP-013
+- Updated CLAUDE.md: added Single Player section to Key Domain Concepts with all 4 AI difficulty descriptions, AI turn trigger, and commentary system; updated layered structure to include ai.py, mcts.py, ai_comments.py
+- Updated GAME_RULES_OVERVIEW.md: added Single Player Mode section with AI Opponents table, AI Turn Flow, and AI Commentary descriptions
+- Archived ralph/plan-single-player.md to ralph/archive/2026-03-05-single-player/ (gitignored, local only); deleted from tracked files
+- No stale "multiplayer only" references found in docs; api.ts has no JSDoc comments needing updates
+- Tests/validation: `uv run pytest` 749 passed, `bun run test --run` 303 passed (41 files)
+- Files changed: `CLAUDE.md`, `docs/GAME_RULES_OVERVIEW.md`, `ralph/plan-single-player.md` (deleted)
+- Learnings: `ralph/archive/` is gitignored so archived files are local-only; documentation stories are straightforward but should still verify no stale references exist
+---
+

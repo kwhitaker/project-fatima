@@ -398,7 +398,7 @@ export function ActiveGameView({
 
         {/* ─── Desktop sidebar (hidden on mobile, visible lg+) ─── */}
         <aside
-          className="hidden lg:block w-72 shrink-0 overflow-y-auto"
+          className="hidden lg:block w-72 shrink-0 overflow-y-auto overflow-x-hidden"
           aria-label="game sidebar"
         >
           {secondaryContent}

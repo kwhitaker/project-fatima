@@ -100,3 +100,12 @@ Started: 2026-03-05
 - Learnings: When sections split games by participation, test data must include players matching the mock user ID; regenerated types change header format (openapi-typescript uses its own header)
 ---
 
+## 2026-03-05 22:00 - US-SP-011
+- Created shared `web/src/lib/ai-constants.ts` with `AI_DISPLAY_NAMES` and `AI_THINKING_TEXT` maps; updated `Games.tsx` to import from it
+- Updated `ActionPanel.tsx` to show themed thinking text per AI difficulty ("Ireena is thinking...", "Rahadin calculates...", "Strahd contemplates...", "The Dark Powers stir...") instead of "Opponent's turn"
+- Updated `ActiveGameView.tsx` score bar to show AI character name instead of "Opp"; updated `DraftingGameView.tsx` to show "Waiting for game to begin..." for AI games; updated `GameRoom.tsx` title to show AI character name
+- Tests/validation: 10 new tests in `sp011.test.tsx`, `bun run test --run` 291 passed (40 files), `uv run pytest` 749 passed
+- Files changed: `web/src/lib/ai-constants.ts`, `web/src/routes/Games.tsx`, `web/src/routes/GameRoom.tsx`, `web/src/routes/game-room/ActionPanel.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/routes/game-room/DraftingGameView.tsx`, `web/src/__tests__/helpers.ts`, `web/src/__tests__/sp011.test.tsx`
+- Learnings: `MuteToggle` component uses `isMuted` from sounds module — ActiveGameView tests must mock it; `makePlayer` helper extended with overrides param to support `player_type`/`ai_difficulty` fields
+---
+

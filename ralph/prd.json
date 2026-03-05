@@ -152,7 +152,7 @@
         "`uv run pytest` passes"
       ],
       "priority": 9,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-SP-010",

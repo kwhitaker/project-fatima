@@ -82,3 +82,12 @@ Started: 2026-03-05
 - Learnings: SimBoard skips elemental bonus in rollouts for speed (minor accuracy tradeoff); MCTS completes 2000 iterations in <1s for typical board states; semaphore `_value` attr useful for testing
 ---
 
+## 2026-03-05 20:00 - US-SP-009
+- Added `ai_comment: str | None` field to `LastMoveInfo`; created `app/rules/ai_comments.py` with comment pools (10-20 lines each) for 4 characters × 6 triggers
+- Wired commentary into `execute_ai_turn` (AI move triggers) and `submit_move` (human move reactions via `attach_human_move_reaction`); added `update_state` to `GameStore` protocol + both implementations
+- Comment trigger conditions: ai_captured_cards, ai_got_captured, plus/elemental/archetype triggers, game_ending; each has 30-50% chance (randomized threshold + roll)
+- Tests/validation: 49 new tests in `test_sp009_ai_comments.py`, `uv run pytest` 749 passed, `uv run pyright` 0 errors, `uv run ruff check` clean
+- Files changed: `app/models/game.py`, `app/rules/ai_comments.py`, `app/services/game_service.py`, `app/store/__init__.py`, `app/store/memory.py`, `app/store/supabase_store.py`, `tests/test_sp009_ai_comments.py`
+- Learnings: `update_state` needed as a lightweight snapshot update (no event append) for attaching metadata; Sequence[BoardCell|None] needed in test helpers to satisfy pyright list invariance
+---
+

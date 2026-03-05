@@ -166,3 +166,13 @@ Started: 2026-03-05
 - Learnings: Guaranteed triggers bypass the RNG threshold check entirely, simplifying the logic
 ---
 
+## 2026-03-05 18:20 - US-SP-018
+- Added `archetype_used_name` and `intimidate_target_cell` fields to `LastMoveInfo` in `app/models/game.py`; set in `apply_intent` when archetype power activates
+- Added archetype callout to `BoardCallouts.tsx` (amber/gold glow, same auto-fade pattern); added gold pulsing ring to placed cell in `BoardGrid.tsx` when archetype is used
+- Updated `api-types.generated.ts` with new fields; wired through `ActiveGameView.tsx` to both `BoardGrid` and `BoardCallouts`
+- 11 backend tests (parametrized per archetype type, devout conditional, intimidate target, roundtrip); 8 frontend tests (callout per archetype, no callout on null, gold ring presence)
+- Tests/validation: `uv run pytest` 797 passed, `bun run test --run` 319 passed (43 files)
+- Files changed: `app/models/game.py`, `app/rules/reducer.py`, `tests/test_sp018_archetype_feedback.py`, `web/src/lib/api-types.generated.ts`, `web/src/routes/game-room/BoardCallouts.tsx`, `web/src/routes/game-room/BoardGrid.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/sp018.test.tsx`
+- Learnings: Archetype enum `.value` needed to get string name from Enum; Devout only activates on fog so archetype_used_name may be null even with use_archetype=True
+---
+

@@ -2,11 +2,11 @@
 
 choose_move(state, ai_index, difficulty, card_lookup, rng) -> PlacementIntent
 
-Dispatches to per-difficulty strategy functions. Currently implements:
+Dispatches to per-difficulty strategy functions:
 - easy (Novice/Ireena): semi-random with capture-aware scoring
 - medium (Greedy/Rahadin): one-ply simulation, picks move maximizing owned cells
 - hard (Expectimax/Strahd): multi-ply expectimax with opponent hand inference
-- nightmare: placeholder (random legal move)
+- nightmare (MCTS/The Dark Powers): Monte Carlo tree search with concealment
 """
 
 from random import Random
@@ -31,6 +31,10 @@ def choose_move(
         return _greedy_move(state, ai_index, card_lookup, rng)
     if difficulty == AIDifficulty.HARD:
         return _expectimax_move(state, ai_index, card_lookup, rng)
+    if difficulty == AIDifficulty.NIGHTMARE:
+        from app.rules.mcts import mcts_move
+
+        return mcts_move(state, ai_index, card_lookup, rng)
     return _random_move(state, ai_index, rng)
 
 

@@ -514,7 +514,28 @@ async def execute_ai_turn(
 
     card_lookup = {c.card_key: c for c in card_store.list_cards()}
     move_rng = Random(state.seed + state.state_version)
-    intent = choose_move(state, ai_index, difficulty, card_lookup, move_rng)
+
+    # Nightmare (MCTS): acquire semaphore, run compute in executor to avoid blocking
+    if difficulty == AIDifficulty.NIGHTMARE:
+        from app.rules.mcts import _nightmare_semaphore, acquire_nightmare_semaphore
+
+        try:
+            await asyncio.wait_for(acquire_nightmare_semaphore(), timeout=10.0)
+        except (TimeoutError, asyncio.TimeoutError):
+            logger.warning(
+                "Nightmare AI semaphore timeout for game %s — The Dark Powers are occupied",
+                game_id,
+            )
+            return
+        try:
+            loop = asyncio.get_event_loop()
+            intent = await loop.run_in_executor(
+                None, choose_move, state, ai_index, difficulty, card_lookup, move_rng
+            )
+        finally:
+            _nightmare_semaphore.release()
+    else:
+        intent = choose_move(state, ai_index, difficulty, card_lookup, move_rng)
 
     try:
         submit_move(

@@ -4,7 +4,16 @@ import uuid
 from datetime import UTC, datetime
 from random import Random
 
-from app.models.game import Archetype, GameResult, GameState, GameStatus, PlayerState
+from app.models.game import AIDifficulty, Archetype, GameResult, GameState, GameStatus, PlayerState
+
+AI_PLAYER_ID = "00000000-0000-0000-0000-000000000001"
+
+AI_DISPLAY_NAMES: dict[AIDifficulty, str] = {
+    AIDifficulty.EASY: "Ireena Kolyana",
+    AIDifficulty.MEDIUM: "Rahadin",
+    AIDifficulty.HARD: "Strahd von Zarovich",
+    AIDifficulty.NIGHTMARE: "The Dark Powers",
+}
 from app.rules.deck import HAND_SIZE, generate_matched_deals
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent

@@ -1,7 +1,14 @@
 from enum import Enum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, model_validator
+
+
+class AIDifficulty(str, Enum):
+    EASY = "easy"
+    MEDIUM = "medium"
+    HARD = "hard"
+    NIGHTMARE = "nightmare"
 
 
 class Archetype(str, Enum):
@@ -27,6 +34,8 @@ class BoardCell(BaseModel):
 class PlayerState(BaseModel):
     player_id: str
     email: str | None = None
+    player_type: Literal["human", "ai"] = "human"
+    ai_difficulty: AIDifficulty | None = None
     archetype: Archetype | None = None
     deal: list[str] = []  # 7 dealt cards before draft selection; empty after draft
     hand: list[str] = []  # 5 selected cards (populated after draft)

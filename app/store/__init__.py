@@ -68,6 +68,14 @@ class GameStore(Protocol):
         """
         ...
 
+    def update_state(self, game_id: str, new_state: GameState) -> None:
+        """Update the cached game snapshot without appending an event.
+
+        Used for attaching metadata (e.g. AI comments) to an existing state.
+        Raises KeyError if game_id does not exist.
+        """
+        ...
+
     def get_events(self, game_id: str) -> list[GameEvent]: ...
 
 

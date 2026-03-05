@@ -449,6 +449,15 @@ def submit_move(
         new_state=new_state,
         idempotency_key=idempotency_key,
     )
+
+    # Attach AI reaction comment after a human move in an AI game
+    if player.player_type == "human":
+        attach_human_move_reaction(state, new_state, game_store)
+        # Re-read state in case a comment was attached
+        updated = game_store.get_game(game_id)
+        if updated is not None:
+            return updated
+
     return new_state
 
 
@@ -463,6 +472,75 @@ _AI_DELAY_RANGES: dict[AIDifficulty, tuple[float, float]] = {
 }
 
 logger = logging.getLogger(__name__)
+
+
+def _attach_ai_comment_after_move(
+    state_before: GameState,
+    state_after: GameState,
+    ai_index: int,
+    game_store: GameStore,
+) -> None:
+    """Evaluate AI comment triggers after a move and attach to last_move if triggered."""
+    from app.rules.ai_comments import detect_ai_move_triggers, evaluate_ai_comment
+
+    if state_after.last_move is None:
+        return
+
+    triggers = detect_ai_move_triggers(state_before, state_after, ai_index)
+    if not triggers:
+        return
+
+    comment_rng = Random(state_after.seed + state_after.state_version + 9999)
+    comment = evaluate_ai_comment(state_after, ai_index, triggers, comment_rng)
+    if comment is None:
+        return
+
+    # Update last_move with comment
+    updated_last_move = state_after.last_move.model_copy(update={"ai_comment": comment})
+    updated_state = state_after.model_copy(update={"last_move": updated_last_move})
+    game_store.update_state(state_after.game_id, updated_state)
+
+
+def attach_human_move_reaction(
+    state_before: GameState,
+    state_after: GameState,
+    game_store: GameStore,
+) -> None:
+    """After a human move in an AI game, evaluate AI reaction triggers.
+
+    If the opponent is AI, detect triggers (ai_got_captured, etc.) and attach
+    an ai_comment to the human's last_move.
+    """
+    from app.rules.ai_comments import detect_human_move_triggers, evaluate_ai_comment
+
+    if state_after.last_move is None:
+        return
+
+    # Find the AI player
+    ai_index: int | None = None
+    for i, p in enumerate(state_after.players):
+        if p.player_type == "ai":
+            ai_index = i
+            break
+    if ai_index is None:
+        return
+
+    human_index = state_after.last_move.player_index
+    if human_index == ai_index:
+        return  # This was the AI's move, not the human's
+
+    triggers = detect_human_move_triggers(state_before, state_after, ai_index)
+    if not triggers:
+        return
+
+    comment_rng = Random(state_after.seed + state_after.state_version + 8888)
+    comment = evaluate_ai_comment(state_after, ai_index, triggers, comment_rng)
+    if comment is None:
+        return
+
+    updated_last_move = state_after.last_move.model_copy(update={"ai_comment": comment})
+    updated_state = state_after.model_copy(update={"last_move": updated_last_move})
+    game_store.update_state(state_after.game_id, updated_state)
 
 
 def is_ai_turn(state: GameState) -> bool:
@@ -538,7 +616,7 @@ async def execute_ai_turn(
         intent = choose_move(state, ai_index, difficulty, card_lookup, move_rng)
 
     try:
-        submit_move(
+        new_state = submit_move(
             game_store=game_store,
             card_store=card_store,
             game_id=game_id,
@@ -553,3 +631,7 @@ async def execute_ai_turn(
         )
     except Exception:
         logger.exception("AI turn failed for game %s", game_id)
+        return
+
+    # Attach AI commentary after successful move
+    _attach_ai_comment_after_move(state, new_state, ai_index, game_store)

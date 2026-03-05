@@ -96,6 +96,11 @@ class MemoryGameStore:
         del self._events[game_id]
         self._idempotency_keys.pop(game_id, None)
 
+    def update_state(self, game_id: str, new_state: GameState) -> None:
+        if game_id not in self._states:
+            raise KeyError(f"Game {game_id!r} does not exist")
+        self._states[game_id] = new_state
+
     def get_events(self, game_id: str) -> list[GameEvent]:
         return list(self._events.get(game_id, []))
 

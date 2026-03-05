@@ -58,6 +58,7 @@ class LastMoveInfo(BaseModel):
     mists_effect: str  # "fog" | "omen" | "none" | "fog_negated"
     plus_triggered: bool = False  # True when the Plus rule fired this placement
     elemental_triggered: bool = False  # True when elemental bonus (+1) was applied
+    ai_comment: str | None = None  # In-character AI comment (single-player only)
 
 
 class GameState(BaseModel):

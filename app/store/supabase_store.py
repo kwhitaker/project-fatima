@@ -211,6 +211,19 @@ class SupabaseGameStore:
                 f"expected {expected_version}, got {check.data['state_version']}"
             )
 
+    def update_state(self, game_id: str, new_state: GameState) -> None:
+        update_dict: dict[str, Any] = {
+            "current_state": new_state.model_dump(mode="json"),
+        }
+        response = (
+            self._client.table("games")
+            .update(update_dict)
+            .eq("id", game_id)
+            .execute()
+        )
+        if not response.data:
+            raise KeyError(f"Game {game_id!r} does not exist")
+
     def get_events(self, game_id: str) -> list[GameEvent]:
         response = (
             self._client.table("game_events")

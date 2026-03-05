@@ -4,7 +4,8 @@ choose_move(state, ai_index, difficulty, card_lookup, rng) -> PlacementIntent
 
 Dispatches to per-difficulty strategy functions. Currently implements:
 - easy (Novice/Ireena): semi-random with capture-aware scoring
-- medium/hard/nightmare: placeholder (random legal move)
+- medium (Greedy/Rahadin): one-ply simulation, picks move maximizing owned cells
+- hard/nightmare: placeholder (random legal move)
 """
 
 from random import Random
@@ -12,7 +13,7 @@ from random import Random
 from app.models.cards import CardDefinition
 from app.models.game import AIDifficulty, Archetype, GameState
 from app.rules.board import ADJACENCY
-from app.rules.reducer import PlacementIntent
+from app.rules.reducer import PlacementIntent, apply_intent
 
 
 def choose_move(
@@ -25,6 +26,8 @@ def choose_move(
     """Pick a move for the AI player, dispatching by difficulty."""
     if difficulty == AIDifficulty.EASY:
         return _novice_move(state, ai_index, card_lookup, rng)
+    if difficulty == AIDifficulty.MEDIUM:
+        return _greedy_move(state, ai_index, card_lookup, rng)
     return _random_move(state, ai_index, rng)
 
 
@@ -44,6 +47,112 @@ def _random_move(
     card_key = rng.choice(hand)
     cell_index = rng.choice(empty_cells)
     return PlacementIntent(player_index=ai_index, card_key=card_key, cell_index=cell_index)
+
+
+def _count_owned(board: list, owner: int) -> int:
+    """Count cells owned by the given player."""
+    return sum(1 for cell in board if cell is not None and cell.owner == owner)
+
+
+def _simulate_move(
+    state: GameState,
+    intent: PlacementIntent,
+    card_lookup: dict[str, CardDefinition],
+    rng: Random,
+) -> int:
+    """Simulate a move and return the number of cells owned by the intent's player."""
+    # Use a separate RNG for simulation so we don't consume from the main RNG
+    sim_rng = Random(rng.randint(0, 2**31))
+    result = apply_intent(state, intent, card_lookup, sim_rng)
+    return _count_owned(result.board, intent.player_index)
+
+
+def _greedy_archetype_variants(
+    state: GameState,
+    ai_index: int,
+    card_key: str,
+    cell_index: int,
+) -> list[dict[str, object]]:
+    """Generate archetype parameter variants for greedy evaluation.
+
+    Returns a list of archetype param dicts to try (empty list if no archetype available).
+    """
+    player = state.players[ai_index]
+    if player.archetype_used or player.archetype is None:
+        return []
+
+    archetype = player.archetype
+    variants: list[dict[str, object]] = []
+
+    if archetype == Archetype.SKULKER:
+        for side in ("n", "e", "s", "w"):
+            variants.append({"use_archetype": True, "skulker_boost_side": side})
+    elif archetype == Archetype.MARTIAL:
+        for direction in ("cw", "ccw"):
+            variants.append({"use_archetype": True, "martial_rotation_direction": direction})
+    elif archetype == Archetype.INTIMIDATE:
+        for neighbor_index, _, _ in ADJACENCY[cell_index]:
+            cell = state.board[neighbor_index]
+            if cell is not None and cell.owner != ai_index:
+                variants.append({"use_archetype": True, "intimidate_target_cell": neighbor_index})
+    elif archetype in (Archetype.CASTER, Archetype.DEVOUT):
+        variants.append({"use_archetype": True})
+
+    return variants
+
+
+def _greedy_move(
+    state: GameState,
+    ai_index: int,
+    card_lookup: dict[str, CardDefinition],
+    rng: Random,
+) -> PlacementIntent:
+    """Greedy (Rahadin): one-ply evaluation, picks move maximizing owned cells.
+
+    For each legal (card, cell) pair, simulates via apply_intent and counts
+    cells owned by AI. Also evaluates archetype variants. Picks the best
+    overall; breaks ties randomly.
+    """
+    player = state.players[ai_index]
+    empty_cells = [i for i, cell in enumerate(state.board) if cell is None]
+    hand = player.hand
+
+    if not hand or not empty_cells:
+        raise ValueError("AI has no legal moves (empty hand or full board)")
+
+    # Evaluate all (card, cell, archetype_variant) combos
+    best_score = -1
+    best_moves: list[PlacementIntent] = []
+
+    for card_key in hand:
+        for cell_index in empty_cells:
+            # Base move (no archetype)
+            base_intent = PlacementIntent(
+                player_index=ai_index, card_key=card_key, cell_index=cell_index
+            )
+            score = _simulate_move(state, base_intent, card_lookup, rng)
+            if score > best_score:
+                best_score = score
+                best_moves = [base_intent]
+            elif score == best_score:
+                best_moves.append(base_intent)
+
+            # Archetype variants
+            for arch_params in _greedy_archetype_variants(state, ai_index, card_key, cell_index):
+                arch_intent = PlacementIntent(
+                    player_index=ai_index,
+                    card_key=card_key,
+                    cell_index=cell_index,
+                    **arch_params,  # type: ignore[arg-type]
+                )
+                arch_score = _simulate_move(state, arch_intent, card_lookup, rng)
+                if arch_score > best_score:
+                    best_score = arch_score
+                    best_moves = [arch_intent]
+                elif arch_score == best_score:
+                    best_moves.append(arch_intent)
+
+    return rng.choice(best_moves)
 
 
 def _score_placement(

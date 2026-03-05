@@ -275,7 +275,7 @@ class TestChooseMoveDispatch:
     @pytest.mark.parametrize(
         "difficulty", [AIDifficulty.MEDIUM, AIDifficulty.HARD, AIDifficulty.NIGHTMARE]
     )
-    def test_other_difficulties_use_random_fallback(self, difficulty: AIDifficulty) -> None:
+    def test_other_difficulties_return_valid_intent(self, difficulty: AIDifficulty) -> None:
         state = _ai_game_state()
         lookup = {f"c{i}": make_card(f"c{i}") for i in range(1, 6)}
         intent = choose_move(state, 1, difficulty, lookup, Random(1))

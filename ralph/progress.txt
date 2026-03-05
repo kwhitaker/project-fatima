@@ -34,3 +34,13 @@ Started: 2026-03-05
 - Learnings: Endpoint must be registered before `/{game_id}` routes to avoid path param matching; test_ux002 pattern shows how to override `get_caller_email` in test fixtures
 ---
 
+## 2026-03-05 15:00 - US-SP-004
+- Created `app/rules/ai.py` with `choose_move()` stub (random legal move selection for now)
+- Added `execute_ai_turn()` async function and `is_ai_turn()` helper to `game_service.py` with per-difficulty delay ranges
+- Wired `BackgroundTasks` into `submit_draft` and `submit_move` endpoints to schedule AI turns
+- 12 new tests: is_ai_turn (4 cases), choose_move (3 cases), execute_ai_turn no-ops (3 cases), AI move submission, full human→AI progression
+- Tests/validation: `uv run pytest` 652 passed, `uv run pyright` 0 errors on changed files
+- Files changed: `app/rules/ai.py`, `app/services/game_service.py`, `app/routers/games.py`, `tests/test_sp004_ai_turn_trigger.py`
+- Learnings: MemoryGameStore uses `_states` dict (not `_games`); `asyncio.sleep` must be patched with `AsyncMock` for sync test runners; no pytest-asyncio in deps so used `asyncio.new_event_loop().run_until_complete()` wrapper
+---
+

@@ -64,7 +64,7 @@ export function ActionPanel({
         <motion.p
           key={isMyTurn ? "my-turn" : "opp-turn"}
           className={cn(
-            "text-sm font-heading font-semibold leading-relaxed",
+            "text-xs font-heading font-semibold leading-relaxed",
             !isMyTurn && "text-muted-foreground"
           )}
           initial={{ opacity: 0, scale: 0.9 }}

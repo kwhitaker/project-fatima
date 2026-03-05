@@ -26,7 +26,7 @@ export function ForfeitDialog({
       <p className="text-sm text-muted-foreground mb-4">
         Leaving now will count as a forfeit. Your opponent will be awarded the win.
       </p>
-      <div className="flex gap-2 justify-end">
+      <div className="flex flex-wrap gap-2 justify-end">
         <Button variant="outline" onClick={onCancel}>
           Cancel
         </Button>

@@ -41,7 +41,7 @@ export function ModalShell({
         >
           <motion.div
             className={cn(
-              "bg-card border-2 border-border rounded-none p-6 w-full shadow-xl",
+              "bg-card border-2 border-border rounded-none p-6 w-full mx-4 shadow-xl",
               maxWidth,
               className,
             )}

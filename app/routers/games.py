@@ -118,8 +118,6 @@ def submit_draft(
     body: DraftRequest,
     caller_id: CallerIdDep,
     game_store: GameStoreDep,
-    card_store: CardStoreDep,
-    background_tasks: BackgroundTasks,
 ) -> GameState:
     try:
         state = game_service.submit_draft(game_store, game_id, caller_id, body.selected_cards)
@@ -129,10 +127,6 @@ def submit_draft(
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-    if game_service.is_ai_turn(state):
-        background_tasks.add_task(
-            game_service.execute_ai_turn, state.game_id, game_store, card_store
-        )
     return state
 
 
@@ -142,15 +136,22 @@ def select_archetype(
     body: SelectArchetypeRequest,
     caller_id: CallerIdDep,
     game_store: GameStoreDep,
+    card_store: CardStoreDep,
+    background_tasks: BackgroundTasks,
 ) -> GameState:
     try:
-        return game_service.select_archetype(game_store, game_id, caller_id, body.archetype)
+        state = game_service.select_archetype(game_store, game_id, caller_id, body.archetype)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if game_service.is_ai_turn(state):
+        background_tasks.add_task(
+            game_service.execute_ai_turn, state.game_id, game_store, card_store
+        )
+    return state
 
 
 @router.get("/{game_id}", response_model=GameState)

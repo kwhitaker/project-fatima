@@ -544,8 +544,14 @@ def attach_human_move_reaction(
 
 
 def is_ai_turn(state: GameState) -> bool:
-    """Return True if the current turn belongs to an AI player and the game is ACTIVE."""
+    """Return True if the current turn belongs to an AI player and the game is ACTIVE.
+
+    Also returns False if any player has not yet selected an archetype,
+    to prevent the AI from moving before the human finishes setup.
+    """
     if state.status != GameStatus.ACTIVE:
+        return False
+    if any(p.archetype is None for p in state.players):
         return False
     current = state.players[state.current_player_index]
     return current.player_type == "ai"

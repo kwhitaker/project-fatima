@@ -49,11 +49,12 @@ def _make_ai_state(status: GameStatus, current: int) -> GameState:
         status=status,
         current_player_index=current,
         players=[
-            PlayerState(player_id="human", player_type="human"),
+            PlayerState(player_id="human", player_type="human", archetype=Archetype.MARTIAL),
             PlayerState(
                 player_id=AI_PLAYER_ID,
                 player_type="ai",
                 ai_difficulty=AIDifficulty.EASY,
+                archetype=Archetype.SKULKER,
             ),
         ],
     )
@@ -195,6 +196,7 @@ class TestExecuteAiTurn:
         human = state.players[0]
         state = submit_draft(gs, state.game_id, human.player_id, human.deal[:5])
         assert state.status == GameStatus.ACTIVE
+        state = select_archetype(gs, state.game_id, human.player_id, Archetype.MARTIAL)
         assert is_ai_turn(state)
 
         version_before = state.state_version

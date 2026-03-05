@@ -109,3 +109,12 @@ Started: 2026-03-05
 - Learnings: `MuteToggle` component uses `isMuted` from sounds module — ActiveGameView tests must mock it; `makePlayer` helper extended with overrides param to support `player_type`/`ai_difficulty` fields
 ---
 
+## 2026-03-05 23:00 - US-SP-012
+- Created `AiCommentBubble` component with per-difficulty styling (amber/warm for Ireena, slate/cold for Rahadin, dark red for Strahd, violet with glow for Dark Powers)
+- Bubble auto-fades after 3.5s, uses `pointer-events-none`, replaces immediately on new comment; integrated into `ActiveGameView` above the board
+- 10 new tests: bubble renders/hides, fade timeout, comment replacement, per-difficulty styling (parameterized), pointer-events-none, ActiveGameView integration (with/without comment, human-vs-human)
+- Tests/validation: `bun run test --run` 303 passed (41 files), `uv run pytest` 749 passed
+- Files changed: `web/src/routes/game-room/AiCommentBubble.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/sp012.test.tsx`
+- Learnings: `vi.useFakeTimers()` + `act(() => vi.advanceTimersByTime())` needed for testing auto-fade; AnimatePresence mock must pass children through for exit animations to be testable
+---
+

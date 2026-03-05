@@ -5,13 +5,14 @@ choose_move(state, ai_index, difficulty, card_lookup, rng) -> PlacementIntent
 Dispatches to per-difficulty strategy functions. Currently implements:
 - easy (Novice/Ireena): semi-random with capture-aware scoring
 - medium (Greedy/Rahadin): one-ply simulation, picks move maximizing owned cells
-- hard/nightmare: placeholder (random legal move)
+- hard (Expectimax/Strahd): multi-ply expectimax with opponent hand inference
+- nightmare: placeholder (random legal move)
 """
 
 from random import Random
 
 from app.models.cards import CardDefinition
-from app.models.game import AIDifficulty, Archetype, GameState
+from app.models.game import AIDifficulty, Archetype, GameState, GameStatus
 from app.rules.board import ADJACENCY
 from app.rules.reducer import PlacementIntent, apply_intent
 
@@ -28,6 +29,8 @@ def choose_move(
         return _novice_move(state, ai_index, card_lookup, rng)
     if difficulty == AIDifficulty.MEDIUM:
         return _greedy_move(state, ai_index, card_lookup, rng)
+    if difficulty == AIDifficulty.HARD:
+        return _expectimax_move(state, ai_index, card_lookup, rng)
     return _random_move(state, ai_index, rng)
 
 
@@ -302,3 +305,268 @@ def _weighted_choice(weights: list[float], rng: Random) -> int:
         if r <= cumulative:
             return i
     return len(weights) - 1
+
+
+# ---------------------------------------------------------------------------
+# Expectimax (Strahd / hard) — multi-ply with opponent hand inference
+# ---------------------------------------------------------------------------
+
+_EXPECTIMAX_HAND_SAMPLES = 25  # number of sampled opponent hands
+_EXPECTIMAX_MAX_DEPTH = 4  # max search depth when >4 empty cells
+_EXPECTIMAX_FULL_DEPTH_THRESHOLD = 4  # search to terminal when ≤ this many empties
+
+
+def _infer_opponent_pool(
+    state: GameState,
+    ai_index: int,
+    card_lookup: dict[str, CardDefinition],
+) -> list[str]:
+    """Return card keys that could be in the opponent's hand.
+
+    Excludes cards visible on the board and cards in the AI's own hand.
+    """
+    known_keys: set[str] = set()
+    for cell in state.board:
+        if cell is not None:
+            known_keys.add(cell.card_key)
+    known_keys.update(state.players[ai_index].hand)
+    return [k for k in card_lookup if k not in known_keys]
+
+
+def _sample_opponent_hands(
+    pool: list[str],
+    hand_size: int,
+    n_samples: int,
+    rng: Random,
+) -> list[list[str]]:
+    """Sample n_samples random opponent hands of given size from pool."""
+    if hand_size <= 0 or not pool:
+        return [[]]
+    hand_size = min(hand_size, len(pool))
+    hands: list[list[str]] = []
+    for _ in range(n_samples):
+        hands.append(rng.sample(pool, hand_size))
+    return hands
+
+
+def _heuristic_eval(
+    state: GameState, ai_index: int, card_lookup: dict[str, CardDefinition],
+) -> float:
+    """Heuristic board evaluation for expectimax cutoff.
+
+    Score = cells owned by AI - cells owned by opponent
+          + 0.1 * (sum of side strengths of AI's placed cards
+                  - sum of side strengths of opponent's placed cards)
+    """
+    ai_cells = 0
+    opp_cells = 0
+    ai_strength = 0.0
+    opp_strength = 0.0
+    for cell in state.board:
+        if cell is None:
+            continue
+        card = card_lookup.get(cell.card_key)
+        sides_sum = (card.sides.n + card.sides.e + card.sides.s + card.sides.w) if card else 20
+        if cell.owner == ai_index:
+            ai_cells += 1
+            ai_strength += sides_sum
+        else:
+            opp_cells += 1
+            opp_strength += sides_sum
+    return (ai_cells - opp_cells) + 0.1 * (ai_strength - opp_strength)
+
+
+def _expectimax_search(
+    state: GameState,
+    ai_index: int,
+    card_lookup: dict[str, CardDefinition],
+    rng: Random,
+    depth: int,
+    is_ai_turn: bool,
+    opponent_hands: list[list[str]] | None = None,
+) -> float:
+    """Recursive expectimax evaluation.
+
+    At AI nodes: maximize over all legal moves (including archetype variants).
+    At opponent nodes: average over sampled hands, with opponent playing greedily.
+    """
+    empty_cells = [i for i, cell in enumerate(state.board) if cell is None]
+
+    # Terminal or depth cutoff
+    if not empty_cells or state.status != GameStatus.ACTIVE:
+        if state.result is not None:
+            if state.result.is_draw:
+                return 0.0
+            return 10.0 if state.result.winner == ai_index else -10.0
+        return _heuristic_eval(state, ai_index, card_lookup)
+
+    if depth <= 0:
+        return _heuristic_eval(state, ai_index, card_lookup)
+
+    if is_ai_turn:
+        # Maximize over AI's legal moves
+        best = float("-inf")
+        player = state.players[ai_index]
+        for card_key in player.hand:
+            for cell_index in empty_cells:
+                # Base move
+                base_intent = PlacementIntent(
+                    player_index=ai_index, card_key=card_key, cell_index=cell_index
+                )
+                sim_rng = Random(rng.randint(0, 2**31))
+                next_state = apply_intent(state, base_intent, card_lookup, sim_rng)
+                val = _expectimax_search(
+                    next_state, ai_index, card_lookup, rng, depth - 1,
+                    is_ai_turn=False, opponent_hands=opponent_hands,
+                )
+                if val > best:
+                    best = val
+
+                # Archetype variants
+                arch_variants = _greedy_archetype_variants(
+                    state, ai_index, card_key, cell_index,
+                )
+                for arch_params in arch_variants:
+                    arch_intent = PlacementIntent(
+                        player_index=ai_index,
+                        card_key=card_key,
+                        cell_index=cell_index,
+                        **arch_params,  # type: ignore[arg-type]
+                    )
+                    sim_rng = Random(rng.randint(0, 2**31))
+                    try:
+                        next_state = apply_intent(state, arch_intent, card_lookup, sim_rng)
+                    except Exception:
+                        continue
+                    val = _expectimax_search(
+                        next_state, ai_index, card_lookup, rng, depth - 1,
+                        is_ai_turn=False, opponent_hands=opponent_hands,
+                    )
+                    if val > best:
+                        best = val
+
+        return best if best > float("-inf") else 0.0
+    else:
+        # Opponent node: average over sampled hands, opponent plays greedily
+        if not opponent_hands:
+            return _heuristic_eval(state, ai_index, card_lookup)
+
+        opp_index = 1 - ai_index
+        total = 0.0
+        valid_samples = 0
+        for opp_hand in opponent_hands:
+            # Filter to cards actually in lookup (safety)
+            usable = [k for k in opp_hand if k in card_lookup and k not in
+                       {c.card_key for c in state.board if c is not None}]
+            if not usable:
+                total += _heuristic_eval(state, ai_index, card_lookup)
+                valid_samples += 1
+                continue
+
+            # Opponent plays greedily: pick the move that maximizes opponent cells
+            best_opp_score = -1
+            best_opp_state = state
+            for card_key in usable:
+                for cell_index in empty_cells:
+                    intent = PlacementIntent(
+                        player_index=opp_index, card_key=card_key, cell_index=cell_index
+                    )
+                    sim_rng = Random(rng.randint(0, 2**31))
+                    try:
+                        next_state = apply_intent(state, intent, card_lookup, sim_rng)
+                    except Exception:
+                        continue
+                    opp_cells = _count_owned(next_state.board, opp_index)
+                    if opp_cells > best_opp_score:
+                        best_opp_score = opp_cells
+                        best_opp_state = next_state
+
+            val = _expectimax_search(
+                best_opp_state, ai_index, card_lookup, rng, depth - 1,
+                is_ai_turn=True, opponent_hands=opponent_hands,
+            )
+            total += val
+            valid_samples += 1
+
+        return total / valid_samples if valid_samples > 0 else 0.0
+
+
+def _expectimax_move(
+    state: GameState,
+    ai_index: int,
+    card_lookup: dict[str, CardDefinition],
+    rng: Random,
+) -> PlacementIntent:
+    """Expectimax (Strahd): multi-ply search with opponent hand inference.
+
+    Infers possible opponent hands, then runs expectimax tree search.
+    Full depth for ≤4 empty cells; limited depth otherwise.
+    """
+    player = state.players[ai_index]
+    empty_cells = [i for i, cell in enumerate(state.board) if cell is None]
+    hand = player.hand
+
+    if not hand or not empty_cells:
+        raise ValueError("AI has no legal moves (empty hand or full board)")
+
+    opp_index = 1 - ai_index
+    opp_hand_size = len(state.players[opp_index].hand)
+
+    # Infer opponent hand possibilities
+    pool = _infer_opponent_pool(state, ai_index, card_lookup)
+    n_samples = min(_EXPECTIMAX_HAND_SAMPLES, max(1, len(pool)))
+    opponent_hands = _sample_opponent_hands(pool, opp_hand_size, n_samples, rng)
+
+    # Determine search depth
+    n_empty = len(empty_cells)
+    if n_empty <= _EXPECTIMAX_FULL_DEPTH_THRESHOLD:
+        depth = n_empty * 2  # full depth (both players' moves)
+    else:
+        depth = _EXPECTIMAX_MAX_DEPTH
+
+    # Evaluate all AI moves at the root
+    best_score = float("-inf")
+    best_moves: list[PlacementIntent] = []
+
+    for card_key in hand:
+        for cell_index in empty_cells:
+            # Base move
+            base_intent = PlacementIntent(
+                player_index=ai_index, card_key=card_key, cell_index=cell_index
+            )
+            sim_rng = Random(rng.randint(0, 2**31))
+            next_state = apply_intent(state, base_intent, card_lookup, sim_rng)
+            val = _expectimax_search(
+                next_state, ai_index, card_lookup, rng, depth - 1,
+                is_ai_turn=False, opponent_hands=opponent_hands,
+            )
+            if val > best_score:
+                best_score = val
+                best_moves = [base_intent]
+            elif val == best_score:
+                best_moves.append(base_intent)
+
+            # Archetype variants
+            for arch_params in _greedy_archetype_variants(state, ai_index, card_key, cell_index):
+                arch_intent = PlacementIntent(
+                    player_index=ai_index,
+                    card_key=card_key,
+                    cell_index=cell_index,
+                    **arch_params,  # type: ignore[arg-type]
+                )
+                sim_rng = Random(rng.randint(0, 2**31))
+                try:
+                    next_state = apply_intent(state, arch_intent, card_lookup, sim_rng)
+                except Exception:
+                    continue
+                val = _expectimax_search(
+                    next_state, ai_index, card_lookup, rng, depth - 1,
+                    is_ai_turn=False, opponent_hands=opponent_hands,
+                )
+                if val > best_score:
+                    best_score = val
+                    best_moves = [arch_intent]
+                elif val == best_score:
+                    best_moves.append(arch_intent)
+
+    return rng.choice(best_moves)

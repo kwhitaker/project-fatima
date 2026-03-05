@@ -147,3 +147,12 @@ Started: 2026-03-05
 - Learnings: `PlacementIntent` is a dataclass in `reducer.py` (not in `models/game.py`); existing SD tests had `make_full_board_state` helper with `p0_archetype_used`/`p1_archetype_used` params — reuse it
 ---
 
+## 2026-03-05 18:07 - US-SP-016
+- Created `SuddenDeathBanner` component with escalating text per SD round (2/3/4), full-screen dark overlay, crimson glow heading, auto-dismiss after 3.5s or click-to-dismiss
+- Integrated into `ActiveGameView` via `game.round_number` prop; uses `useRef` to detect round transitions
+- 6 tests: round transition rendering, parameterized text per round (2/3/4), auto-dismiss, click-dismiss, no banner at round 1, consecutive SD transitions
+- Tests/validation: `bun run test --run` 311 passed (42 files), `uv run pytest` 762 passed
+- Files changed: `web/src/routes/game-room/SuddenDeathBanner.tsx`, `web/src/routes/game-room/ActiveGameView.tsx`, `web/src/__tests__/sp016.test.tsx`
+- Learnings: `uxp017` style audit test disallows `zinc` colors in TSX files — use `stone` instead for muted tones
+---
+

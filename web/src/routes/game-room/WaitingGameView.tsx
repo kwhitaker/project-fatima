@@ -9,6 +9,8 @@ export function WaitingGameView({
   onCopyLink,
   joining,
   onJoin,
+  leaving,
+  onCancel,
 }: {
   game: GameState;
   isParticipant: boolean;
@@ -17,6 +19,8 @@ export function WaitingGameView({
   onCopyLink: () => void;
   joining: boolean;
   onJoin: () => void | Promise<void>;
+  leaving?: boolean;
+  onCancel?: () => void | Promise<void>;
 }) {
   return (
     <div className="flex-1 min-h-0 overflow-y-auto">
@@ -39,6 +43,15 @@ export function WaitingGameView({
         )}
         {!isParticipant && isFull && (
           <p className="text-muted-foreground text-sm">This game is full. You cannot join.</p>
+        )}
+        {isParticipant && onCancel && (
+          <Button
+            variant="destructive"
+            onClick={() => void onCancel()}
+            disabled={leaving}
+          >
+            {leaving ? "Cancelling…" : "Cancel Game"}
+          </Button>
         )}
       </div>
     </div>

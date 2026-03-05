@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import type {
+  AIDifficulty,
   BoardCell,
   CardDefinition,
   GameState,
@@ -8,6 +9,8 @@ import type {
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { VictoryOverlay } from "@/routes/game-room/VictoryOverlay";
 import { DefeatOverlay } from "@/routes/game-room/DefeatOverlay";
+import { AiCommentBubble } from "@/routes/game-room/AiCommentBubble";
+import { WaitingGameView } from "@/routes/game-room/WaitingGameView";
 
 // ---------------------------------------------------------------------------
 // Mock card definitions
@@ -226,6 +229,26 @@ const SCENARIOS: Scenario[] = [
     label: "Early finish",
     description: "Game ends with clinch (empty cells marked \u2715)",
   },
+  {
+    label: "Draw result",
+    description: "Game ends in a draw (equal scores)",
+  },
+  {
+    label: "AI comment (Easy)",
+    description: "Ireena AI comment bubble style",
+  },
+  {
+    label: "AI comment (Nightmare)",
+    description: "Dark Powers AI comment bubble style",
+  },
+  {
+    label: "Archetype used",
+    description: "Last move with archetype power feedback",
+  },
+  {
+    label: "Waiting (creator)",
+    description: "Waiting for opponent with cancel button",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -245,6 +268,9 @@ export default function DevPlayground() {
     "fog" | "omen" | "none" | null
   >(null);
   const [earlyFinish, setEarlyFinish] = useState(false);
+  const [aiComment, setAiComment] = useState<string | null>(null);
+  const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty | null>(null);
+  const [showWaiting, setShowWaiting] = useState(false);
 
   const reset = useCallback(() => {
     setPlacedCells(new Set());
@@ -255,6 +281,9 @@ export default function DevPlayground() {
     setVictoryCells([]);
     setMistsEffect(null);
     setEarlyFinish(false);
+    setAiComment(null);
+    setAiDifficulty(null);
+    setShowWaiting(false);
     setGame(makeGame());
     setActiveScenario(null);
   }, []);
@@ -478,6 +507,84 @@ export default function DevPlayground() {
             setEarlyFinish(true);
             break;
           }
+          case 11: {
+            // Draw result
+            const board = filledBoard(0);
+            setGame(
+              makeGame({
+                status: "complete",
+                board,
+                result: {
+                  winner: null,
+                  is_draw: true,
+                  completion_reason: "board_full",
+                  early_finish: false,
+                },
+              }),
+            );
+            break;
+          }
+          case 12: {
+            // AI comment (Easy / Ireena)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-raven", owner: 1 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setAiComment("Oh! I think that was a good move… was it?");
+            setAiDifficulty("easy");
+            break;
+          }
+          case 13: {
+            // AI comment (Nightmare / Dark Powers)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-ghost", owner: 1 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setAiComment("Your fate was sealed before the first card fell.");
+            setAiDifficulty("nightmare");
+            break;
+          }
+          case 14: {
+            // Archetype used (Skulker boost)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[5] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([5]));
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "skulker",
+            });
+            break;
+          }
+          case 15: {
+            // Waiting state with cancel
+            setShowWaiting(true);
+            setGame(
+              makeGame({
+                status: "waiting" as GameState["status"],
+                players: [
+                  {
+                    player_id: "me",
+                    archetype: null,
+                    deal: [],
+                    hand: [],
+                    archetype_used: false,
+                    player_type: "human",
+                  },
+                ],
+                board: emptyBoard(),
+              }),
+            );
+            break;
+          }
         }
       }, 50);
     },
@@ -531,6 +638,30 @@ export default function DevPlayground() {
           <VictoryOverlay onDismiss={() => setShowVictory(false)} />
         )}
         {showDefeat && <DefeatOverlay onDismiss={() => setShowDefeat(false)} />}
+
+        {/* AI comment bubble */}
+        {aiComment && (
+          <div className="flex justify-center">
+            <AiCommentBubble comment={aiComment} difficulty={aiDifficulty} />
+          </div>
+        )}
+
+        {/* Waiting state */}
+        {showWaiting && (
+          <div className="border-2 border-border bg-card p-4">
+            <WaitingGameView
+              game={game}
+              isParticipant={true}
+              isFull={false}
+              copied={false}
+              onCopyLink={() => {}}
+              joining={false}
+              onJoin={() => {}}
+              leaving={false}
+              onCancel={() => alert("Game cancelled (demo)")}
+            />
+          </div>
+        )}
 
         {/* Board */}
         <div className="flex justify-center">

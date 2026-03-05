@@ -347,6 +347,8 @@ export default function GameRoom() {
           onCopyLink={handleCopyLink}
           joining={joining}
           onJoin={() => void handleJoin()}
+          leaving={leaving}
+          onCancel={isParticipant ? () => void handleLeave() : undefined}
         />
       ) : (
         <CompleteGameView

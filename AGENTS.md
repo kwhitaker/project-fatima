@@ -131,6 +131,13 @@ Rules engine guidance (MVP):
 - **Parameterize repetitive tests.** Use `it.each` / `describe.each` when 3+ tests
   differ only by input values.
 
+### Dev Playground maintenance
+
+When adding new UI states, overlays, animations, or visual interactions to the game room,
+**also add a corresponding scenario** to `web/src/routes/DevPlayground.tsx`. The playground
+is the primary tool for visually verifying effects without running a real game. Each scenario
+should set up the minimal board/game state needed to trigger the visual.
+
 ### Dead code policy
 
 - When replacing a component, module, or hook, delete the old file and remove all

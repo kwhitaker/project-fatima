@@ -120,5 +120,6 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 - Catch narrow exceptions; translate domain errors to `HTTPException` at the router.
 - Store seed in game state; derive per-move RNG from it (enables deterministic replay).
 - **No dead code**: when replacing a component/module, delete the old file and all references in the same commit.
+- **Dev Playground**: when adding new UI states, overlays, or visual interactions, add a matching scenario to `web/src/routes/DevPlayground.tsx`.
 - **Shared test fixtures**: backend helpers in `tests/conftest.py`, frontend helpers in `web/src/__tests__/helpers.ts`. Never duplicate across test files.
 - **Test behavior, not source**: frontend tests must render and assert on DOM, not read `.tsx` files with `fs.readFileSync`. See `AGENTS.md` for details.

@@ -10,19 +10,13 @@ import {
   type GameState,
   type AIDifficulty,
 } from "@/lib/api";
+import { AI_DISPLAY_NAMES } from "@/lib/ai-constants";
 
 const STATUS_LABELS: Record<GameState["status"], string> = {
   waiting: "Waiting",
   drafting: "Drafting",
   active: "Active",
   complete: "Complete",
-};
-
-const AI_DISPLAY_NAMES: Record<AIDifficulty, string> = {
-  easy: "Ireena Kolyana",
-  medium: "Rahadin",
-  hard: "Strahd von Zarovich",
-  nightmare: "The Dark Powers",
 };
 
 const AI_FLAVOR_TEXT: Record<AIDifficulty, string> = {

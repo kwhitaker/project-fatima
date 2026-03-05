@@ -41,7 +41,7 @@ export function makeGame(overrides: Partial<GameState> = {}): GameState {
   };
 }
 
-export function makePlayer(id: string, email?: string): PlayerState {
+export function makePlayer(id: string, email?: string, overrides?: Partial<PlayerState>): PlayerState {
   return {
     player_id: id,
     email: email ?? `${id}@example.com`,
@@ -49,6 +49,8 @@ export function makePlayer(id: string, email?: string): PlayerState {
     deal: [],
     hand: [],
     archetype_used: false,
+    player_type: "human",
+    ...overrides,
   };
 }
 

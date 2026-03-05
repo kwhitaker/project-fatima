@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { getCardDefinitions, getGame, joinGame, leaveGame, placeCard, selectArchetype, submitDraft, type Archetype, type CardDefinition, type GameState } from "@/lib/api";
+import { AI_DISPLAY_NAMES } from "@/lib/ai-constants";
 import { initAudio } from "@/lib/sounds";
 
 import { CardInspectPreview } from "@/routes/game-room/CardInspectPreview";
@@ -220,12 +221,17 @@ export default function GameRoom() {
   const myScore = myCells + (myPlayer?.hand.length ?? 0);
   const opponentScore = opponentCells + (opponentPlayer?.hand.length ?? 0);
 
+  const opponentDisplayName =
+    opponentPlayer?.player_type === "ai" && opponentPlayer.ai_difficulty
+      ? AI_DISPLAY_NAMES[opponentPlayer.ai_difficulty]
+      : opponentPlayer?.email ?? "opponent";
+
   const titleText =
     game.status === "waiting"
       ? "Waiting for opponent"
       : game.status === "drafting"
         ? "Draft Phase"
-        : `Playing against ${opponentPlayer?.email ?? "opponent"}`;
+        : `Playing against ${opponentDisplayName}`;
 
   return (
     <div className="container py-4 flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -281,6 +287,7 @@ export default function GameRoom() {
           onSubmitDraft={handleSubmitDraft}
           leaving={leaving}
           onLeave={() => void handleLeave()}
+          isAiGame={game.players.some((p) => p.player_type === "ai")}
         />
       ) : game.status === "active" ? (
         <GameRoomProvider

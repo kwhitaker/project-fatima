@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import type { CardDefinition, PlayerState } from "@/lib/api";
+import { AI_THINKING_TEXT } from "@/lib/ai-constants";
 import { cn } from "@/lib/utils";
 import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { motion, AnimatePresence } from "motion/react";
@@ -8,10 +9,12 @@ export function ActionPanel({
   isMyTurn,
   selectedCardDef,
   myPlayer,
+  opponentPlayer,
 }: {
   isMyTurn: boolean;
   selectedCardDef?: CardDefinition;
   myPlayer?: PlayerState;
+  opponentPlayer?: PlayerState;
 }) {
   const {
     selectedCard,
@@ -69,7 +72,11 @@ export function ActionPanel({
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         >
-          {isMyTurn ? "Your turn" : "Opponent's turn"}
+          {isMyTurn
+            ? "Your turn"
+            : opponentPlayer?.player_type === "ai" && opponentPlayer.ai_difficulty
+              ? AI_THINKING_TEXT[opponentPlayer.ai_difficulty]
+              : "Opponent's turn"}
         </motion.p>
       </AnimatePresence>
 

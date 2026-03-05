@@ -7,6 +7,7 @@ import type {
   GameState,
   PlayerState,
 } from "@/lib/api";
+import { AI_DISPLAY_NAMES } from "@/lib/ai-constants";
 import { cn } from "@/lib/utils";
 import { BoardGrid } from "@/routes/game-room/BoardGrid";
 import { BoardCallouts } from "@/routes/game-room/BoardCallouts";
@@ -299,7 +300,9 @@ export function ActiveGameView({
                   {myScore}
                 </motion.span>
               </AnimatePresence>
-              &nbsp;|&nbsp;Opp:&nbsp;
+              &nbsp;|&nbsp;{opponentPlayer?.player_type === "ai" && opponentPlayer.ai_difficulty
+                ? AI_DISPLAY_NAMES[opponentPlayer.ai_difficulty]
+                : "Opp"}:&nbsp;
               <AnimatePresence mode="popLayout">
                 <motion.span
                   key={`opp-${opponentScore}`}
@@ -383,6 +386,7 @@ export function ActiveGameView({
                   selectedCard ? cardDefs.get(selectedCard) : undefined
                 }
                 myPlayer={myPlayer}
+                opponentPlayer={opponentPlayer}
               />
             </div>
             <div className="w-full sm:flex-1 sm:min-w-0">

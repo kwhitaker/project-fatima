@@ -13,6 +13,10 @@ from typing import TYPE_CHECKING, Any
 from app.models.game import GameState
 from app.store import ConflictError, DuplicateEventError, GameEvent
 
+# Sentinel UUID for AI players — must match game_service.AI_PLAYER_ID.
+# Inlined here to avoid circular import (game_service imports from store).
+_AI_PLAYER_ID = "00000000-0000-0000-0000-000000000001"
+
 if TYPE_CHECKING:
     from supabase import Client
 
@@ -50,7 +54,9 @@ class SupabaseGameStore:
         if len(initial_state.players) >= 1:
             row["player1_id"] = initial_state.players[0].player_id
         if len(initial_state.players) >= 2:
-            row["player2_id"] = initial_state.players[1].player_id
+            p2 = initial_state.players[1].player_id
+            if p2 != _AI_PLAYER_ID:
+                row["player2_id"] = p2
         self._client.table("games").upsert(row).execute()
 
     def has_idempotency_key(self, game_id: str, idempotency_key: str) -> bool:
@@ -134,7 +140,9 @@ class SupabaseGameStore:
         if len(new_state.players) >= 1:
             update_dict["player1_id"] = new_state.players[0].player_id
         if len(new_state.players) >= 2:
-            update_dict["player2_id"] = new_state.players[1].player_id
+            p2 = new_state.players[1].player_id
+            if p2 != _AI_PLAYER_ID:
+                update_dict["player2_id"] = p2
 
         update_response = (
             self._client.table("games")

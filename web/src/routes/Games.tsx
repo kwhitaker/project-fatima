@@ -103,6 +103,7 @@ export default function Games() {
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [creatingAi, setCreatingAi] = useState<AIDifficulty | null>(null);
+  const [nightmareError, setNightmareError] = useState<string | null>(null);
 
   useEffect(() => {
     listGames()
@@ -140,11 +141,19 @@ export default function Games() {
 
   const handleCreateAi = async (difficulty: AIDifficulty) => {
     setCreatingAi(difficulty);
+    setNightmareError(null);
     try {
       const game = await createGameVsAi(difficulty);
       void navigate(`/g/${game.game_id}`);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to create AI game");
+      const status = (e as { status?: number }).status;
+      if (difficulty === "nightmare" && status === 503) {
+        setNightmareError(
+          "The Dark Powers are occupied with another mortal.",
+        );
+      } else {
+        setError(e instanceof Error ? e.message : "Failed to create AI game");
+      }
       setCreatingAi(null);
     }
   };
@@ -177,6 +186,11 @@ export default function Games() {
                 disabled={creatingAi !== null}
                 onClick={() => void handleCreateAi(difficulty)}
                 className="hover:bg-accent/20 hover:border-accent cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                title={
+                  difficulty === "nightmare"
+                    ? "Only 2 players can face Nightmare difficulty at a time. Try again shortly if unavailable."
+                    : undefined
+                }
               >
                 <div className="mb-1 font-semibold">
                   {AI_DISPLAY_NAMES[difficulty]}
@@ -187,6 +201,20 @@ export default function Games() {
                 <div className="text-muted-foreground mt-1 text-xs">
                   {AI_FLAVOR_TEXT[difficulty]}
                 </div>
+                {difficulty === "nightmare" && (
+                  <div className="mt-1 text-[10px] italic text-amber-500/70">
+                    Few may commune with The Dark Powers at once.
+                  </div>
+                )}
+                {difficulty === "nightmare" && nightmareError && (
+                  <div
+                    className="mt-1 text-xs font-medium text-red-400"
+                    role="alert"
+                    aria-label="nightmare error"
+                  >
+                    {nightmareError}
+                  </div>
+                )}
               </button>
             ),
           )}

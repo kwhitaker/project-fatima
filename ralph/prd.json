@@ -17,7 +17,7 @@
         "`uv run pyright` passes"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-SP-002",

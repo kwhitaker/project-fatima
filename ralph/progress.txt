@@ -4,52 +4,15 @@
 - (add stable patterns here as they are discovered)
 
 ---
-Started: 2026-03-04
+Started: 2026-03-05
 ---
 
-## 2026-03-04 08:16 - US-UP-001
-- Shrunk h1 from text-2xl font-bold → text-base font-semibold
-- Added text-xs to Back to Games link and Refresh button
-- Compacted realtime badge: smaller text (text-[10px]), thinner border, less padding
-- Reduced status row gap and margin (gap-3 mb-2 → gap-2 mb-1)
-- Tests/validation: 4 new tests in up001.test.tsx, all 251 frontend + 575 backend pass
-- Files changed: web/src/routes/GameRoom.tsx, web/src/__tests__/up001.test.tsx
-- Learnings: Game room route is /g/:gameId (not /games/:gameId)
----
-
-## 2026-03-04 08:20 - US-UP-002
-- Created BoardCallouts component with auto-fading animated callouts for Mists (fog/omen), captures (single/combo), Plus!, and Elemental events
-- Used steppedEase(4) entry animation matching VictoryOverlay pixel-art style, pointer-events-none overlay
-- Integrated into ActiveGameView board area with relative positioning
-- Tests/validation: 6 new tests in up002.test.tsx, all 257 frontend + 575 backend pass
-- Files changed: web/src/routes/game-room/BoardCallouts.tsx (new), web/src/routes/game-room/ActiveGameView.tsx, web/src/__tests__/up002.test.tsx (new)
-- Learnings: motion/react mock pattern — proxy for motion elements + passthrough AnimatePresence
----
-
-## 2026-03-04 08:30 - US-UP-003
-- Removed ArchetypePowerAside from sidebar, replaced with compact ArchetypeTooltipName component
-- Compact grid layout: label | archetype name (hover tooltip) | hand count
-- Tooltip uses CSS group-hover/group-focus, no new dependencies needed
-- Kept "Available"/"Used" text to maintain existing test compatibility
-- Tests/validation: 2 new tests in up003.test.tsx, all 259 frontend tests pass
-- Files changed: web/src/routes/game-room/ActiveGameView.tsx, web/src/__tests__/up003.test.tsx (new)
-- Learnings: PlayerState.hand is string[] not object[]; keep status text consistent with existing tests
----
-
-## 2026-03-04 08:37 - US-UP-004
-- Replaced checkbox "Use Power" with prominent toggle button (⚡ Use Power)
-- Button has animate-pulse when available + not toggled, bg-primary filled state when toggled
-- Updated 10 existing test references from checkbox role to button role
-- Tests/validation: 4 new tests in up004.test.tsx, all 263 frontend tests pass
-- Files changed: web/src/routes/game-room/ActionPanel.tsx, web/src/__tests__/up004.test.tsx (new), web/src/__tests__/routes.test.tsx
-- Learnings: When changing element roles, update all existing tests that query by old role
----
-
-## 2026-03-04 08:39 - US-UP-005
-- Added confirm step to ArchetypeModal: click selects (ring-2 highlight), Confirm button submits
-- Confirm button disabled until archetype selected; shows "Confirming…" during pending
-- Updated existing test to add confirm click step
-- Tests/validation: 4 new tests in up005.test.tsx, all 267 frontend tests pass
-- Files changed: web/src/routes/game-room/ArchetypeModal.tsx, web/src/__tests__/up005.test.tsx (new), web/src/__tests__/routes.test.tsx
+## 2026-03-05 12:00 - US-SP-001
+- Added `AIDifficulty` enum (easy/medium/hard/nightmare) and `player_type`/`ai_difficulty` fields to `PlayerState`
+- Added `AI_PLAYER_ID` constant and `AI_DISPLAY_NAMES` dict to `game_service.py`
+- 17 new tests covering enum values, model fields, backward compat, serialization roundtrip, and constants
+- Tests/validation: `uv run pytest` 611 passed, `uv run pyright` 0 errors on changed files (5 pre-existing in test_scoring.py)
+- Files changed: `app/models/game.py`, `app/services/game_service.py`, `tests/test_sp001_ai_model.py`
+- Learnings: PlayerState defaults safely for old snapshots; Literal types validated by Pydantic
 ---
 

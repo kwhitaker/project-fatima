@@ -1,7 +1,8 @@
 /**
  * Tests for US-GM-011: open games in list + newest-first ordering.
+ * Updated for the reworked Games page with separate sections.
  */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { vi, beforeEach, describe, it, expect } from "vitest";
 import App from "../App";
@@ -13,7 +14,7 @@ const { mockGetSession, mockOnAuthStateChange, mockSignOut } = vi.hoisted(
     mockGetSession: vi.fn(),
     mockOnAuthStateChange: vi.fn(),
     mockSignOut: vi.fn(),
-  })
+  }),
 );
 
 vi.mock("@/lib/supabase", () => ({
@@ -43,6 +44,7 @@ const { mockListGames } = vi.hoisted(() => ({
 vi.mock("@/lib/api", () => ({
   listGames: mockListGames,
   createGame: vi.fn(),
+  createGameVsAi: vi.fn(),
   getGame: vi.fn(),
   joinGame: vi.fn(),
   leaveGame: vi.fn(),
@@ -64,14 +66,14 @@ function renderGames() {
   return render(
     <MemoryRouter initialEntries={["/games"]}>
       <App />
-    </MemoryRouter>
+    </MemoryRouter>,
   );
 }
 
 // --- Open game rendering -----------------------------------------------------
 
 describe("open games in list", () => {
-  it("shows 'Open' badge for games user is not a participant of", async () => {
+  it("shows 'Join' label for games user is not a participant of", async () => {
     mockListGames.mockResolvedValue([
       makeGame({
         game_id: "open-game-1",
@@ -81,7 +83,7 @@ describe("open games in list", () => {
     ]);
     renderGames();
     await waitFor(() => {
-      expect(screen.getByText("Open")).toBeInTheDocument();
+      expect(screen.getByText("Join")).toBeInTheDocument();
     });
   });
 
@@ -99,21 +101,31 @@ describe("open games in list", () => {
     });
   });
 
-  it("shows 'Waiting...' when open game host has no email", async () => {
+  it("shows 'Unknown' when open game host has no email", async () => {
     mockListGames.mockResolvedValue([
       makeGame({
         game_id: "open-game-1",
         status: "waiting",
-        players: [{ player_id: "other-user", archetype: null, hand: [], archetype_used: false }],
+        players: [
+          {
+            player_id: "other-user",
+            archetype: null,
+            hand: [],
+            deal: [],
+            archetype_used: false,
+            player_type: "human",
+          },
+        ],
       }),
     ]);
     renderGames();
     await waitFor(() => {
-      expect(screen.getByText("Waiting...")).toBeInTheDocument();
+      const openSection = screen.getByText("Open Games").closest("section")!;
+      expect(within(openSection).getByText("Unknown")).toBeInTheDocument();
     });
   });
 
-  it("shows 'Waiting' status for own waiting game (not 'Open')", async () => {
+  it("shows 'Waiting' status for own waiting game (not in Open Games)", async () => {
     mockListGames.mockResolvedValue([
       makeGame({
         game_id: "my-game",
@@ -124,7 +136,11 @@ describe("open games in list", () => {
     renderGames();
     await waitFor(() => {
       expect(screen.getByText("Waiting")).toBeInTheDocument();
-      expect(screen.queryByText("Open")).not.toBeInTheDocument();
+      // Should not appear in open games section
+      const openSection = screen.getByText("Open Games").closest("section")!;
+      expect(
+        within(openSection).getByText("No open games available."),
+      ).toBeInTheDocument();
     });
   });
 });
@@ -153,7 +169,8 @@ describe("list ordering", () => {
       expect(screen.getByText("game-wai")).toBeInTheDocument();
       expect(screen.getByText("game-cmp")).toBeInTheDocument();
     });
-    const items = screen.getAllByRole("listitem");
+    const myGamesSection = screen.getByText("My Games").closest("section")!;
+    const items = within(myGamesSection).getAllByRole("listitem");
     expect(items).toHaveLength(2);
     expect(items[0].textContent).toContain("game-wai");
     expect(items[1].textContent).toContain("game-cmp");

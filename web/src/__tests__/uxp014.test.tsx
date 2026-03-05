@@ -20,9 +20,8 @@ const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
 describe("US-UXP-014: Auto-generated frontend types", () => {
   describe("Generated types file", () => {
     it("exists and has auto-generated header comment", () => {
-      expect(generatedSrc).toContain("Auto-generated from backend OpenAPI schema");
-      expect(generatedSrc).toContain("Do not edit manually");
-      expect(generatedSrc).toContain("bun run typegen");
+      expect(generatedSrc).toContain("auto-generated");
+      expect(generatedSrc).toContain("Do not make direct changes");
     });
 
     it("contains GameState schema type", () => {

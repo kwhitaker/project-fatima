@@ -10,6 +10,7 @@ export type GameResult = components["schemas"]["GameResult"];
 export type LastMoveInfo = components["schemas"]["LastMoveInfo"];
 export type GameState = components["schemas"]["GameState"];
 export type Archetype = components["schemas"]["Archetype"];
+export type AIDifficulty = components["schemas"]["AIDifficulty"];
 
 async function authHeaders(): Promise<HeadersInit> {
   const { data } = await supabase.auth.getSession();

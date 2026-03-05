@@ -6,18 +6,21 @@ import { render, screen } from "@testing-library/react";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import Games from "../routes/Games";
-import type { GameState } from "@/lib/api";
+import { makeGame, makePlayer } from "./helpers";
 
 vi.mock("@/context/AuthContext", () => ({
-  useAuth: () => ({ signOut: vi.fn() }),
+  useAuth: () => ({
+    user: { id: "user-123", email: "test@example.com" },
+    signOut: vi.fn(),
+  }),
 }));
 
 vi.mock("@/lib/api", () => ({
   listGames: vi.fn(),
   createGame: vi.fn(),
+  createGameVsAi: vi.fn(),
 }));
 
-// Supabase mock (Games doesn't use it directly, but the module graph imports it)
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     auth: {
@@ -31,21 +34,14 @@ vi.mock("@/lib/supabase", () => ({
 
 const { listGames } = await import("@/lib/api");
 
-const mockGame: GameState = {
-  game_id: "game-abc123",
-  status: "waiting",
-  players: [],
-  board: Array(9).fill(null) as (null)[],
-  current_player_index: 0,
-  starting_player_index: 0,
-  state_version: 1,
-  round_number: 1,
-  result: null,
-  last_move: null,
-};
-
 beforeEach(() => {
-  vi.mocked(listGames).mockResolvedValue([mockGame]);
+  vi.mocked(listGames).mockResolvedValue([
+    makeGame({
+      game_id: "game-abc123",
+      status: "waiting",
+      players: [makePlayer("user-123", "test@example.com")],
+    }),
+  ]);
 });
 
 describe("US-UX-001: dark mode default + mobile-first layout", () => {
@@ -53,7 +49,7 @@ describe("US-UX-001: dark mode default + mobile-first layout", () => {
     render(
       <MemoryRouter>
         <Games />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Row now shows truncated ID (8 chars: "game-abc") instead of full game_id
     await screen.findByText("game-abc");
@@ -65,7 +61,7 @@ describe("US-UX-001: dark mode default + mobile-first layout", () => {
     render(
       <MemoryRouter>
         <Games />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
     // Header should be present; find by the Create Game button which is always rendered
     await screen.findByRole("button", { name: /create game/i });

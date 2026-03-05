@@ -85,6 +85,7 @@ const { mockListGames, mockCreateGame, mockGetGame, mockJoinGame, mockLeaveGame,
 vi.mock("@/lib/api", () => ({
   listGames: mockListGames,
   createGame: mockCreateGame,
+  createGameVsAi: vi.fn(),
   getGame: mockGetGame,
   joinGame: mockJoinGame,
   leaveGame: mockLeaveGame,
@@ -499,7 +500,7 @@ describe("games page", () => {
   it("clicking a game row navigates to /g/:gameId", async () => {
     setupAuth(true);
     mockListGames.mockResolvedValue([
-      makeGame({ game_id: "game-ccc" }),
+      makeGame({ game_id: "game-ccc", players: [{ player_id: "user-123", archetype: null, hand: [], deal: [], archetype_used: false, player_type: "human" }] }),
     ]);
     const user = userEvent.setup();
     renderAt("/games");

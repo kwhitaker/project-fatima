@@ -215,6 +215,99 @@
       ],
       "priority": 13,
       "passes": true
+    },
+    {
+      "id": "US-SP-014",
+      "title": "Bug fix: AI waits for human archetype selection before moving",
+      "description": "As a player, I want the AI to wait until I've selected my archetype before taking its first turn -- so the game doesn't start in a broken state.",
+      "acceptanceCriteria": [
+        "In `is_ai_turn()` (or the call sites in `games.py`), add a guard: do NOT trigger AI turn if any player has `archetype is None`. This covers both 'AI goes first' and 'human goes first' scenarios",
+        "In `POST /{game_id}/archetype` endpoint, add `BackgroundTasks` dependency and trigger `execute_ai_turn` if the game is ACTIVE and `is_ai_turn()` returns true after archetype selection",
+        "Remove the AI turn trigger from `POST /{game_id}/draft` for AI games (the draft transition to ACTIVE is no longer the right place -- archetype selection is)",
+        "Add tests: AI does not move before human selects archetype; AI moves after human selects archetype when AI goes first; AI does not move after archetype if human goes first",
+        "`uv run pytest` passes"
+      ],
+      "priority": 14,
+      "passes": true
+    },
+    {
+      "id": "US-SP-015",
+      "title": "Bug fix: archetype powers reset each Sudden Death round",
+      "description": "As a player, I want my archetype power to refresh each Sudden Death round -- so Sudden Death feels like a meaningful rematch, not a stripped-down version of the game.",
+      "acceptanceCriteria": [
+        "In `begin_sudden_death_round()` in `reducer.py`, reset `archetype_used=False` on both players when building `new_players`",
+        "Update the comment that currently says 'Preserves archetype_used (once-per-game)' to reflect the new per-round behavior",
+        "AI archetype logic in `ai.py` already checks `player.archetype_used` per move, so no AI changes needed -- just verify via test",
+        "Add tests: after SD transition, both players have `archetype_used=False`; a player can use their archetype again in the new SD round; AI uses archetype in SD round if available",
+        "`uv run pytest` passes"
+      ],
+      "priority": 15,
+      "passes": false
+    },
+    {
+      "id": "US-SP-016",
+      "title": "Frontend: Sudden Death banner overlay",
+      "description": "As a player, I want a dramatic banner displayed when Sudden Death begins -- so I know the stakes have changed and the tension escalates with each round.",
+      "acceptanceCriteria": [
+        "Detect SD transition on the frontend by comparing `game.round_number` changes (round_number > 1 means SD is active)",
+        "Show a full-screen overlay banner (similar to victory/defeat) when SD begins, auto-dismiss after 3.5s or click-to-dismiss",
+        "Escalating text per SD round: Round 2: 'Sudden Death' / 'The souls are bound. Play on.' -- Round 3: 'Sudden Death II' / 'The Mists refuse to release you.' -- Round 4: 'Final Sudden Death' / 'Barovia trembles. This ends now.'",
+        "Style: dark semi-transparent overlay, large heading with red/crimson glow text, subtitle in muted tone. Use motion/react for scale-in + fade animation consistent with existing BoardCallouts style",
+        "If the game ends in a draw after 3 SD rounds (cap reached), the result screen handles that -- no SD banner needed for the draw outcome",
+        "Add frontend tests: banner renders when round_number transitions from 1 to 2; correct text for each SD round number; banner auto-dismisses",
+        "`bun run test --run` passes"
+      ],
+      "priority": 16,
+      "passes": false
+    },
+    {
+      "id": "US-SP-017",
+      "title": "AI commentary: win/loss canned responses",
+      "description": "As a player, I want the AI opponent to comment when the game ends in a win or loss -- so the conclusion feels personal and thematic.",
+      "acceptanceCriteria": [
+        "Add `game_won` and `game_lost` trigger types to each character's comment pool in `ai_comments.py` (5 lines each, 4 characters = 40 new lines total)",
+        "Ireena won: encouraging/surprised ('I won? I actually won!', etc). Ireena lost: gracious/cheerful ('You were wonderful!', etc)",
+        "Rahadin won: cold/dismissive ('The outcome was never in question.', etc). Rahadin lost: terse/grudging ('...Noted.', etc)",
+        "Strahd won: theatrical/menacing ('Kneel.', 'Did you expect anything less?', etc). Strahd lost: threatening/dismissive ('Enjoy this. It will not happen again.', etc)",
+        "Dark Powers won: cosmic/inevitable ('As it was always meant to be.', etc). Dark Powers lost: cryptic/ominous ('This outcome changes nothing.', etc)",
+        "In `detect_ai_move_triggers` and `detect_human_move_triggers`, when the game ends (status transitions to COMPLETE), check `state_after.result` to determine `game_won` vs `game_lost` from the AI's perspective. Use these instead of generic `game_ending` when win/loss is clear. Keep `game_ending` as fallback for draws",
+        "Set comment probability to 100% for `game_won` and `game_lost` triggers (these should always fire)",
+        "Add tests: AI comments on winning, AI comments on losing, draw uses `game_ending`, correct character flavor per difficulty",
+        "`uv run pytest` passes"
+      ],
+      "priority": 17,
+      "passes": false
+    },
+    {
+      "id": "US-SP-018",
+      "title": "Frontend: archetype power visual feedback on cards",
+      "description": "As a player, I want to see visual feedback on the board when an archetype power activates -- so I understand what happened beyond just a text banner.",
+      "acceptanceCriteria": [
+        "Add `archetype_used_name: str | None = None` field to `LastMoveInfo` in `app/models/game.py` -- set to the archetype name (e.g. 'skulker', 'martial') when an archetype was used this move. Set in `apply_intent` alongside existing `archetype_activated` logic",
+        "In `BoardGrid.tsx`, when `last_move.archetype_used_name` is set, apply a brief highlight effect to the placed card's cell: a 1.5s pulsing ring/glow in gold/amber (distinct from the yellow last-move ring and blue/red ownership colors). Use CSS animation or motion/react",
+        "In `BoardCallouts.tsx`, add an archetype callout (same pattern as Plus/Elemental): 'Martial!' / 'Skulker!' / 'Intimidate!' / 'Caster!' / 'Devout!' with an amber/gold glow style. Auto-dismiss after 2.5s",
+        "For Intimidate specifically: if `last_move.archetype_used_name === 'intimidate'`, also briefly highlight the intimidated cell (the cell targeted by the debuff) with a red pulse, using `last_move.cell_index` to derive adjacent cells or adding `intimidate_target_cell: number | None` to `LastMoveInfo`",
+        "Keep the existing ownership color scheme intact (blue = you, red = opponent). The archetype glow is a temporary overlay, not a color change",
+        "Add frontend tests: archetype callout renders for each archetype name; gold ring appears on placed cell when archetype is used; no archetype callout when `archetype_used_name` is null",
+        "Add backend tests: `archetype_used_name` is set correctly in `LastMoveInfo` after archetype use; `archetype_used_name` is null when no archetype used",
+        "`uv run pytest` and `bun run test --run` pass"
+      ],
+      "priority": 18,
+      "passes": false
+    },
+    {
+      "id": "US-SP-019",
+      "title": "Frontend: Nightmare difficulty limited-availability notice",
+      "description": "As a player, I want to see that Nightmare difficulty has limited availability -- so I'm not confused if my game creation fails due to the concurrency cap.",
+      "acceptanceCriteria": [
+        "On the Nightmare difficulty card in `Games.tsx`, add a small thematic line below the existing flavor text: 'Few may commune with The Dark Powers at once.' styled in a dimmer/warning tone (e.g. `text-amber-500/70 text-[10px] italic`)",
+        "Wrap the Nightmare card (or just the availability line) with a `title` attribute tooltip: 'Only 2 players can face Nightmare difficulty at a time. Try again shortly if unavailable.'",
+        "If `POST /games/vs-ai` returns 503 for Nightmare, display a toast or inline error on the Nightmare card: 'The Dark Powers are occupied with another mortal.' (matches the existing backend 503 message). Do not navigate away",
+        "Add frontend tests: availability text renders on nightmare card only; tooltip text is present; 503 error displays the themed message",
+        "`bun run test --run` passes"
+      ],
+      "priority": 19,
+      "passes": false
     }
   ]
 }

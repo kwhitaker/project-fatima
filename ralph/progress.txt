@@ -128,3 +128,13 @@ Started: 2026-03-05
 - Learnings: `ralph/archive/` is gitignored so archived files are local-only; documentation stories are straightforward but should still verify no stale references exist
 ---
 
+## 2026-03-05 17:00 - US-SP-014
+- Added archetype guard to `is_ai_turn()`: returns False if any player has `archetype is None`, preventing AI from moving before human selects archetype
+- Moved AI turn trigger from `POST /{game_id}/draft` to `POST /{game_id}/archetype` endpoint (added `BackgroundTasks` + `CardStoreDep` dependencies)
+- Removed `BackgroundTasks`/`CardStoreDep` from draft endpoint (no longer needed there)
+- Updated `test_sp004` to set archetypes in test helpers; 5 new tests in `test_sp014_archetype_ai_guard.py`
+- Tests/validation: `uv run pytest` 754 passed, `uv run pyright` 0 errors, `uv run ruff check` clean (pre-existing E402 only)
+- Files changed: `app/services/game_service.py`, `app/routers/games.py`, `tests/test_sp004_ai_turn_trigger.py`, `tests/test_sp014_archetype_ai_guard.py`
+- Learnings: `_make_ai_state` helpers in tests must include archetype fields now; draft endpoint no longer needs card_store or background_tasks deps
+---
+

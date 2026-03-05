@@ -48,6 +48,9 @@ app/
     archetypes.py    # Once-per-game archetype powers
     deck.py          # Deck generation + validation
     cards.py         # cards.jsonl loader + validator
+    ai.py            # AI strategy engine (novice, greedy, expectimax)
+    mcts.py          # MCTS strategy (Nightmare difficulty)
+    ai_comments.py   # AI in-character commentary system
 tests/
 cards.jsonl          # Card definitions (JSON Lines, one card per line)
 ```
@@ -84,6 +87,13 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 - **Deal & Draft**: Each player is dealt 7 cards (`DEAL_SIZE`), picks 5 to keep (`HAND_SIZE`). The draft phase (`DRAFTING` status) occurs between joining and the active match. The first player places all 5 cards; the second player places 4, keeping 1 in hand.
 - **Scoring (hand-in-score)**: Final score = cells owned on board + cards remaining in hand. Total points = 10. First player can score 0–9, second player can score 1–10 (always has 1 card in hand).
 - **Deal validation**: Named character uniqueness by `character_key`; rarity slots (ultra≤1, very_rare≤2, rare≤3); copy limits by rarity bucket.
+- **Single Player**: Play against AI opponents at four difficulty levels, each themed as a Curse of Strahd character:
+  - **Easy / Ireena Kolyana**: Semi-random placement with basic capture instincts and noisy scoring. Archetype use is enthusiastic but clumsy (50% chance on early turns, 20% chance to forget entirely).
+  - **Medium / Rahadin**: One-ply greedy evaluation — simulates every legal move via `apply_intent`, picks the one that maximizes owned cells. Evaluates archetype variants per move.
+  - **Hard / Strahd von Zarovich**: Expectimax search with opponent hand inference. Samples ~25 possible opponent hands, searches full depth when ≤4 empty cells, depth 4 otherwise.
+  - **Nightmare / The Dark Powers**: MCTS with 2000+ playouts, UCB1 selection, lightweight `SimBoard` for fast rollouts. Concealment layer sandbagging early game. Gated by `asyncio.Semaphore(2)` to limit server load.
+  - AI turns are triggered via `BackgroundTasks` after human moves. AI moves use the same `apply_intent` path — no special game logic.
+  - AI commentary: in-character comments triggered by captures, Plus/Elemental events, archetype use, and game endings. Attached to `last_move.ai_comment`.
 
 ## Card Data
 

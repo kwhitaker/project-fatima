@@ -200,6 +200,35 @@ All of the following are active in the current codebase:
 - Sudden Death (up to 3 rounds, then draw)
 - Named character uniqueness + rarity slots + copy limits
 
+## Single Player Mode
+
+Players can start a game against an AI opponent at one of four difficulty levels, each themed as a Curse of Strahd character. The AI plays by the exact same rules as a human — all moves go through `apply_intent`, and the AI has no information advantage.
+
+### AI Opponents
+
+| Difficulty | Character | Strategy |
+|---|---|---|
+| **Easy** | Ireena Kolyana | Semi-random placement with basic capture instincts. Scores each (card, cell) pair with +1 per capturable neighbor, +1 for elemental match, plus random noise. Archetype use is enthusiastic but clumsy. Drafts 5 of 7 cards randomly. |
+| **Medium** | Rahadin | One-ply greedy evaluation. Simulates every legal move via `apply_intent` and picks the placement that maximizes owned cells. Evaluates archetype variants (Skulker on all 4 sides, Martial CW/CCW, etc.) and picks the best overall. Drafts by highest total side values. |
+| **Hard** | Strahd von Zarovich | Expectimax search with opponent hand inference. Infers possible opponent hands by excluding known cards from the pool, samples ~25 likely hands. Full-depth search when ≤4 empty cells; depth 4 with heuristic eval otherwise. Opponent assumed to play greedily. |
+| **Nightmare** | The Dark Powers | Monte Carlo Tree Search (MCTS) with 2000+ playouts, UCB1 selection, and random rollouts to terminal state. Uses a lightweight `SimBoard` that bypasses Pydantic for ~5-10x faster simulation. Concealment layer prefers mid-strength cards over strongest when move quality is similar (sandbagging). |
+
+### AI Turn Flow
+
+1. Human submits a move (or completes their draft).
+2. If the next turn belongs to the AI and the game is still ACTIVE, a background task is scheduled.
+3. After a themed delay (0.3-2.5s depending on difficulty), the AI computes its move and submits it through `apply_intent`.
+4. The move is stored as a normal game event; the human client picks it up via Realtime.
+
+### AI Commentary
+
+The AI makes in-character comments during games. Comments are triggered by captures, Plus/Elemental events, archetype use, and game endings, with a 30-50% chance per trigger. Each character has a distinct personality:
+
+- **Ireena**: Encouraging and naive ("Oh, clever move!", "I think I'm getting the hang of this!")
+- **Rahadin**: Cold and tactical ("Predictable.", "You waste my time.")
+- **Strahd**: Menacing and theatrical ("You amuse me, mortal.", "Your struggle is... entertaining.")
+- **The Dark Powers**: Cryptic and ominous ("The mists remember what you have forgotten.", "Every choice narrows the path.")
+
 ## Future Expansion Ideas (Post-MVP)
 
 - Add card keywords tied to CoS tags (Undead/Holy/Vistani/etc.).

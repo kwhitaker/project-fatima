@@ -91,3 +91,12 @@ Started: 2026-03-05
 - Learnings: `update_state` needed as a lightweight snapshot update (no event append) for attaching metadata; Sequence[BoardCell|None] needed in test helpers to satisfy pyright list invariance
 ---
 
+## 2026-03-05 21:15 - US-SP-010
+- Reworked `Games.tsx` into three sections: Play vs AI (4 difficulty cards with character names + flavor text), My Games (shows AI character name + difficulty badge for AI games, email for human), Open Games (joinable lobbies with creator email + Join label + Create Game button)
+- Regenerated `api-types.generated.ts` to include `player_type`, `ai_difficulty`, `AIDifficulty` fields; exported `AIDifficulty` type from `api.ts`
+- Updated existing tests (ux001, gm011, routes, uxp014) to match new component structure; fixed mock data to include player lists
+- Tests/validation: 7 new tests in `sp010.test.tsx`, `bun run test --run` 281 passed (39 files), `uv run pytest` 749 passed
+- Files changed: `web/src/routes/Games.tsx`, `web/src/lib/api.ts`, `web/src/lib/api-types.generated.ts`, `web/src/__tests__/sp010.test.tsx`, `web/src/__tests__/ux001.test.tsx`, `web/src/__tests__/gm011.test.tsx`, `web/src/__tests__/routes.test.tsx`, `web/src/__tests__/uxp014.test.tsx`
+- Learnings: When sections split games by participation, test data must include players matching the mock user ID; regenerated types change header format (openapi-typescript uses its own header)
+---
+

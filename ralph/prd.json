@@ -169,7 +169,7 @@
         "`bun run test --run` passes"
       ],
       "priority": 10,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-SP-011",

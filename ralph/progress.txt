@@ -24,3 +24,13 @@ Started: 2026-03-06
 - Learnings: AI code (ai.py) just passes use_archetype=True for Caster — no AI changes needed for this rework
 ---
 
+## 2026-03-06 13:00 - US-PR-003
+- Replaced Devout Fog-negation with Ward: player picks a friendly board card to protect from capture for one opponent placement
+- Replaced `devout_negate_fog: bool` with `devout_ward_cell: int | None` in `_ArchetypeResult`; added `warded_cell` to GameState and LastMoveInfo
+- Updated resolve_captures to skip warded cell in Plus pre-step and BFS; updated AI (greedy variants + novice params) to supply devout_ward_cell
+- Removed `fog_negated` mists effect from tests and model comments; rewrote all Devout tests (12 tests covering ward, Plus, combo, expiry, validation)
+- 808 tests pass, 0 pyright errors
+- Files changed: app/models/game.py, app/rules/reducer.py, app/rules/captures.py, app/rules/ai.py, tests/test_devout.py, tests/test_sp018_archetype_feedback.py, tests/test_api.py, tests/test_auth_api.py, tests/test_ux011.py
+- Learnings: Devout now always consumes power on activation (not conditionally). AI needs devout_ward_cell for friendly board cards; no ward possible on first placement (no friendly cards on board yet).
+---
+

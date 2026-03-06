@@ -56,3 +56,14 @@ Started: 2026-03-06
 - Pattern: use `data-ward-shield` attribute with value "up"/"steady"/"down" to track ward animation state in tests
 ---
 
+## 2026-03-06 16:40 - US-PE-006
+- Added `intimidateTargetCell` prop to BoardGrid; target cell shows shudder animation (`data-intimidate-shudder`), red flash overlay, and `-3` particle (`data-intimidate-particle`) on debuffed edge
+- Updated BoardCallouts to display "Intimidate -3!" with red (`text-red-400`) + red text-shadow instead of generic amber
+- Computed debuff side (facing side of target relative to placed card) in frontend from 3x3 grid positions
+- Added DevPlayground scenario (case 23) for Intimidate with target shudder + debuff
+- Passed `intimidateTargetCell` from ActiveGameView → BoardGrid via `game.last_move.intimidate_target_cell`
+- Tests: 361 frontend tests pass, 857 backend tests pass
+- Files: `BoardGrid.tsx`, `BoardCallouts.tsx`, `ActiveGameView.tsx`, `DevPlayground.tsx`, `sp018.test.tsx`
+- Pattern: use `data-intimidate-shudder` and `data-intimidate-particle` data attributes for test assertions; compute debuff side from cell indices (target row/col vs placed row/col)
+---
+

@@ -100,7 +100,7 @@
         "`cd web && bun run test --run` passes"
       ],
       "priority": 6,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-PE-007",

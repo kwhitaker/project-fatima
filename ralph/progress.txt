@@ -15,3 +15,12 @@ Started: 2026-03-06
 - Learnings: Intimidate logic is entirely in captures.py resolve_captures(); archetypes.py has no Intimidate code
 ---
 
+## 2026-03-06 12:30 - US-PR-002
+- Replaced `caster_reroll: bool` with `caster_force_omen: bool` in `_ArchetypeResult`
+- Changed Mists section in apply_intent: Caster now forces modifier=+2 regardless of die roll (die still rolled once for display)
+- Rewrote all Caster tests: parametrized test for all 6 die values, fog-roll-still-omen, mists_effect='omen' assertion, single roll count
+- 807 tests pass, 0 pyright errors
+- Files changed: app/rules/reducer.py, tests/test_caster.py
+- Learnings: AI code (ai.py) just passes use_archetype=True for Caster — no AI changes needed for this rework
+---
+

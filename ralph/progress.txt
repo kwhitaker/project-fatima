@@ -76,3 +76,11 @@ Started: 2026-03-06
 - Pattern: use class-style mock for AudioContext in tests (vi.fn() wrapper doesn't work with `new`); sound mocks must include all exported functions to avoid import errors
 ---
 
+
+## 2026-03-06 16:45 - US-PE-008
+- Reorganized DevPlayground scenarios into grouped sections: Core Mechanics, Game Outcomes, AI, Archetype Effects, Misc
+- Archetype Effects section (cases 14-22) groups all 5 archetypes together with "Archetype: Variant" label format
+- Added SCENARIO_SECTIONS array for sectioned UI rendering with section headers
+- Tests: 370 frontend tests pass (8 new in pe008.test.tsx), 857 backend tests pass
+- Files: DevPlayground.tsx, pe008.test.tsx
+---

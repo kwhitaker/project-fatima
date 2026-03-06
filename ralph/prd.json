@@ -130,7 +130,7 @@
         "`cd web && bun run test --run` passes"
       ],
       "priority": 8,
-      "passes": false
+      "passes": true
     }
   ]
 }

@@ -34,7 +34,7 @@ from app.services.game_service import (
     submit_move,
 )
 from app.store.memory import MemoryCardStore, MemoryGameStore
-from tests.conftest import _TEST_CARDS, make_card
+from tests.conftest import _TEST_CARDS, make_card, pick_valid_hand
 
 
 @pytest.fixture()
@@ -166,7 +166,8 @@ class TestExecuteAiTurn:
         gs = MemoryGameStore()
         state = create_game_vs_ai(gs, card_store, "h1", "h@t", AIDifficulty.EASY, seed=100)
         human = state.players[0]
-        state = submit_draft(gs, state.game_id, human.player_id, human.deal[:5])
+        hand = pick_valid_hand(human.deal, card_store)
+        state = submit_draft(gs, card_store, state.game_id, human.player_id, hand)
         if state.status != GameStatus.ACTIVE:
             pytest.skip("Game not ACTIVE after draft")
 
@@ -194,7 +195,8 @@ class TestExecuteAiTurn:
         gs = MemoryGameStore()
         state = create_game_vs_ai(gs, card_store, "h1", "h@t", AIDifficulty.EASY, seed=seed)
         human = state.players[0]
-        state = submit_draft(gs, state.game_id, human.player_id, human.deal[:5])
+        hand = pick_valid_hand(human.deal, card_store)
+        state = submit_draft(gs, card_store, state.game_id, human.player_id, hand)
         assert state.status == GameStatus.ACTIVE
         state = select_archetype(gs, state.game_id, human.player_id, Archetype.MARTIAL)
         assert is_ai_turn(state)
@@ -226,7 +228,8 @@ class TestAiTurnAfterHumanMove:
         gs = MemoryGameStore()
         state = create_game_vs_ai(gs, card_store, "h1", "h@t", AIDifficulty.EASY, seed=seed)
         human = state.players[0]
-        state = submit_draft(gs, state.game_id, human.player_id, human.deal[:5])
+        hand = pick_valid_hand(human.deal, card_store)
+        state = submit_draft(gs, card_store, state.game_id, human.player_id, hand)
         assert state.status == GameStatus.ACTIVE
         assert state.current_player_index == 0
 

@@ -17,7 +17,7 @@ AI_DISPLAY_NAMES: dict[AIDifficulty, str] = {
     AIDifficulty.HARD: "Strahd von Zarovich",
     AIDifficulty.NIGHTMARE: "The Dark Powers",
 }
-from app.rules.deck import HAND_SIZE, generate_matched_deals
+from app.rules.deck import HAND_SIZE, generate_matched_deals, validate_hand_tiers
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
@@ -331,6 +331,7 @@ def join_game(
 
 def submit_draft(
     game_store: GameStore,
+    card_store: CardStore,
     game_id: str,
     player_id: str,
     selected_cards: list[str],
@@ -366,6 +367,12 @@ def submit_draft(
     # Check for duplicates in selection
     if len(set(selected_cards)) != len(selected_cards):
         raise ValueError("Duplicate cards in selection")
+
+    # Check hand tier constraints
+    card_lookup = {c.card_key: c for c in card_store.list_cards()}
+    tier_errors = validate_hand_tiers(selected_cards, card_lookup)
+    if tier_errors:
+        raise ValueError("; ".join(tier_errors))
 
     new_players = list(state.players)
     new_players[player_index] = player.model_copy(

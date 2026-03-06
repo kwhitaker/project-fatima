@@ -17,6 +17,10 @@ HAND_SIZE = 5   # Cards kept after draft selection
 # Exact tier distribution required in every deal.
 DEAL_TIER_SLOTS: dict[int, int] = {3: 2, 2: 3, 1: 3}
 
+# Hand tier limits: max cards of each tier allowed in a drafted hand of 5.
+# T1 is unconstrained (no entry needed).
+HAND_TIER_LIMITS: dict[int, int] = {3: 1, 2: 2}
+
 # Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
 _RARITY_SLOT_LIMITS: dict[str, int] = {
     "ultra": 1,
@@ -99,6 +103,30 @@ def validate_deal(cards: list[CardDefinition]) -> list[str]:
                 f"max {limit} for {key_bucket[card_key]} bucket"
             )
 
+    return errors
+
+
+def validate_hand_tiers(
+    selected_keys: list[str],
+    card_lookup: dict[str, CardDefinition],
+) -> list[str]:
+    """Validate that a drafted hand respects HAND_TIER_LIMITS.
+
+    Returns a list of human-readable error strings (empty = valid).
+    """
+    errors: list[str] = []
+    tier_counts: dict[int, int] = {}
+    for key in selected_keys:
+        card = card_lookup.get(key)
+        if card is None:
+            continue
+        tier_counts[card.tier] = tier_counts.get(card.tier, 0) + 1
+    for tier, limit in HAND_TIER_LIMITS.items():
+        count = tier_counts.get(tier, 0)
+        if count > limit:
+            errors.append(
+                f"Too many Tier {tier} cards: {count} selected, max {limit}"
+            )
     return errors
 
 

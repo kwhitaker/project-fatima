@@ -119,9 +119,12 @@ def submit_draft(
     body: DraftRequest,
     caller_id: CallerIdDep,
     game_store: GameStoreDep,
+    card_store: CardStoreDep,
 ) -> GameState:
     try:
-        state = game_service.submit_draft(game_store, game_id, caller_id, body.selected_cards)
+        state = game_service.submit_draft(
+            game_store, card_store, game_id, caller_id, body.selected_cards
+        )
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except PermissionError as exc:

@@ -7,6 +7,8 @@ can impersonate different users.
 
 from fastapi.testclient import TestClient
 
+from tests.conftest import _pick_valid_hand_from_keys
+
 
 def _alice(client: TestClient, method: str, path: str, **kwargs):  # type: ignore[no-untyped-def]
     return getattr(client, method)(path, headers={"X-User-Id": "alice"}, **kwargs)
@@ -62,17 +64,17 @@ def test_full_happy_path(client: TestClient) -> None:
     assert len(alice_deal) == 8
     assert len(bob_deal) == 8
 
-    # 3. Both players submit draft (pick first 5 cards)
+    # 3. Both players submit draft (pick valid hands respecting tier limits)
     resp = _alice(
         client, "post", f"/games/{game_id}/draft",
-        json={"selected_cards": alice_deal[:5]},
+        json={"selected_cards": _pick_valid_hand_from_keys(alice_deal)},
     )
     assert resp.status_code == 200
     assert resp.json()["status"] == "drafting"  # Bob hasn't drafted yet
 
     resp = _bob(
         client, "post", f"/games/{game_id}/draft",
-        json={"selected_cards": bob_deal[:5]},
+        json={"selected_cards": _pick_valid_hand_from_keys(bob_deal)},
     )
     assert resp.status_code == 200
     data = resp.json()

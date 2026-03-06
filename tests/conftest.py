@@ -16,6 +16,7 @@ from app.dependencies import get_card_store, get_game_store
 from app.main import app
 from app.models.cards import CardDefinition, CardSides
 from app.models.game import Archetype, BoardCell, GameState, GameStatus, PlayerState
+from app.rules.deck import HAND_SIZE, HAND_TIER_LIMITS
 from app.store.memory import MemoryCardStore, MemoryGameStore
 
 # ---------------------------------------------------------------------------
@@ -104,9 +105,52 @@ def mock_rng(*rolls: int) -> MagicMock:
     return rng
 
 
+def pick_valid_hand(
+    deal_keys: list[str],
+    card_store: MemoryCardStore,
+) -> list[str]:
+    """Pick HAND_SIZE cards from a deal respecting HAND_TIER_LIMITS."""
+    cards = [card_store.get_card(k) for k in deal_keys]
+    tier_counts: dict[int, int] = {}
+    selected: list[str] = []
+    for card in cards:
+        if card is None:
+            continue
+        tier = card.tier
+        limit = HAND_TIER_LIMITS.get(tier, HAND_SIZE)
+        if tier_counts.get(tier, 0) >= limit:
+            continue
+        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        selected.append(card.card_key)
+        if len(selected) == HAND_SIZE:
+            break
+    return selected
+
+
 def _mock_caller_id(request: Request) -> str:
     """Test auth: read user identity from X-User-Id header."""
     return request.headers.get("X-User-Id", "test-user")
+
+
+def _pick_valid_hand_from_keys(deal_keys: list[str]) -> list[str]:
+    """Pick HAND_SIZE cards from deal keys respecting HAND_TIER_LIMITS using _TEST_CARDS."""
+    lookup = {c.card_key: c for c in _TEST_CARDS}
+    tier_counts: dict[int, int] = {}
+    selected: list[str] = []
+    for key in deal_keys:
+        card = lookup.get(key)
+        if card is None:
+            selected.append(key)
+        else:
+            tier = card.tier
+            limit = HAND_TIER_LIMITS.get(tier, HAND_SIZE)
+            if tier_counts.get(tier, 0) >= limit:
+                continue
+            tier_counts[tier] = tier_counts.get(tier, 0) + 1
+            selected.append(key)
+        if len(selected) == HAND_SIZE:
+            break
+    return selected
 
 
 def create_and_draft_game(
@@ -131,12 +175,13 @@ def create_and_draft_game(
     data = resp.json()
     assert data["status"] == "drafting"
 
-    # Draft: both players pick first 5 from their deal
+    # Draft: pick valid hands respecting tier limits
     for i, uid in enumerate([alice_id, bob_id]):
         deal = data["players"][i]["deal"]
+        selected = _pick_valid_hand_from_keys(deal)
         resp = client.post(
             f"/games/{game_id}/draft",
-            json={"selected_cards": deal[:5]},
+            json={"selected_cards": selected},
             headers={"X-User-Id": uid},
         )
         assert resp.status_code == 200

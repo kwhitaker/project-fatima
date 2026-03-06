@@ -43,6 +43,11 @@ describe("US-UXP-015: Procedural game sound effects", () => {
       expect(typeof mod.playTurnStart).toBe("function");
       expect(typeof mod.playVictory).toBe("function");
       expect(typeof mod.playDefeat).toBe("function");
+      expect(typeof mod.playMartial).toBe("function");
+      expect(typeof mod.playSkulker).toBe("function");
+      expect(typeof mod.playCaster).toBe("function");
+      expect(typeof mod.playDevout).toBe("function");
+      expect(typeof mod.playIntimidate).toBe("function");
     });
   });
 
@@ -60,6 +65,46 @@ describe("US-UXP-015: Procedural game sound effects", () => {
       expect(() => freshMod.playTurnStart()).not.toThrow();
       expect(() => freshMod.playVictory()).not.toThrow();
       expect(() => freshMod.playDefeat()).not.toThrow();
+      expect(() => freshMod.playMartial()).not.toThrow();
+      expect(() => freshMod.playSkulker()).not.toThrow();
+      expect(() => freshMod.playCaster()).not.toThrow();
+      expect(() => freshMod.playDevout()).not.toThrow();
+      expect(() => freshMod.playIntimidate()).not.toThrow();
+    });
+  });
+
+  describe("archetype sound functions create oscillators after init", () => {
+    it("all archetype sounds create oscillators when audio is initialized", async () => {
+      vi.resetModules();
+      const createOscillatorMock = vi.fn(() => ({
+        type: "sine" as OscillatorType,
+        frequency: { setValueAtTime: vi.fn(), linearRampToValueAtTime: vi.fn() },
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+      }));
+      const freshGain = { gain: { value: 0, setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() }, connect: vi.fn() };
+      class MockAudioContext {
+        createOscillator = createOscillatorMock;
+        createGain = vi.fn(() => ({ ...freshGain }));
+        currentTime = 0;
+        destination = {};
+      }
+      vi.stubGlobal("AudioContext", MockAudioContext);
+      const mod = await import("@/lib/sounds");
+      expect(mod.initAudio()).toBe(true);
+
+      for (const [fnName, expectedMin] of [
+        ["playMartial", 2],
+        ["playSkulker", 3],
+        ["playCaster", 3],
+        ["playDevout", 3],
+        ["playIntimidate", 3],
+      ] as [string, number][]) {
+        createOscillatorMock.mockClear();
+        (mod as Record<string, () => void>)[fnName]();
+        expect(createOscillatorMock.mock.calls.length).toBeGreaterThanOrEqual(expectedMin);
+      }
     });
   });
 

@@ -21,7 +21,7 @@ import { MuteToggle } from "@/routes/game-room/MuteToggle";
 import { SuddenDeathBanner } from "@/routes/game-room/SuddenDeathBanner";
 import { useGameRoom } from "@/routes/game-room/GameRoomContext";
 import { motion, AnimatePresence } from "motion/react";
-import { playPlus, playElemental, playTurnStart } from "@/lib/sounds";
+import { playPlus, playElemental, playTurnStart, playMartial, playSkulker, playCaster, playDevout, playIntimidate } from "@/lib/sounds";
 
 export function ActiveGameView({
   game,
@@ -114,6 +114,24 @@ export function ActiveGameView({
     }
     prevElemRef.current = key;
   }, [game.last_move?.elemental_triggered, game.last_move?.cell_index]);
+
+  // Sound: Archetype activation
+  const prevArchRef = useRef<string | null>(null);
+  useEffect(() => {
+    const name = game.last_move?.archetype_used_name ?? null;
+    const key = name ? `${game.last_move!.cell_index}-${name}` : null;
+    if (key && key !== prevArchRef.current) {
+      const soundMap: Record<string, () => void> = {
+        martial: playMartial,
+        skulker: playSkulker,
+        caster: playCaster,
+        devout: playDevout,
+        intimidate: playIntimidate,
+      };
+      soundMap[name!]?.();
+    }
+    prevArchRef.current = key;
+  }, [game.last_move?.archetype_used_name, game.last_move?.cell_index]);
 
   /* ─── Secondary sidebar content (shared between desktop sidebar & mobile drawer) ─── */
   const secondaryContent = (

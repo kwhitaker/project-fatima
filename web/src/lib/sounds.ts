@@ -141,3 +141,49 @@ export function playDefeat(): void {
   osc("sawtooth", 400, t, 0.3, 0.5, 200);
   osc("square", 300, t + 0.2, 0.4, 0.3, 150);
 }
+
+// ── Archetype sound effects ─────────────────────────────────
+
+/** Quick rising sweep (whoosh) for Martial */
+export function playMartial(): void {
+  if (!ctx || !masterGain) return;
+  const t = now();
+  osc("sawtooth", 200, t, 0.15, 0.5, 800);
+  osc("sine", 150, t + 0.05, 0.12, 0.3, 600);
+}
+
+/** Sharp staccato burst for Skulker */
+export function playSkulker(): void {
+  if (!ctx || !masterGain) return;
+  const t = now();
+  osc("square", 600, t, 0.04, 0.7);
+  osc("square", 900, t + 0.05, 0.04, 0.5);
+  osc("square", 1200, t + 0.1, 0.03, 0.3);
+}
+
+/** Deep resonant hum for Caster */
+export function playCaster(): void {
+  if (!ctx || !masterGain) return;
+  const t = now();
+  osc("sine", 100, t, 0.4, 0.6);
+  osc("sine", 150, t, 0.35, 0.4);
+  osc("sawtooth", 200, t + 0.1, 0.3, 0.2, 180);
+}
+
+/** Gentle chime/bell for Devout */
+export function playDevout(): void {
+  if (!ctx || !masterGain) return;
+  const t = now();
+  osc("sine", 880, t, 0.2, 0.5);
+  osc("sine", 1320, t + 0.05, 0.25, 0.3);
+  osc("sine", 1760, t + 0.1, 0.2, 0.2);
+}
+
+/** Low aggressive rumble for Intimidate */
+export function playIntimidate(): void {
+  if (!ctx || !masterGain) return;
+  const t = now();
+  osc("sawtooth", 80, t, 0.25, 0.7, 50);
+  osc("square", 60, t + 0.05, 0.2, 0.5, 40);
+  osc("sawtooth", 120, t + 0.1, 0.15, 0.3, 60);
+}

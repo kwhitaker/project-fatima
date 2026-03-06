@@ -46,3 +46,13 @@ Started: 2026-03-06
 - Pattern: use `data-caster-aura` and `data-caster-particle` data attributes for test assertions on caster animations
 ---
 
+## 2026-03-06 16:35 - US-PE-005
+- Replaced emoji 🛡 ward indicator with animated golden shield overlay (`WardShieldOverlay` component in BoardGrid) with shield-up/steady/down animation states
+- Changed ward cell ring color from sky to amber/gold (`ring-amber-300`); shield has radial gradient golden barrier with breathing pulse
+- Updated BoardCallouts to show "Ward!" with golden/holy text-shadow instead of generic "Devout!"
+- Updated DevPlayground scenario 20 description; updated pr006 and sp018 tests for new ring color and data-ward-shield attribute
+- Tests: 357 frontend tests pass, 857 backend tests pass
+- Files: `BoardGrid.tsx`, `BoardCallouts.tsx`, `DevPlayground.tsx`, `pr006.test.tsx`, `sp018.test.tsx`
+- Pattern: use `data-ward-shield` attribute with value "up"/"steady"/"down" to track ward animation state in tests
+---
+

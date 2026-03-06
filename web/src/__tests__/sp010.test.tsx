@@ -1,7 +1,7 @@
 /**
  * US-SP-010: Games list rework — My Games, Open Games, Play vs AI sections
  */
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
@@ -96,7 +96,7 @@ describe("US-SP-010: Games list rework", () => {
       expect(screen.getByTestId("ai-nightmare")).toBeInTheDocument();
     });
 
-    it("calls createGameVsAi and navigates on click", async () => {
+    it("opens confirmation modal on click and creates game on Challenge", async () => {
       vi.mocked(listGames).mockResolvedValue([]);
       const aiGame = makeGame({
         game_id: "ai-game-id",
@@ -114,8 +114,71 @@ describe("US-SP-010: Games list rework", () => {
       await screen.findByText("Play vs AI");
       await user.click(screen.getByTestId("ai-hard"));
 
+      // Confirmation modal should appear with long description
+      const modal = screen.getByTestId("ai-confirm-modal");
+      expect(modal).toBeInTheDocument();
+      expect(
+        within(modal).getByText("Strahd von Zarovich"),
+      ).toBeInTheDocument();
+      expect(within(modal).getByText("Hard")).toBeInTheDocument();
+      expect(
+        within(modal).getByText(/peers into the fog of possibility/),
+      ).toBeInTheDocument();
+
+      // Click Challenge to confirm
+      await user.click(within(modal).getByRole("button", { name: /challenge/i }));
+
       expect(createGameVsAi).toHaveBeenCalledWith("hard");
       expect(mockNavigate).toHaveBeenCalledWith("/g/ai-game-id");
+    });
+
+    it("closes confirmation modal on Cancel", async () => {
+      vi.mocked(listGames).mockResolvedValue([]);
+
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter>
+          <Games />
+        </MemoryRouter>,
+      );
+
+      await screen.findByText("Play vs AI");
+      await user.click(screen.getByTestId("ai-easy"));
+
+      // Modal opens
+      expect(screen.getByTestId("ai-confirm-modal")).toBeInTheDocument();
+
+      // Cancel
+      await user.click(screen.getByRole("button", { name: /cancel/i }));
+
+      // Modal gone after exit animation — no createGameVsAi call
+      await waitFor(() => {
+        expect(screen.queryByTestId("ai-confirm-modal")).not.toBeInTheDocument();
+      });
+      expect(createGameVsAi).not.toHaveBeenCalled();
+    });
+
+    it("closes confirmation modal on Escape key", async () => {
+      vi.mocked(listGames).mockResolvedValue([]);
+
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter>
+          <Games />
+        </MemoryRouter>,
+      );
+
+      await screen.findByText("Play vs AI");
+      await user.click(screen.getByTestId("ai-medium"));
+
+      expect(screen.getByTestId("ai-confirm-modal")).toBeInTheDocument();
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("ai-confirm-modal")).not.toBeInTheDocument();
+      });
+      expect(createGameVsAi).not.toHaveBeenCalled();
     });
   });
 
@@ -163,6 +226,90 @@ describe("US-SP-010: Games list rework", () => {
       );
 
       await screen.findByText("opponent@example.com");
+    });
+  });
+
+  describe("My Games collapse toggle", () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it("collapses and expands My Games list on toggle click", async () => {
+      const aiGame = makeGame({
+        game_id: "my-ai-game",
+        status: "active",
+        players: [
+          makePlayer("user-123", "test@example.com"),
+          {
+            ...makePlayer("00000000-0000-0000-0000-000000000001", "ai@bot"),
+            player_type: "ai" as const,
+            ai_difficulty: "medium" as const,
+          },
+        ],
+      });
+      vi.mocked(listGames).mockResolvedValue([aiGame]);
+
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter>
+          <Games />
+        </MemoryRouter>,
+      );
+
+      // Games list is visible by default
+      await screen.findByText("Rahadin");
+      const toggle = screen.getByRole("button", { name: /my games/i });
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+
+      // Collapse
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+      // Expand again
+      await user.click(toggle);
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+    });
+
+    it("persists collapse state to localStorage", async () => {
+      vi.mocked(listGames).mockResolvedValue([]);
+
+      const user = userEvent.setup();
+      render(
+        <MemoryRouter>
+          <Games />
+        </MemoryRouter>,
+      );
+
+      const toggle = await screen.findByRole("button", { name: /my games/i });
+      await user.click(toggle);
+      expect(localStorage.getItem("fatima:myGamesCollapsed")).toBe("true");
+
+      await user.click(toggle);
+      expect(localStorage.getItem("fatima:myGamesCollapsed")).toBe("false");
+    });
+
+    it("shows game count badge", async () => {
+      vi.mocked(listGames).mockResolvedValue([
+        makeGame({
+          game_id: "game-1",
+          status: "active",
+          players: [makePlayer("user-123", "test@example.com"), makePlayer("p2")],
+        }),
+        makeGame({
+          game_id: "game-2",
+          status: "complete",
+          players: [makePlayer("user-123", "test@example.com"), makePlayer("p3")],
+          result: { winner: 0, is_draw: false },
+        }),
+      ]);
+
+      render(
+        <MemoryRouter>
+          <Games />
+        </MemoryRouter>,
+      );
+
+      await screen.findByText("(2)");
     });
   });
 
@@ -217,7 +364,7 @@ describe("US-SP-010: Games list rework", () => {
       // The Create Game button should be inside Open Games section
       const openGamesHeading = await screen.findByText("Open Games");
       const section = openGamesHeading.closest("section")!;
-      expect(within(section).getByText("Create Game")).toBeInTheDocument();
+      expect(within(section).getByText("Challenge Another Player")).toBeInTheDocument();
     });
   });
 });

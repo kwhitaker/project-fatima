@@ -64,7 +64,7 @@ describe("US-UX-001: dark mode default + mobile-first layout", () => {
       </MemoryRouter>,
     );
     // Header should be present; find by the Create Game button which is always rendered
-    await screen.findByRole("button", { name: /create game/i });
+    await screen.findByRole("button", { name: /challenge another player/i });
     const header = document.querySelector("div.flex");
     expect(header).not.toBeNull();
   });

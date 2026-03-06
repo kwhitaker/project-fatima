@@ -1,7 +1,7 @@
 /**
  * US-SP-019: Frontend Nightmare difficulty limited-availability notice
  */
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
@@ -102,6 +102,10 @@ describe("US-SP-019: Nightmare limited-availability notice", () => {
 
     await screen.findByText("Play vs AI");
     await user.click(screen.getByTestId("ai-nightmare"));
+
+    // Confirmation modal opens — click Challenge (exact match, not "Challenge Another Player")
+    const modal = screen.getByTestId("ai-confirm-modal");
+    await user.click(within(modal).getByRole("button", { name: /^challenge$/i }));
 
     expect(
       await screen.findByText(

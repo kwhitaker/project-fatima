@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,15 @@ export function ModalShell({
   "aria-label"?: string;
   "data-testid"?: string;
 }) {
+  useEffect(() => {
+    if (!open) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -35,9 +44,6 @@ export function ModalShell({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          onKeyDown={(e) => {
-            if (e.key === "Escape") onClose();
-          }}
         >
           <motion.div
             className={cn(

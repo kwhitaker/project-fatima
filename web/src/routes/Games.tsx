@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -10,7 +10,11 @@ import {
   type GameState,
   type AIDifficulty,
 } from "@/lib/api";
-import { AI_DISPLAY_NAMES } from "@/lib/ai-constants";
+import { AI_DISPLAY_NAMES, AI_LONG_DESCRIPTIONS } from "@/lib/ai-constants";
+import { ModalShell } from "@/components/ui/ModalShell";
+import { GameRulesDialog } from "@/routes/game-room/GameRulesDialog";
+
+const STORAGE_KEY_MY_GAMES = "fatima:myGamesCollapsed";
 
 const STATUS_LABELS: Record<GameState["status"], string> = {
   waiting: "Waiting",
@@ -104,6 +108,27 @@ export default function Games() {
   const [creating, setCreating] = useState(false);
   const [creatingAi, setCreatingAi] = useState<AIDifficulty | null>(null);
   const [nightmareError, setNightmareError] = useState<string | null>(null);
+  const [selectedAi, setSelectedAi] = useState<AIDifficulty | null>(null);
+  const [showRules, setShowRules] = useState(false);
+  const [myGamesCollapsed, setMyGamesCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY_MY_GAMES) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleMyGames = () => {
+    setMyGamesCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(STORAGE_KEY_MY_GAMES, String(next));
+      } catch {
+        // storage unavailable
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     listGames()
@@ -164,16 +189,21 @@ export default function Games() {
 
   return (
     <motion.div
-      className="container py-8"
+      className="mx-auto max-w-3xl overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.15 }}
     >
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Games</h1>
-        <Button variant="outline" onClick={() => void signOut()}>
-          Log out
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowRules(true)}>
+            How to Play
+          </Button>
+          <Button variant="outline" onClick={() => void signOut()}>
+            Log out
+          </Button>
+        </div>
       </div>
 
       {error && <p className="text-destructive mb-4 text-sm">{error}</p>}
@@ -188,7 +218,7 @@ export default function Games() {
                 key={difficulty}
                 data-testid={`ai-${difficulty}`}
                 disabled={creatingAi !== null || hasActiveGame}
-                onClick={() => void handleCreateAi(difficulty)}
+                onClick={() => setSelectedAi(difficulty)}
                 className="hover:bg-accent/20 hover:border-accent cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                 title={
                   hasActiveGame
@@ -212,89 +242,22 @@ export default function Games() {
                     Few may commune with The Dark Powers at once.
                   </div>
                 )}
-                {difficulty === "nightmare" && nightmareError && (
-                  <div
-                    className="mt-1 text-xs font-medium text-red-400"
-                    role="alert"
-                    aria-label="nightmare error"
-                  >
-                    {nightmareError}
-                  </div>
-                )}
               </button>
             ),
           )}
         </div>
       </section>
 
-      {/* My Games */}
-      <section className="mb-8">
-        <h2 className="mb-3 text-lg font-semibold">My Games</h2>
-        {loading ? (
-          <p className="text-muted-foreground text-sm">Loading...</p>
-        ) : myGames.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No games yet.</p>
-        ) : (
-          <motion.ul
-            className="space-y-2"
-            initial="hidden"
-            animate="visible"
-            variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
-          >
-            {myGames.map((game) => {
-              const displayName = getOpponentName(game, myId);
-              const shortId = game.game_id.slice(0, 8);
-              const resultLabel = getResultLabel(game, myId);
-              const aiDiff = getAiDifficulty(game, myId);
-              return (
-                <motion.li
-                  key={game.game_id}
-                  variants={{
-                    hidden: { opacity: 0, y: 10 },
-                    visible: { opacity: 1, y: 0 },
-                  }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <Link
-                    to={`/g/${game.game_id}`}
-                    className="hover:bg-accent/20 hover:border-accent block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate font-medium">
-                          {displayName}
-                        </span>
-                        <span
-                          className="text-muted-foreground font-mono text-xs"
-                          title={game.game_id}
-                        >
-                          {shortId}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-1">
-                        {aiDiff && <DifficultyBadge difficulty={aiDiff} />}
-                        <StatusBadge status={game.status} />
-                        {resultLabel && <ResultBadge label={resultLabel} />}
-                      </div>
-                    </div>
-                  </Link>
-                </motion.li>
-              );
-            })}
-          </motion.ul>
-        )}
-      </section>
-
       {/* Open Games */}
       <section className="mb-8">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold">Open Games</h2>
           <Button
             onClick={() => void handleCreate()}
             disabled={creating || hasActiveGame}
             title={hasActiveGame ? "Finish or forfeit your current game first" : undefined}
           >
-            {creating ? "Creating..." : "Create Game"}
+            {creating ? "Creating..." : "Challenge Another Player"}
           </Button>
         </div>
         {loading ? (
@@ -371,6 +334,154 @@ export default function Games() {
           </motion.ul>
         )}
       </section>
+
+      {/* My Games */}
+      <section className="mb-8">
+        <button
+          type="button"
+          onClick={toggleMyGames}
+          className="mb-3 flex w-full cursor-pointer items-center gap-2 text-left"
+          aria-expanded={!myGamesCollapsed}
+          aria-controls="my-games-list"
+        >
+          <svg
+            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${myGamesCollapsed ? "" : "rotate-90"}`}
+            viewBox="0 0 16 16"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M6 3l5 5-5 5V3z" />
+          </svg>
+          <h2 className="text-lg font-semibold">My Games</h2>
+          {myGames.length > 0 && (
+            <span className="text-xs text-muted-foreground">({myGames.length})</span>
+          )}
+        </button>
+        <AnimatePresence initial={false}>
+          {!myGamesCollapsed && (
+            <motion.div
+              id="my-games-list"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              style={{ overflow: "hidden" }}
+            >
+              {loading ? (
+                <p className="text-muted-foreground text-sm">Loading...</p>
+              ) : myGames.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No games yet.</p>
+              ) : (
+                <motion.ul
+                  className="space-y-2"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ visible: { transition: { staggerChildren: 0.04 } } }}
+                >
+                  {myGames.map((game) => {
+                    const displayName = getOpponentName(game, myId);
+                    const shortId = game.game_id.slice(0, 8);
+                    const resultLabel = getResultLabel(game, myId);
+                    const aiDiff = getAiDifficulty(game, myId);
+                    return (
+                      <motion.li
+                        key={game.game_id}
+                        variants={{
+                          hidden: { opacity: 0, y: 10 },
+                          visible: { opacity: 1, y: 0 },
+                        }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <Link
+                          to={`/g/${game.game_id}`}
+                          className="hover:bg-accent/20 hover:border-accent block w-full cursor-pointer rounded-none border-2 border-border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex min-w-0 flex-col">
+                              <span className="truncate font-medium">
+                                {displayName}
+                              </span>
+                              <span
+                                className="text-muted-foreground font-mono text-xs"
+                                title={game.game_id}
+                              >
+                                {shortId}
+                              </span>
+                            </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1">
+                              {aiDiff && <DifficultyBadge difficulty={aiDiff} />}
+                              <StatusBadge status={game.status} />
+                              {resultLabel && <ResultBadge label={resultLabel} />}
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.li>
+                    );
+                  })}
+                </motion.ul>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </section>
+
+      {/* AI Confirmation Modal */}
+      <ModalShell
+        open={selectedAi !== null}
+        onClose={() => setSelectedAi(null)}
+        maxWidth="max-w-md"
+        aria-label="Confirm AI opponent"
+        data-testid="ai-confirm-modal"
+      >
+        {selectedAi && (
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2 className="text-xl font-bold">
+                {AI_DISPLAY_NAMES[selectedAi]}
+              </h2>
+              <span className="text-sm font-semibold text-violet-400">
+                {DIFFICULTY_LABELS[selectedAi]}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {AI_LONG_DESCRIPTIONS[selectedAi]}
+            </p>
+            {selectedAi === "nightmare" && (
+              <p className="text-xs italic text-amber-500/70">
+                Few may commune with The Dark Powers at once.
+              </p>
+            )}
+            {nightmareError && selectedAi === "nightmare" && (
+              <p
+                className="text-xs font-medium text-red-400"
+                role="alert"
+                aria-label="nightmare error"
+              >
+                {nightmareError}
+              </p>
+            )}
+            <div className="flex gap-3 pt-2">
+              <Button
+                className="flex-1"
+                disabled={creatingAi !== null}
+                onClick={() => void handleCreateAi(selectedAi)}
+              >
+                {creatingAi ? "Summoning..." : "Challenge"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1"
+                disabled={creatingAi !== null}
+                onClick={() => setSelectedAi(null)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </ModalShell>
+
+      <GameRulesDialog open={showRules} onClose={() => setShowRules(false)} />
     </motion.div>
   );
 }

@@ -520,9 +520,9 @@ describe("games page", () => {
     const user = userEvent.setup();
     renderAt("/games");
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /create game/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /challenge another player/i })).toBeInTheDocument();
     });
-    await user.click(screen.getByRole("button", { name: /create game/i }));
+    await user.click(screen.getByRole("button", { name: /challenge another player/i }));
     await waitFor(() => {
       expect(mockCreateGame).toHaveBeenCalledOnce();
       expect(
@@ -1330,7 +1330,7 @@ describe("Button component", () => {
     renderAt("/games");
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /create game/i })
+        screen.getByRole("button", { name: /challenge another player/i })
       ).toBeInTheDocument();
     });
   });

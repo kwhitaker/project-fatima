@@ -116,11 +116,11 @@ describe("create game blocked (409)", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /create game/i })
+        screen.getByRole("button", { name: /challenge another player/i })
       ).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /create game/i }));
+    await user.click(screen.getByRole("button", { name: /challenge another player/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/non-complete game/i)).toBeInTheDocument();
@@ -139,11 +139,11 @@ describe("create game blocked (409)", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole("button", { name: /create game/i })
+        screen.getByRole("button", { name: /challenge another player/i })
       ).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /create game/i }));
+    await user.click(screen.getByRole("button", { name: /challenge another player/i }));
 
     await waitFor(() => {
       expect(screen.getByText(/forfeit/i)).toBeInTheDocument();

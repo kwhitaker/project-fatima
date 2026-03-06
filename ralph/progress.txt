@@ -35,3 +35,11 @@ Started: 2026-03-06
 - Learnings: `validate_hand_tiers` returns errors (empty=valid), so `not errors` means valid — watch the truthiness
 ---
 
+## 2026-03-06 15:00 - US-DR-004
+- Updated DraftingGameView.tsx: HAND_TIER_LIMITS {3:1, 2:2}, tier badge (T1/T2/T3) on each card, instruction text mentions tier constraints, cards disabled when tier limit reached
+- Updated test deal from 7 all-T1 cards to 8 tier-distributed cards (2xT3, 3xT2, 3xT1); added 4 new tests (instructions, tier badges, T3 disabled after 1, T2 disabled after 2)
+- Tests: 343 frontend passed, 847 backend passed
+- Files: web/src/routes/game-room/DraftingGameView.tsx, web/src/__tests__/drafting.test.tsx
+- Learnings: Test deals must respect tier distribution; selecting cards sequentially in tests must account for tier limits disabling buttons
+---
+

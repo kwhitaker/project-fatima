@@ -22,7 +22,7 @@
         "`uv run pyright` passes"
       ],
       "priority": 1,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-002",
@@ -40,7 +40,7 @@
         "`uv run pyright` passes"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-003",
@@ -57,7 +57,7 @@
         "`uv run pyright` passes"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-004",
@@ -76,7 +76,7 @@
         "`cd web && bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-005",

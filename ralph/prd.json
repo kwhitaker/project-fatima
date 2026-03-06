@@ -1,313 +1,134 @@
 {
   "project": "project-fatima",
-  "branchName": "feature/single-player",
-  "description": "Single-player mode: play against AI opponents at four difficulty levels themed as Curse of Strahd characters (Ireena, Rahadin, Strahd, The Dark Powers). Includes AI identity and game creation, novice and greedy strategy engines, expectimax and MCTS advanced strategies, AI commentary/trash talk, games list rework to distinguish single-player vs multiplayer, and frontend AI opponent experience.",
+  "branchName": "feature/power-refactor",
+  "description": "Rebalance archetype powers. Intimidate is nerfed from min-side-debuff to -3 debuff (mirroring Skulker). Caster is reworked from best-of-two-rolls to guaranteed Omen (+2 all sides). Devout is reworked from negate-Fog to Ward (protect one friendly board card from capture for one opponent turn). AI archetype selection is upgraded to evaluate all five powers against hand composition. Docs and rules text updated.",
   "userStories": [
     {
-      "id": "US-SP-001",
-      "title": "AI difficulty enum and PlayerState model changes",
-      "description": "As a developer, I want the game model to distinguish human and AI players with a difficulty level — so the system knows when to trigger AI behavior.",
+      "id": "US-PR-001",
+      "title": "Intimidate nerf: -3 debuff instead of min-side",
+      "description": "As a player, I want Intimidate to reduce an enemy card's facing side by 3 (min 1) instead of replacing it with the card's minimum side -- so the power is strong but not an auto-capture.",
       "acceptanceCriteria": [
-        "Add `AIDifficulty` enum to `app/models/game.py` with values: `easy`, `medium`, `hard`, `nightmare`",
-        "Add `player_type: Literal['human', 'ai'] = 'human'` field to `PlayerState`",
-        "Add `ai_difficulty: AIDifficulty | None = None` field to `PlayerState` (only set for AI players)",
-        "Existing serialization/deserialization of `GameState` still works (new fields default safely for old snapshots)",
-        "Add `AI_PLAYER_ID = '00000000-0000-0000-0000-000000000001'` constant and `AI_DISPLAY_NAMES` dict mapping each difficulty to a character name (Ireena Kolyana, Rahadin, Strahd von Zarovich, The Dark Powers) in `app/services/game_service.py`",
-        "`uv run pytest` passes with no regressions",
+        "In `app/rules/captures.py`, change the Intimidate debuff from `min(n,e,s,w)` to `max(facing_side - 3, 1)`",
+        "Update `app/rules/archetypes.py` if any Intimidate logic lives there (currently it doesn't -- debuff is in captures.py)",
+        "Update existing Intimidate tests in `tests/test_intimidate.py` to reflect the new -3 behavior",
+        "Add test: card with facing side 5 is debuffed to 2 (5-3=2), attacker with 3 captures (3>2)",
+        "Add test: card with facing side 2 is debuffed to 1 (floor), not negative",
+        "Add test: card with facing side 10 is debuffed to 7, attacker with 7 does NOT capture (tie, no strict >)",
+        "Intimidate + Mists interactions still work correctly (stacking -3 debuff with mists modifier)",
+        "`uv run pytest` passes",
         "`uv run pyright` passes"
       ],
       "priority": 1,
       "passes": true
     },
     {
-      "id": "US-SP-002",
-      "title": "create_game_vs_ai service function",
-      "description": "As a player, I want to start a game against an AI opponent at a chosen difficulty — so I can play without waiting for another human.",
+      "id": "US-PR-002",
+      "title": "Caster rework: guaranteed Omen (+2 all sides)",
+      "description": "As a player, I want Caster to guarantee an Omen result (+2 to all comparisons) for one placement -- so the power has real strategic impact instead of a marginal reroll.",
       "acceptanceCriteria": [
-        "New `create_game_vs_ai(game_store, card_store, player_id, email, difficulty, seed=None)` function in `game_service.py`",
-        "Creates game with human as player 0 and AI as player 1 (`player_type='ai'`, `ai_difficulty` set, `player_id=AI_PLAYER_ID`, email from `AI_DISPLAY_NAMES`)",
-        "Generates deals for both players (same `generate_matched_deals`)",
-        "AI auto-drafts: easy picks 5 randomly, medium picks 5 with highest total side values, hard/nightmare pick 5 with best defensive+offensive coverage (highest min-side sum)",
-        "AI auto-selects archetype: easy picks randomly, medium/hard/nightmare pick strategically (Skulker if hand has a card with a weak side adjacent to a strong side, otherwise Martial)",
-        "Game enters `DRAFTING` status — human still needs to draft and pick archetype",
-        "AI player is exempt from `_check_no_active_game` (AI can be in many games at once)",
-        "Add tests: game creation succeeds, AI player fields are correct, AI deal is auto-drafted, AI archetype is auto-selected, human still needs to draft",
-        "`uv run pytest` passes"
+        "In `app/rules/reducer.py`, change Caster behavior: when Caster is activated, the Mists modifier is always +2 regardless of the actual die roll",
+        "The die is still rolled (for display/logging), but the modifier is forced to +2",
+        "Remove the `caster_reroll` flag from `_ArchetypeResult` and replace with `caster_force_omen: bool`",
+        "Update `_apply_archetype()` CASTER branch to set the new flag",
+        "Update `apply_intent()` Mists section: if `caster_force_omen`, set modifier to +2 and effect label to 'omen'",
+        "Update `tests/test_caster.py`: rewrite tests for guaranteed Omen behavior instead of best-of-two",
+        "Add test: Caster activation always yields +2 modifier even when die rolls 1 (Fog)",
+        "Add test: Caster activation yields mists_effect='omen' in last_move regardless of roll",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
       ],
       "priority": 2,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-SP-003",
-      "title": "POST /games/vs-ai endpoint",
-      "description": "As a frontend client, I want an API endpoint to create a game against an AI opponent — so I can start single-player games over HTTP.",
+      "id": "US-PR-003",
+      "title": "Devout rework: Ward (protect one friendly card from capture)",
+      "description": "As a player, I want Devout to let me Ward one of my cards already on the board, making it immune to capture for the opponent's next placement -- so I have a meaningful defensive option.",
       "acceptanceCriteria": [
-        "New `POST /games/vs-ai` endpoint in `app/routers/games.py`",
-        "Request body: `{ \"difficulty\": \"easy\" | \"medium\" | \"hard\" | \"nightmare\" }`",
-        "Calls `create_game_vs_ai` from game_service; returns the `GameState` with status 201",
-        "Returns 409 if player already has a non-complete game",
-        "Auth: requires valid JWT (same pattern as existing endpoints)",
-        "Add `createGameVsAi(difficulty)` to `web/src/lib/api.ts`",
-        "Add router-level tests verifying status codes (201, 409)",
-        "`uv run pytest` passes"
+        "Add `devout_ward_cell: int | None = None` field to `PlacementIntent`",
+        "In `_apply_archetype()` DEVOUT branch: validate `devout_ward_cell` is 0-8, occupied, owned by the player (not opponent), and not the cell being placed into. Raise `ArchetypePowerArgumentError` on invalid target",
+        "Return a new flag `devout_ward_cell: int | None` in `_ArchetypeResult` (replace `devout_negate_fog`)",
+        "Add `warded_cell: int | None = None` field to `GameState` -- persists until the opponent completes one placement, then clears",
+        "In `apply_intent()`: if `devout_ward_cell` is set, store it in state as `warded_cell`",
+        "In `apply_intent()`: at the start of the NEXT player's turn, pass `warded_cell` to `resolve_captures()`. After that placement resolves, clear `warded_cell` from state",
+        "In `resolve_captures()`: skip capture of the warded cell during both Plus pre-step and BFS standard captures -- the warded card cannot change ownership",
+        "Add `warded_cell: int | None` to `LastMoveInfo` so the frontend can highlight the warded card",
+        "Devout power is consumed (archetype_used=True) when ward is placed, not conditionally",
+        "Delete all old Devout/Fog-negation tests in `tests/test_devout.py` and replace with Ward tests",
+        "Add test: warded card is not captured even when opponent's attacking side is higher",
+        "Add test: warded card is not captured by Plus rule",
+        "Add test: warded card is not captured by combo chain",
+        "Add test: ward expires after one opponent placement (next turn after that, the card is capturable again)",
+        "Add test: cannot ward an empty cell or opponent's card",
+        "Add test: ward does not protect against the player's own placement (only opponent's)",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
       ],
       "priority": 3,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-SP-004",
-      "title": "AI turn trigger: background task after human moves",
-      "description": "As a player, I want the AI to automatically take its turn after I play — so the game flows without manual intervention.",
+      "id": "US-PR-004",
+      "title": "AI archetype selection: hand-aware heuristic",
+      "description": "As a developer, I want the AI to evaluate all five archetypes against its hand composition when selecting a power -- so the AI makes intelligent archetype choices across all difficulty levels.",
       "acceptanceCriteria": [
-        "After `submit_draft` transitions an AI game to ACTIVE, if it's the AI's turn, schedule an AI move",
-        "After `submit_move` in an AI game, if the next turn belongs to the AI and the game is still ACTIVE, schedule an AI move",
-        "New `execute_ai_turn(game_id, game_store, card_store)` async function that loads state, computes the AI move via `choose_move`, and calls `submit_move` internally",
-        "AI moves use the same `apply_intent` path as human moves — no special game logic",
-        "Add a small delay before AI move: easy 0.3-0.8s, medium 0.5-1.0s, hard 0.8-1.5s, nightmare 1.5-2.5s (randomized within range from game seed)",
-        "Use FastAPI `BackgroundTasks` to schedule AI turns without blocking the response",
-        "If the game completes (board full, early finish, or Sudden Death draw) before AI turn executes, the AI turn is a no-op",
-        "Add tests: AI turn fires after human move, AI move is valid, game progresses correctly, no AI turn when game is complete",
-        "`uv run pytest` passes"
+        "Rewrite `_ai_auto_archetype(hand, difficulty, rng)` in `game_service.py`",
+        "Easy: still random choice from all 5 archetypes",
+        "Medium: score each archetype against the hand, pick the best (break ties randomly). Scoring heuristics: Skulker scores high when hand has cards with one weak side adjacent to a strong side; Martial scores high when hand has cards with strong sides clustered; Caster scores high when hand has many mid-range sides (5-7); Devout scores high when hand has one high-value card worth protecting; Intimidate scores high when hand has moderate attacking sides (5-7)",
+        "Hard/Nightmare: same scoring as Medium but with tighter evaluation (consider more factors)",
+        "Add tests: verify AI picks Skulker for hands with weak-adjacent-strong pattern, Caster for mid-range hands, Devout for hands with one standout card, etc.",
+        "Add test: Easy AI picks randomly (distribution check over multiple seeds)",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
       ],
       "priority": 4,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-SP-005",
-      "title": "AI strategy: Novice (Ireena) — semi-random placement",
-      "description": "As a player on Easy difficulty, I want the AI to play like a beginner who makes some reasonable moves but plenty of mistakes — so the game is fun and forgiving.",
+      "id": "US-PR-005",
+      "title": "AI archetype usage: Devout Ward and Caster Omen in AI strategies",
+      "description": "As a developer, I want the AI strategies (novice, greedy, expectimax, MCTS) to correctly use the reworked Caster and Devout powers -- so the AI takes advantage of guaranteed Omen and Ward.",
       "acceptanceCriteria": [
-        "New `app/rules/ai.py` module with `choose_move(state, ai_index, difficulty, card_lookup, rng) -> PlacementIntent`",
-        "Novice strategy: scores each (card, cell) pair based on: +1 per adjacent opponent card where attacking side > facing side, +1 for elemental match, plus random noise uniform(0, 1.5). Picks via weighted random choice from top candidates",
-        "Novice does not consider defense (exposed weak sides) or Plus setups",
-        "Novice archetype usage: 50% chance to activate on first or second placement regardless of board state. When activating: Skulker boosts a random side, Martial picks random direction, Intimidate targets random adjacent opponent card, Caster/Devout used even on non-Fog/non-Omen turns. 20% chance to never use archetype at all (checked once at game start, stored as a flag)",
-        "All legal move enumeration: each card in hand x each empty cell",
-        "Add tests: novice returns valid moves, novice prefers obvious captures most of the time, novice sometimes makes suboptimal choices (noise), archetype usage is inconsistent",
-        "`uv run pytest` passes"
+        "Update `_greedy_archetype_variants()` in `ai.py`: Devout now generates variants with `devout_ward_cell` for each friendly card on the board adjacent to the placement cell",
+        "Caster variant is unchanged (still `{use_archetype: True}` with no extra params -- the guaranteed Omen is automatic)",
+        "Novice `_novice_archetype_params()`: Devout picks a random friendly board card to ward",
+        "Greedy/Expectimax/MCTS: evaluate Devout ward variants via simulation like other archetypes",
+        "Add test: greedy AI generates Devout ward variants for friendly board cards",
+        "Add test: novice AI can activate Devout ward when friendly cards exist on board",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
       ],
       "priority": 5,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-SP-006",
-      "title": "AI strategy: Greedy (Rahadin) — one-ply evaluation",
-      "description": "As a player on Medium difficulty, I want the AI to always pick the move that captures the most cards this turn — so it feels competent but predictable.",
+      "id": "US-PR-006",
+      "title": "Frontend: update archetype copy and power descriptions",
+      "description": "As a player, I want the archetype selection modal and power descriptions to reflect the rebalanced powers -- so I understand what each power does.",
       "acceptanceCriteria": [
-        "Greedy strategy in `app/rules/ai.py`: for each legal (card, cell) pair, simulate via `apply_intent` and count cells owned by AI in the resulting state. Pick the move with the highest count; break ties randomly",
-        "Also evaluates `use_archetype=True` variants for each move (Skulker tests all 4 sides, Martial tests CW/CCW, Intimidate tests all valid adjacent targets) and picks the best overall across archetype/no-archetype",
-        "Greedy does not reason about future opponent moves or hidden hand",
-        "Add tests: greedy picks capture over non-capture, greedy uses archetype when it would flip an extra card, greedy breaks ties randomly (seeded)",
-        "`uv run pytest` passes"
+        "Update `web/src/routes/game-room/archetypesCopy.ts` with new power descriptions: Caster = 'Guaranteed Omen: your Mists result is always +2 for this placement. Use it once per game.'; Devout = 'Ward: after placing, choose one of your cards on the board. It cannot be captured by the opponent's next placement. Use it once per game.'; Intimidate = 'Weaken: after placing, pick an adjacent opponent card. Its facing side is reduced by 3 (min 1) for this comparison. Use it once per game.'",
+        "Update `ArchetypeModal.tsx` if any archetype-specific UI logic needs to change (Devout now needs a cell-selection step like Intimidate)",
+        "Update `ActionPanel.tsx`: Devout power activation should show cell selection UI for picking a friendly card to ward (similar to Intimidate's target selection but for own cards)",
+        "Add visual indicator on the warded cell (e.g., a shield icon or distinct ring color) that persists until the ward expires",
+        "Update `GameRulesDialog.tsx` if it contains archetype descriptions",
+        "Update frontend tests for archetype copy changes",
+        "`cd web && bun run test --run` passes"
       ],
       "priority": 6,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-SP-007",
-      "title": "AI strategy: Expectimax (Strahd) — opponent hand inference",
-      "description": "As a player on Hard difficulty, I want the AI to reason about what I might be holding and plan multiple moves ahead — so it feels like a genuinely challenging opponent.",
+      "id": "US-PR-007",
+      "title": "Documentation refresh: CLAUDE.md, GAME_RULES_OVERVIEW.md, CARDS_SPEC.md",
+      "description": "As a developer, I want all documentation to reflect the rebalanced archetype powers -- so docs stay accurate.",
       "acceptanceCriteria": [
-        "Expectimax strategy in `app/rules/ai.py`: infers possible opponent hands by excluding known cards (board + AI hand) from the game's card pool, then samples 20-30 likely opponent hands",
-        "Search: AI turn nodes maximize over legal moves; opponent turn nodes average over sampled hands (opponent assumed to play greedily). Full depth when <=4 empty cells; depth 3-4 with heuristic eval (cell ownership + side strength of placed cards) otherwise",
-        "Evaluates archetype use at every AI node — picks path with higher expected value",
-        "Opponent hand inference sharpens as game progresses (pool shrinks with each played card)",
-        "Add tests: expectimax finds winning move in near-endgame setup, expectimax narrows opponent hand as cards are played, stays within reasonable compute time (<2s for any board state)",
-        "`uv run pytest` passes"
+        "Update archetype descriptions in `CLAUDE.md` to reflect new Intimidate (-3 debuff), Caster (guaranteed Omen), and Devout (Ward) mechanics",
+        "Update `docs/GAME_RULES_OVERVIEW.md` archetype section with full rebalanced descriptions",
+        "If `docs/CARDS_SPEC.md` mentions archetypes, update those references too",
+        "No stale references to 'best of two rolls', 'negate Fog', or 'min side debuff' remain in any doc"
       ],
       "priority": 7,
-      "passes": true
-    },
-    {
-      "id": "US-SP-008",
-      "title": "AI strategy: MCTS (The Dark Powers) — Monte Carlo tree search",
-      "description": "As a player on Nightmare difficulty, I want the AI to use advanced search with information warfare tactics — so it feels like an oppressive, insurmountable challenge.",
-      "acceptanceCriteria": [
-        "MCTS strategy in `app/rules/ai.py` (or separate `app/rules/mcts.py` if >200 lines): runs 2000-3000 simulated playouts per move using UCB1 selection, random rollouts to terminal state, and backpropagation",
-        "Each playout samples a fresh opponent hand from the remaining card pool (same inference as Strahd but integrated into MCTS)",
-        "Lightweight simulation board (`SimBoard`) that bypasses Pydantic for speed: operates on raw tuples `(card_key, owner)` per cell, ~5-10x faster than full `apply_intent`",
-        "Concealment layer: when two moves have similar visit counts (within 10%), prefer the one that plays a mid-strength card over the strongest card (sandbagging early game)",
-        "Concurrency limiter: `asyncio.Semaphore(2)` gates concurrent Nightmare move computations. Third concurrent request queues with 10s timeout, then returns 503 with themed message 'The Dark Powers are occupied with another mortal.'",
-        "All AI compute offloaded via `run_in_executor` to avoid blocking the event loop",
-        "Add tests: MCTS returns valid move within time budget, SimBoard produces same captures as full apply_intent for a suite of positions, semaphore limits concurrency, 503 on timeout",
-        "`uv run pytest` passes"
-      ],
-      "priority": 8,
-      "passes": true
-    },
-    {
-      "id": "US-SP-009",
-      "title": "AI commentary system: model and backend",
-      "description": "As a player, I want the AI to make in-character comments during the game — so single-player matches feel alive and thematic.",
-      "acceptanceCriteria": [
-        "Add `ai_comment: str | None = None` field to `LastMoveInfo` in `app/models/game.py`",
-        "New `app/rules/ai_comments.py` module with comment pools per difficulty/character (10-20 lines each)",
-        "Comment trigger conditions: ai_captured_cards (AI captures 1+ cards), ai_got_captured (opponent captured AI's card on their turn), plus_triggered, elemental_triggered, archetype_used (AI uses its power), game_ending (last move of game). Each trigger has a 30-50% chance of producing a comment (rolled from game RNG)",
-        "Ireena: encouraging, naive ('Oh, clever move!', 'I think I'm getting the hang of this!', 'Wait, that was mine!')",
-        "Rahadin: cold, tactical ('Predictable.', 'You waste my time.', 'Efficient.')",
-        "Strahd: menacing, theatrical ('You amuse me, mortal.', 'Did you truly believe that would work?', 'Your struggle is... entertaining.')",
-        "Dark Powers: cryptic, ominous ('The mists remember what you have forgotten.', 'Every choice narrows the path.', 'We have seen this ending before.')",
-        "After `execute_ai_turn` computes and submits a move, evaluate comment triggers against the resulting state and attach `ai_comment` to `last_move` if triggered",
-        "After a human move in an AI game, also evaluate 'reaction' triggers (ai_got_captured, opponent used archetype) and attach `ai_comment` to the human's `last_move`",
-        "Add tests: comments are generated for capture triggers, comments match the correct character personality, comment chance is roughly 30-50% over many runs, no comments in human-vs-human games",
-        "`uv run pytest` passes"
-      ],
-      "priority": 9,
-      "passes": true
-    },
-    {
-      "id": "US-SP-010",
-      "title": "Games list rework: separate My Games, Open Games, and Play vs AI",
-      "description": "As a player, I want the games list to clearly distinguish between my games, open multiplayer lobbies, and single-player options — so I can quickly find what I want.",
-      "acceptanceCriteria": [
-        "Rework `web/src/routes/Games.tsx` into sections/tabs: 'My Games' (in-progress and recent completed, both AI and human), 'Open Games' (joinable multiplayer lobbies from other players), and a prominent 'Play vs AI' entry point",
-        "My Games section: shows opponent name (character name for AI, email for human), difficulty badge for AI games, status badge, result for completed games",
-        "Open Games section: shows creator email, 'Join' button, created_at timestamp. Only shows WAITING games with 1 player",
-        "'Play vs AI' section: four cards/buttons for each difficulty with character name, difficulty label, and a one-line flavor description. Clicking calls `POST /games/vs-ai` and navigates to the game room",
-        "AI difficulty flavor text: Easy/Ireena 'A sheltered noble still learning the game.', Medium/Rahadin 'Strahd\\'s chamberlain plays with cold precision.', Hard/Strahd 'The lord of Barovia does not lose.', Nightmare/Dark Powers 'Ancient forces that see through every stratagem.'",
-        "The 'Create Game' button for multiplayer moves to the Open Games section",
-        "Add frontend tests: Play vs AI section renders four difficulty options, My Games shows AI opponent name, Open Games shows joinable lobbies",
-        "`bun run test --run` passes"
-      ],
-      "priority": 10,
-      "passes": true
-    },
-    {
-      "id": "US-SP-011",
-      "title": "Frontend: AI opponent display in game room",
-      "description": "As a player, I want the game room to show the AI character name and themed 'thinking' indicator — so single-player games feel distinct from multiplayer.",
-      "acceptanceCriteria": [
-        "In `ActiveGameView.tsx` and related components, display the AI character name (from `AI_DISPLAY_NAMES` mapping, keyed by `ai_difficulty`) instead of the AI player's email/ID",
-        "During the AI's turn, show a themed thinking indicator: 'Ireena is thinking...', 'Rahadin calculates...', 'Strahd contemplates...', 'The Dark Powers stir...'",
-        "The thinking indicator replaces the standard 'Opponent's turn' text when the opponent is AI",
-        "In `DraftingGameView.tsx`, after the human submits their draft in an AI game, show 'Waiting for game to begin...' instead of 'Waiting for opponent to draft...' (since AI auto-drafts)",
-        "Add frontend tests: AI character name displayed, thinking indicator shown during AI turn, correct flavor text per difficulty",
-        "`bun run test --run` passes"
-      ],
-      "priority": 11,
-      "passes": true
-    },
-    {
-      "id": "US-SP-012",
-      "title": "Frontend: AI commentary display",
-      "description": "As a player, I want to see the AI's comments displayed as speech bubbles during the game — so the AI feels like a real opponent with personality.",
-      "acceptanceCriteria": [
-        "When `last_move.ai_comment` is present, display it as a speech bubble or toast near the opponent's name/info area in `ActiveGameView.tsx`",
-        "Speech bubble auto-fades after 3-4 seconds (use AnimatePresence with enter/exit animations)",
-        "Style per difficulty: Ireena uses a warm/friendly style (light background), Rahadin uses a cold/neutral style (slate), Strahd uses a dark/menacing style (deep red/purple), Dark Powers use an eerie style (dark with subtle glow)",
-        "Speech bubble should not block board interaction (use `pointer-events-none` or position it outside the board area)",
-        "If a new comment arrives before the previous one fades, replace it immediately",
-        "Add frontend tests: speech bubble renders when ai_comment is set, bubble fades after timeout, no bubble when ai_comment is null",
-        "`bun run test --run` passes"
-      ],
-      "priority": 12,
-      "passes": true
-    },
-    {
-      "id": "US-SP-013",
-      "title": "Documentation refresh: CLAUDE.md, GAME_RULES_OVERVIEW.md, plan-single-player.md",
-      "description": "As a developer, I want documentation updated to reflect the single-player system — so docs match the implementation.",
-      "acceptanceCriteria": [
-        "Update `CLAUDE.md` Key Domain Concepts: add 'Single Player' section describing AI opponents, difficulty levels, and the AI turn trigger mechanism",
-        "Update `docs/GAME_RULES_OVERVIEW.md`: add 'Single Player Mode' section describing the four AI opponents with their character names and strategies",
-        "Archive `ralph/plan-single-player.md` to `ralph/archive/` (the plan is now implemented)",
-        "No stale references to 'multiplayer only' or 'two human players required' remain in documentation",
-        "Update `web/src/lib/api.ts` JSDoc comments if any reference only human opponents"
-      ],
-      "priority": 13,
-      "passes": true
-    },
-    {
-      "id": "US-SP-014",
-      "title": "Bug fix: AI waits for human archetype selection before moving",
-      "description": "As a player, I want the AI to wait until I've selected my archetype before taking its first turn -- so the game doesn't start in a broken state.",
-      "acceptanceCriteria": [
-        "In `is_ai_turn()` (or the call sites in `games.py`), add a guard: do NOT trigger AI turn if any player has `archetype is None`. This covers both 'AI goes first' and 'human goes first' scenarios",
-        "In `POST /{game_id}/archetype` endpoint, add `BackgroundTasks` dependency and trigger `execute_ai_turn` if the game is ACTIVE and `is_ai_turn()` returns true after archetype selection",
-        "Remove the AI turn trigger from `POST /{game_id}/draft` for AI games (the draft transition to ACTIVE is no longer the right place -- archetype selection is)",
-        "Add tests: AI does not move before human selects archetype; AI moves after human selects archetype when AI goes first; AI does not move after archetype if human goes first",
-        "`uv run pytest` passes"
-      ],
-      "priority": 14,
-      "passes": true
-    },
-    {
-      "id": "US-SP-015",
-      "title": "Bug fix: archetype powers reset each Sudden Death round",
-      "description": "As a player, I want my archetype power to refresh each Sudden Death round -- so Sudden Death feels like a meaningful rematch, not a stripped-down version of the game.",
-      "acceptanceCriteria": [
-        "In `begin_sudden_death_round()` in `reducer.py`, reset `archetype_used=False` on both players when building `new_players`",
-        "Update the comment that currently says 'Preserves archetype_used (once-per-game)' to reflect the new per-round behavior",
-        "AI archetype logic in `ai.py` already checks `player.archetype_used` per move, so no AI changes needed -- just verify via test",
-        "Add tests: after SD transition, both players have `archetype_used=False`; a player can use their archetype again in the new SD round; AI uses archetype in SD round if available",
-        "`uv run pytest` passes"
-      ],
-      "priority": 15,
-      "passes": true
-    },
-    {
-      "id": "US-SP-016",
-      "title": "Frontend: Sudden Death banner overlay",
-      "description": "As a player, I want a dramatic banner displayed when Sudden Death begins -- so I know the stakes have changed and the tension escalates with each round.",
-      "acceptanceCriteria": [
-        "Detect SD transition on the frontend by comparing `game.round_number` changes (round_number > 1 means SD is active)",
-        "Show a full-screen overlay banner (similar to victory/defeat) when SD begins, auto-dismiss after 3.5s or click-to-dismiss",
-        "Escalating text per SD round: Round 2: 'Sudden Death' / 'The souls are bound. Play on.' -- Round 3: 'Sudden Death II' / 'The Mists refuse to release you.' -- Round 4: 'Final Sudden Death' / 'Barovia trembles. This ends now.'",
-        "Style: dark semi-transparent overlay, large heading with red/crimson glow text, subtitle in muted tone. Use motion/react for scale-in + fade animation consistent with existing BoardCallouts style",
-        "If the game ends in a draw after 3 SD rounds (cap reached), the result screen handles that -- no SD banner needed for the draw outcome",
-        "Add frontend tests: banner renders when round_number transitions from 1 to 2; correct text for each SD round number; banner auto-dismisses",
-        "`bun run test --run` passes"
-      ],
-      "priority": 16,
-      "passes": true
-    },
-    {
-      "id": "US-SP-017",
-      "title": "AI commentary: win/loss canned responses",
-      "description": "As a player, I want the AI opponent to comment when the game ends in a win or loss -- so the conclusion feels personal and thematic.",
-      "acceptanceCriteria": [
-        "Add `game_won` and `game_lost` trigger types to each character's comment pool in `ai_comments.py` (5 lines each, 4 characters = 40 new lines total)",
-        "Ireena won: encouraging/surprised ('I won? I actually won!', etc). Ireena lost: gracious/cheerful ('You were wonderful!', etc)",
-        "Rahadin won: cold/dismissive ('The outcome was never in question.', etc). Rahadin lost: terse/grudging ('...Noted.', etc)",
-        "Strahd won: theatrical/menacing ('Kneel.', 'Did you expect anything less?', etc). Strahd lost: threatening/dismissive ('Enjoy this. It will not happen again.', etc)",
-        "Dark Powers won: cosmic/inevitable ('As it was always meant to be.', etc). Dark Powers lost: cryptic/ominous ('This outcome changes nothing.', etc)",
-        "In `detect_ai_move_triggers` and `detect_human_move_triggers`, when the game ends (status transitions to COMPLETE), check `state_after.result` to determine `game_won` vs `game_lost` from the AI's perspective. Use these instead of generic `game_ending` when win/loss is clear. Keep `game_ending` as fallback for draws",
-        "Set comment probability to 100% for `game_won` and `game_lost` triggers (these should always fire)",
-        "Add tests: AI comments on winning, AI comments on losing, draw uses `game_ending`, correct character flavor per difficulty",
-        "`uv run pytest` passes"
-      ],
-      "priority": 17,
-      "passes": true
-    },
-    {
-      "id": "US-SP-018",
-      "title": "Frontend: archetype power visual feedback on cards",
-      "description": "As a player, I want to see visual feedback on the board when an archetype power activates -- so I understand what happened beyond just a text banner.",
-      "acceptanceCriteria": [
-        "Add `archetype_used_name: str | None = None` field to `LastMoveInfo` in `app/models/game.py` -- set to the archetype name (e.g. 'skulker', 'martial') when an archetype was used this move. Set in `apply_intent` alongside existing `archetype_activated` logic",
-        "In `BoardGrid.tsx`, when `last_move.archetype_used_name` is set, apply a brief highlight effect to the placed card's cell: a 1.5s pulsing ring/glow in gold/amber (distinct from the yellow last-move ring and blue/red ownership colors). Use CSS animation or motion/react",
-        "In `BoardCallouts.tsx`, add an archetype callout (same pattern as Plus/Elemental): 'Martial!' / 'Skulker!' / 'Intimidate!' / 'Caster!' / 'Devout!' with an amber/gold glow style. Auto-dismiss after 2.5s",
-        "For Intimidate specifically: if `last_move.archetype_used_name === 'intimidate'`, also briefly highlight the intimidated cell (the cell targeted by the debuff) with a red pulse, using `last_move.cell_index` to derive adjacent cells or adding `intimidate_target_cell: number | None` to `LastMoveInfo`",
-        "Keep the existing ownership color scheme intact (blue = you, red = opponent). The archetype glow is a temporary overlay, not a color change",
-        "Add frontend tests: archetype callout renders for each archetype name; gold ring appears on placed cell when archetype is used; no archetype callout when `archetype_used_name` is null",
-        "Add backend tests: `archetype_used_name` is set correctly in `LastMoveInfo` after archetype use; `archetype_used_name` is null when no archetype used",
-        "`uv run pytest` and `bun run test --run` pass"
-      ],
-      "priority": 18,
-      "passes": true
-    },
-    {
-      "id": "US-SP-019",
-      "title": "Frontend: Nightmare difficulty limited-availability notice",
-      "description": "As a player, I want to see that Nightmare difficulty has limited availability -- so I'm not confused if my game creation fails due to the concurrency cap.",
-      "acceptanceCriteria": [
-        "On the Nightmare difficulty card in `Games.tsx`, add a small thematic line below the existing flavor text: 'Few may commune with The Dark Powers at once.' styled in a dimmer/warning tone (e.g. `text-amber-500/70 text-[10px] italic`)",
-        "Wrap the Nightmare card (or just the availability line) with a `title` attribute tooltip: 'Only 2 players can face Nightmare difficulty at a time. Try again shortly if unavailable.'",
-        "If `POST /games/vs-ai` returns 503 for Nightmare, display a toast or inline error on the Nightmare card: 'The Dark Powers are occupied with another mortal.' (matches the existing backend 503 message). Do not navigate away",
-        "Add frontend tests: availability text renders on nightmare card only; tooltip text is present; 503 error displays the themed message",
-        "`bun run test --run` passes"
-      ],
-      "priority": 19,
-      "passes": true
+      "passes": false
     }
   ]
 }

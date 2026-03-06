@@ -76,7 +76,7 @@
         "`cd web && bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-DR-005",
@@ -88,7 +88,7 @@
         "No stale references to '7-card deal' or 'draw 7' remain in any doc"
       ],
       "priority": 5,
-      "passes": false
+      "passes": true
     }
   ]
 }

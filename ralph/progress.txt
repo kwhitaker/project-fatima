@@ -43,3 +43,11 @@ Started: 2026-03-06
 - Learnings: Test deals must respect tier distribution; selecting cards sequentially in tests must account for tier limits disabling buttons
 ---
 
+## 2026-03-06 16:00 - US-DR-005
+- Updated CLAUDE.md Deal & Draft section: 8-card deal (2×T3, 3×T2, 3×T1) with tier constraints (max 1 T3, max 2 T2)
+- Updated GAME_RULES_OVERVIEW.md match setup + AI opponent table; updated TECH_DECISIONS.md deal size
+- Verified no stale '7-card deal' references remain in any .md file
+- Files: CLAUDE.md, docs/GAME_RULES_OVERVIEW.md, docs/TECH_DECISIONS.md
+- Learnings: Also fixed US-DR-004 passes flag that was missed in previous progress commit
+---
+

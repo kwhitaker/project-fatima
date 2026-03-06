@@ -34,3 +34,12 @@ Started: 2026-03-06
 - Learnings: Devout now always consumes power on activation (not conditionally). AI needs devout_ward_cell for friendly board cards; no ward possible on first placement (no friendly cards on board yet).
 ---
 
+## 2026-03-06 14:00 - US-PR-004
+- Rewrote `_ai_auto_archetype` in game_service.py: Easy stays random; Medium/Hard/Nightmare score all 5 archetypes against hand composition and pick the best (ties broken randomly)
+- Added 5 scoring functions: `_score_skulker` (weak-adjacent-strong gap), `_score_martial` (clustered strong+weak sides), `_score_caster` (mid-range 5-7 density), `_score_devout` (standout card gap), `_score_intimidate` (moderate+weak side mix)
+- Updated existing test `test_strategic_picks_skulker_or_martial` → `test_strategic_picks_valid_archetype` (all 5 archetypes valid for strategic AI)
+- 816 tests pass, 0 pyright errors on changed files
+- Files changed: app/services/game_service.py, tests/test_ai_archetype_selection.py, tests/test_sp002_create_vs_ai.py
+- Learnings: Caster and Intimidate overlap on mid-range sides (5-7); differentiate by penalizing Intimidate when no weak (≤3) sides present. Martial needs ≤4 threshold for weak sides to not overlap with Skulker's ≤3 adjacent ≥7 pattern.
+---
+

@@ -71,7 +71,7 @@ class TestCreateGameVsAi:
     ) -> None:
         state = _create(game_store, card_store)
         # Human still has a deal to draft from
-        assert len(state.players[0].deal) == 7
+        assert len(state.players[0].deal) == 8
         assert state.players[0].hand == []
         # AI has auto-drafted: deal cleared, hand populated
         assert state.players[1].deal == []
@@ -88,7 +88,7 @@ class TestCreateGameVsAi:
         self, game_store: MemoryGameStore, card_store: MemoryCardStore
     ) -> None:
         state = _create(game_store, card_store)
-        assert len(state.players[0].deal) == 7
+        assert len(state.players[0].deal) == 8
         assert state.players[0].hand == []
         assert state.players[0].archetype is None
 

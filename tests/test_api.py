@@ -59,8 +59,8 @@ def test_full_happy_path(client: TestClient) -> None:
     assert len(data["players"]) == 2
     alice_deal = data["players"][0]["deal"]
     bob_deal = data["players"][1]["deal"]
-    assert len(alice_deal) == 7
-    assert len(bob_deal) == 7
+    assert len(alice_deal) == 8
+    assert len(bob_deal) == 8
 
     # 3. Both players submit draft (pick first 5 cards)
     resp = _alice(

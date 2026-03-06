@@ -6,6 +6,7 @@ from app.models.cards import CardDefinition, CardSides
 from app.rules.cards import rarity_bucket
 from app.rules.deck import (
     DEAL_SIZE,
+    DEAL_TIER_SLOTS,
     DEFAULT_COST_TOLERANCE,
     DeckGenerationError,
     deck_cost,
@@ -48,7 +49,7 @@ def _card(
 def _make_pool(n: int, prefix: str = "c") -> list[CardDefinition]:
     """Return n unique cards spread across tiers 1-3 for deal generation.
 
-    Cycles through tiers so the MAX_PER_TIER constraint is satisfiable.
+    Cycles through tiers so the DEAL_TIER_SLOTS constraint is satisfiable.
     All cards are common rarity (no rarity-slot pressure).
     """
     tiers = [1, 2, 3]
@@ -60,7 +61,7 @@ def _make_pool(n: int, prefix: str = "c") -> list[CardDefinition]:
 # ---------------------------------------------------------------------------
 
 
-def test_generates_two_deals_of_seven() -> None:
+def test_generates_two_deals_of_eight() -> None:
     pool = _make_pool(25)
     a, b = generate_matched_deals(pool, seed=42)
     assert len(a) == DEAL_SIZE
@@ -72,6 +73,27 @@ def test_generated_decks_pass_validation() -> None:
     a, b = generate_matched_deals(pool, seed=42)
     assert validate_deal(a) == []
     assert validate_deal(b) == []
+
+
+def test_generated_deals_have_exact_tier_distribution() -> None:
+    pool = _make_pool(25)
+    a, b = generate_matched_deals(pool, seed=42)
+    for deal in (a, b):
+        for tier, required in DEAL_TIER_SLOTS.items():
+            assert sum(1 for c in deal if c.tier == tier) == required
+
+
+def test_both_deals_in_pair_have_correct_tier_distribution() -> None:
+    """Same check across multiple seeds to avoid flaky single-seed pass."""
+    for seed in range(10):
+        pool = _make_pool(30)
+        a, b = generate_matched_deals(pool, seed=seed)
+        for deal in (a, b):
+            for tier, required in DEAL_TIER_SLOTS.items():
+                actual = sum(1 for c in deal if c.tier == tier)
+                assert actual == required, (
+                    f"seed={seed}, tier={tier}: expected {required}, got {actual}"
+                )
 
 
 # ---------------------------------------------------------------------------
@@ -114,16 +136,15 @@ def test_balanced_pool_costs_are_equal() -> None:
 
 
 def test_mixed_pool_costs_within_tolerance() -> None:
-    # 1 ultra (cost=32) + 19 common (cost=16):
-    # one deal gets the ultra → diff = 32 + 6*16 - 7*16 = 16 <= 20
-    pool = [_card("ultra0", tier=3, rarity=99, sides=_SIDES_T3_ULTRA)] + _make_pool(19)
+    # 1 ultra (cost=32) + 24 common cycling tiers:
+    pool = [_card("ultra0", tier=3, rarity=99, sides=_SIDES_T3_ULTRA)] + _make_pool(24)
     a, b = generate_matched_deals(pool, seed=42, tolerance=20)
     assert abs(deck_cost(a) - deck_cost(b)) <= 20
 
 
 def test_cost_imbalance_raises_deck_generation_error() -> None:
-    # 1 ultra + 19 common produces diff=16; tolerance=0 rejects it
-    pool = [_card("ultra0", tier=3, rarity=99, sides=_SIDES_T3_ULTRA)] + _make_pool(19)
+    # 1 ultra + 24 common produces diff; tolerance=0 rejects it
+    pool = [_card("ultra0", tier=3, rarity=99, sides=_SIDES_T3_ULTRA)] + _make_pool(24)
     with pytest.raises(DeckGenerationError, match="tolerance"):
         generate_matched_deals(pool, seed=42, tolerance=0)
 
@@ -134,7 +155,7 @@ def test_cost_imbalance_raises_deck_generation_error() -> None:
 
 
 def test_insufficient_pool_raises() -> None:
-    # 10 unique ultra cards: slot limit = 1 ultra per deal, so deals stay at 1 card each
+    # 10 unique ultra cards: slot limit = 1 ultra per deal, so deals stay at 1 T3 each
     pool = [_card(f"ultra{i}", tier=3, rarity=99, sides=_SIDES_T3_ULTRA) for i in range(10)]
     with pytest.raises(DeckGenerationError, match="fill"):
         generate_matched_deals(pool, seed=42)
@@ -146,8 +167,7 @@ def test_empty_pool_raises() -> None:
 
 
 def test_too_small_pool_raises() -> None:
-    # 3 unique common card_keys: each deal can have at most 2 copies each = 6 max,
-    # can't reach DEAL_SIZE (7).
+    # 3 unique common card_keys cycling tiers: can't fill 2 deals of 8
     pool = _make_pool(3)
     with pytest.raises(DeckGenerationError):
         generate_matched_deals(pool, seed=42)
@@ -161,22 +181,19 @@ def test_too_small_pool_raises() -> None:
 def test_rare_slot_limit_honored() -> None:
     # 8 rare + 20 common: each deck may hold at most 3 rare cards
     pool = [
-        _card(f"rare{i}", tier=1, rarity=80, sides=_SIDES_T1_RARE) for i in range(8)
+        _card(f"rare{i}", tier=(i % 3) + 1, rarity=80, sides=_SIDES_T1_RARE) for i in range(8)
     ] + _make_pool(20)
     a, b = generate_matched_deals(pool, seed=42)
     assert sum(1 for c in a if rarity_bucket(c.rarity) == "rare") <= 3
     assert sum(1 for c in b if rarity_bucket(c.rarity) == "rare") <= 3
 
 
-def test_tier_diversity_honored() -> None:
-    # No single tier may exceed MAX_PER_TIER (3) cards per deal
-    from app.rules.deck import MAX_PER_TIER
-
+def test_tier_slots_honored() -> None:
     pool = _make_pool(30)
     a, b = generate_matched_deals(pool, seed=42)
-    for tier in [1, 2, 3]:
-        assert sum(1 for c in a if c.tier == tier) <= MAX_PER_TIER
-        assert sum(1 for c in b if c.tier == tier) <= MAX_PER_TIER
+    for tier, required in DEAL_TIER_SLOTS.items():
+        assert sum(1 for c in a if c.tier == tier) == required
+        assert sum(1 for c in b if c.tier == tier) == required
 
 
 def test_named_uniqueness_honored() -> None:

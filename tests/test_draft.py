@@ -1,4 +1,4 @@
-"""Tests for US-DR-003: draft phase (deal 7, keep 5)."""
+"""Tests for US-DR-003: draft phase (deal 8, keep 5)."""
 
 import pytest
 
@@ -6,7 +6,6 @@ from app.models.game import GameState, GameStatus, PlayerState
 from app.rules.deck import DEAL_SIZE, HAND_SIZE
 from app.services.game_service import submit_draft
 from app.store.memory import MemoryGameStore
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -18,7 +17,7 @@ def _make_drafting_state(
     deal_a: list[str] | None = None,
     deal_b: list[str] | None = None,
 ) -> GameState:
-    """Build a DRAFTING state with two players and 7-card deals."""
+    """Build a DRAFTING state with two players and 8-card deals."""
     if deal_a is None:
         deal_a = [f"a{i}" for i in range(DEAL_SIZE)]
     if deal_b is None:

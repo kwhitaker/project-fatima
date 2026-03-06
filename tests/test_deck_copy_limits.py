@@ -1,10 +1,10 @@
 """Tests for US-016: deal validator copy limits by rarity bucket."""
 
 from app.models.cards import CardDefinition, CardSides
-from app.rules.deck import DEAL_SIZE, validate_deal
+from app.rules.deck import validate_deal
 
 # ---------------------------------------------------------------------------
-# Helpers (same side values as test_deck_validator.py)
+# Helpers
 # ---------------------------------------------------------------------------
 
 COMMON_SIDES = CardSides(n=6, e=4, s=3, w=3)  # T1 common: sum=16, cap=6 ✓
@@ -37,29 +37,16 @@ def _card(
     )
 
 
-def _common(n: int, card_key: str | None = None) -> CardDefinition:
-    key = card_key if card_key is not None else f"common_{n}"
-    return _card(key, tier=1, rarity=15, sides=COMMON_SIDES)
-
-
-def _uncommon(n: int, card_key: str | None = None) -> CardDefinition:
-    key = card_key if card_key is not None else f"uncommon_{n}"
-    return _card(key, tier=1, rarity=60, sides=UNCOMMON_SIDES)
-
-
-def _rare(n: int, card_key: str | None = None) -> CardDefinition:
-    key = card_key if card_key is not None else f"rare_{n}"
-    return _card(key, tier=2, rarity=80, sides=RARE_SIDES)
-
-
-def _very_rare(n: int, card_key: str | None = None) -> CardDefinition:
-    key = card_key if card_key is not None else f"vrare_{n}"
-    return _card(key, tier=2, rarity=92, sides=VERY_RARE_SIDES)
-
-
-def _ultra(n: int, card_key: str | None = None) -> CardDefinition:
-    key = card_key if card_key is not None else f"ultra_{n}"
-    return _card(key, tier=3, rarity=99, sides=ULTRA_SIDES)
+def _valid_deal() -> list[CardDefinition]:
+    """Return a valid 8-card deal: 3 T1 + 3 T2 + 2 T3 (all common, distinct keys)."""
+    deal: list[CardDefinition] = []
+    for i in range(3):
+        deal.append(_card(f"t1_{i}", tier=1, rarity=15, sides=COMMON_SIDES))
+    for i in range(3):
+        deal.append(_card(f"t2_{i}", tier=2, rarity=15, sides=COMMON_SIDES))
+    for i in range(2):
+        deal.append(_card(f"t3_{i}", tier=3, rarity=15, sides=COMMON_SIDES))
+    return deal
 
 
 # ---------------------------------------------------------------------------
@@ -68,16 +55,18 @@ def _ultra(n: int, card_key: str | None = None) -> CardDefinition:
 
 
 def test_two_copies_common_passes() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 2)]
-    deal.append(_card("dup", tier=1, rarity=15, sides=COMMON_SIDES))
-    deal.append(_card("dup", tier=1, rarity=15, sides=COMMON_SIDES))
+    deal = _valid_deal()
+    # Replace two T1 slots with same card_key (common allows 2 copies)
+    deal[0] = _card("dup", tier=1, rarity=15, sides=COMMON_SIDES)
+    deal[1] = _card("dup", tier=1, rarity=15, sides=COMMON_SIDES)
     assert validate_deal(deal) == []
 
 
 def test_three_copies_common_fails() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 3)]
-    for _ in range(3):
-        deal.append(_card("dup", tier=1, rarity=15, sides=COMMON_SIDES))
+    deal = _valid_deal()
+    # Replace all three T1 slots with same card_key
+    for i in range(3):
+        deal[i] = _card("dup", tier=1, rarity=15, sides=COMMON_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "dup" in e and "copy" in e.lower()]
     assert len(copy_errs) == 1
@@ -90,16 +79,16 @@ def test_three_copies_common_fails() -> None:
 
 
 def test_two_copies_uncommon_passes() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 2)]
-    deal.append(_card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES))
-    deal.append(_card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES))
+    deal = _valid_deal()
+    deal[0] = _card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES)
+    deal[1] = _card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES)
     assert validate_deal(deal) == []
 
 
 def test_three_copies_uncommon_fails() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 3)]
-    for _ in range(3):
-        deal.append(_card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES))
+    deal = _valid_deal()
+    for i in range(3):
+        deal[i] = _card("uc_dup", tier=1, rarity=60, sides=UNCOMMON_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "uc_dup" in e and "copy" in e.lower()]
     assert len(copy_errs) == 1
@@ -112,15 +101,15 @@ def test_three_copies_uncommon_fails() -> None:
 
 
 def test_one_copy_rare_passes() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 1)]
-    deal.append(_card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES))
+    deal = _valid_deal()
+    deal[3] = _card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES)
     assert validate_deal(deal) == []
 
 
 def test_two_copies_rare_fails() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 2)]
-    deal.append(_card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES))
-    deal.append(_card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES))
+    deal = _valid_deal()
+    deal[3] = _card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES)
+    deal[4] = _card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "rare_dup" in e and "copy" in e.lower()]
     assert len(copy_errs) == 1
@@ -133,15 +122,15 @@ def test_two_copies_rare_fails() -> None:
 
 
 def test_one_copy_very_rare_passes() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 1)]
-    deal.append(_card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES))
+    deal = _valid_deal()
+    deal[3] = _card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES)
     assert validate_deal(deal) == []
 
 
 def test_two_copies_very_rare_fails() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 2)]
-    deal.append(_card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES))
-    deal.append(_card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES))
+    deal = _valid_deal()
+    deal[3] = _card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES)
+    deal[4] = _card("vr_dup", tier=2, rarity=92, sides=VERY_RARE_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "vr_dup" in e and "copy" in e.lower()]
     assert len(copy_errs) == 1
@@ -154,17 +143,17 @@ def test_two_copies_very_rare_fails() -> None:
 
 
 def test_one_copy_ultra_passes() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 1)]
-    deal.append(_card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES))
+    deal = _valid_deal()
+    deal[-1] = _card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES)
     assert validate_deal(deal) == []
 
 
 def test_two_copies_ultra_fails() -> None:
     # Normally 2 ultra would also fail the rarity slot check (ultra ≤ 1),
     # but we verify the copy-limit error is also present.
-    deal = [_common(i) for i in range(DEAL_SIZE - 2)]
-    deal.append(_card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES))
-    deal.append(_card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES))
+    deal = _valid_deal()
+    deal[-1] = _card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES)
+    deal[-2] = _card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "ultra_dup" in e and "copy" in e.lower()]
     assert len(copy_errs) == 1
@@ -177,9 +166,9 @@ def test_two_copies_ultra_fails() -> None:
 
 
 def test_copy_error_message_is_actionable() -> None:
-    deal = [_common(i) for i in range(DEAL_SIZE - 3)]
-    for _ in range(3):
-        deal.append(_card("my_card", tier=1, rarity=15, sides=COMMON_SIDES))
+    deal = _valid_deal()
+    for i in range(3):
+        deal[i] = _card("my_card", tier=1, rarity=15, sides=COMMON_SIDES)
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "my_card" in e]
     assert len(copy_errs) == 1
@@ -196,13 +185,17 @@ def test_copy_error_message_is_actionable() -> None:
 
 
 def test_two_distinct_copy_violations_both_reported() -> None:
-    # Need DEAL_SIZE cards total: some filler + 3 alpha + 3 beta
-    # DEAL_SIZE - 6 filler + 3 alpha + 3 beta = DEAL_SIZE + 0 (7-6=1 filler)
-    deal = [_common(i) for i in range(DEAL_SIZE - 6)]
-    for _ in range(3):
-        deal.append(_card("alpha", tier=1, rarity=15, sides=COMMON_SIDES))
-    for _ in range(3):
-        deal.append(_card("beta", tier=1, rarity=15, sides=COMMON_SIDES))
+    # 3 copies of alpha (T1) + 3 copies of beta (T2) + 2 filler (T3)
+    deal = [
+        _card("alpha", tier=1, rarity=15, sides=COMMON_SIDES),
+        _card("alpha", tier=1, rarity=15, sides=COMMON_SIDES),
+        _card("alpha", tier=1, rarity=15, sides=COMMON_SIDES),
+        _card("beta", tier=2, rarity=15, sides=COMMON_SIDES),
+        _card("beta", tier=2, rarity=15, sides=COMMON_SIDES),
+        _card("beta", tier=2, rarity=15, sides=COMMON_SIDES),
+        _card("t3_0", tier=3, rarity=15, sides=COMMON_SIDES),
+        _card("t3_1", tier=3, rarity=15, sides=COMMON_SIDES),
+    ]
     errs = validate_deal(deal)
     copy_errs = [e for e in errs if "copy" in e.lower()]
     assert len(copy_errs) == 2
@@ -217,14 +210,17 @@ def test_two_distinct_copy_violations_both_reported() -> None:
 
 def test_copy_limit_and_slot_limit_both_reported() -> None:
     # 2 copies of same rare card_key (copy violation) + 4 distinct rare cards (slot violation)
-    # Total rare = 6, need filler to reach DEAL_SIZE
-    deal = [_common(i) for i in range(DEAL_SIZE - 6)]
-    deal.append(_card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES))
-    deal.append(_card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES))
-    deal.append(_rare(1))
-    deal.append(_rare(2))
-    deal.append(_rare(3))
-    deal.append(_rare(4))
+    # Spread rares across tiers to maintain tier validity
+    deal = [
+        _card("t1_0", tier=1, rarity=15, sides=COMMON_SIDES),  # T1 filler
+        _card("r_t1", tier=1, rarity=80, sides=RARE_SIDES),  # T1 rare
+        _card("rare_dup", tier=1, rarity=80, sides=RARE_SIDES),  # T1 rare (dup key)
+        _card("rare_dup", tier=2, rarity=80, sides=RARE_SIDES),  # T2 rare (dup - copy err)
+        _card("r_t2_0", tier=2, rarity=80, sides=RARE_SIDES),  # T2 rare
+        _card("r_t2_1", tier=2, rarity=80, sides=RARE_SIDES),  # T2 rare
+        _card("t3_0", tier=3, rarity=15, sides=COMMON_SIDES),  # T3 filler
+        _card("t3_1", tier=3, rarity=15, sides=COMMON_SIDES),  # T3 filler
+    ]
     errs = validate_deal(deal)
     assert any("rare_dup" in e and "copy" in e.lower() for e in errs)
     assert any("rare" in e and "very_rare" not in e and "copy" not in e.lower() for e in errs)

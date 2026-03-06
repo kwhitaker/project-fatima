@@ -361,6 +361,7 @@ export function ActiveGameView({
               wardedCell={game.warded_cell ?? null}
               archetypeUsedName={game.last_move?.archetype_used_name ?? null}
               martialRotationDirection={(game.last_move?.martial_rotation_direction as "cw" | "ccw" | null) ?? null}
+              skulkerBoostSide={(game.last_move?.skulker_boost_side as "n" | "e" | "s" | "w" | null) ?? null}
             />
             <BoardCallouts
               mistsEffect={

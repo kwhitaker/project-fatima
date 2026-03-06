@@ -40,7 +40,7 @@ describe("US-SP-018: Archetype power visual feedback", () => {
   describe("BoardCallouts — archetype callout", () => {
     it.each([
       ["martial", "Martial Spin!"],
-      ["skulker", "Skulker!"],
+      ["skulker", "Skulker +3!"],
       ["intimidate", "Intimidate!"],
       ["caster", "Caster!"],
       ["devout", "Devout!"],
@@ -161,6 +161,64 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       );
       const spinEl = container.querySelector("[data-martial-spin]");
       expect(spinEl).not.toBeInTheDocument();
+    });
+
+    it.each(["n", "e", "s", "w"] as const)(
+      "sets data-skulker-glow=%s on placed card when skulker boost side is %s",
+      (side) => {
+        const board = [
+          { card_key: "c1", owner: 0 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ];
+        const { container } = render(
+          <BoardGrid
+            board={board}
+            myIndex={0}
+            lastMoveCellIndex={0}
+            placedCells={new Set([0])}
+            archetypeUsedName="skulker"
+            skulkerBoostSide={side}
+          />,
+        );
+        const glowEl = container.querySelector(`[data-skulker-glow="${side}"]`);
+        expect(glowEl).toBeInTheDocument();
+        const particleEl = container.querySelector(`[data-skulker-particle="${side}"]`);
+        expect(particleEl).toBeInTheDocument();
+        expect(particleEl?.textContent).toBe("+3");
+      },
+    );
+
+    it("does not set data-skulker-glow when archetype is not skulker", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          placedCells={new Set([0])}
+          archetypeUsedName="martial"
+          martialRotationDirection="cw"
+        />,
+      );
+      const glowEl = container.querySelector("[data-skulker-glow]");
+      expect(glowEl).not.toBeInTheDocument();
     });
 
     it("applies standard yellow ring when no archetype used", () => {

@@ -243,9 +243,11 @@ export function BoardCallouts({
           >
             {archetypeUsedName === "martial"
               ? "Martial Spin!"
-              : archetypeUsedName.charAt(0).toUpperCase() +
-                archetypeUsedName.slice(1) +
-                "!"}
+              : archetypeUsedName === "skulker"
+                ? "Skulker +3!"
+                : archetypeUsedName.charAt(0).toUpperCase() +
+                  archetypeUsedName.slice(1) +
+                  "!"}
           </motion.div>
         )}
       </AnimatePresence>

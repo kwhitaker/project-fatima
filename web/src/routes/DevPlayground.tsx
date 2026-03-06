@@ -242,8 +242,8 @@ const SCENARIOS: Scenario[] = [
     description: "Dark Powers AI comment bubble style",
   },
   {
-    label: "Archetype used",
-    description: "Last move with archetype power feedback",
+    label: "Skulker +3 (N)",
+    description: "Skulker boost on north edge with glow + particle",
   },
   {
     label: "Martial Spin CW",
@@ -252,6 +252,18 @@ const SCENARIOS: Scenario[] = [
   {
     label: "Martial Spin CCW",
     description: "Martial archetype spin counter-clockwise",
+  },
+  {
+    label: "Skulker +3 (E)",
+    description: "Skulker boost on east edge",
+  },
+  {
+    label: "Skulker +3 (S)",
+    description: "Skulker boost on south edge",
+  },
+  {
+    label: "Skulker +3 (W)",
+    description: "Skulker boost on west edge",
   },
   {
     label: "Devout Ward",
@@ -284,6 +296,7 @@ export default function DevPlayground() {
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty | null>(null);
   const [showWaiting, setShowWaiting] = useState(false);
   const [martialRotationDirection, setMartialRotationDirection] = useState<"cw" | "ccw" | null>(null);
+  const [skulkerBoostSide, setSkulkerBoostSide] = useState<"n" | "e" | "s" | "w" | null>(null);
 
   const reset = useCallback(() => {
     setPlacedCells(new Set());
@@ -298,6 +311,7 @@ export default function DevPlayground() {
     setAiDifficulty(null);
     setShowWaiting(false);
     setMartialRotationDirection(null);
+    setSkulkerBoostSide(null);
     setGame(makeGame());
     setActiveScenario(null);
   }, []);
@@ -559,13 +573,14 @@ export default function DevPlayground() {
             break;
           }
           case 14: {
-            // Archetype used (Skulker boost)
+            // Skulker +3 (North)
             const board = emptyBoard();
             board[4] = { card_key: "c-strahd", owner: 0 };
-            board[5] = { card_key: "c-zombie", owner: 0 };
+            board[1] = { card_key: "c-zombie", owner: 0 };
             setGame(makeGame({ board }));
             setPlacedCells(new Set([4]));
-            setCapturedCells(new Set([5]));
+            setCapturedCells(new Set([1]));
+            setSkulkerBoostSide("n");
             setLastMove({
               player_index: 0,
               card_key: "c-strahd",
@@ -575,6 +590,7 @@ export default function DevPlayground() {
               plus_triggered: false,
               elemental_triggered: false,
               archetype_used_name: "skulker",
+              skulker_boost_side: "n",
             });
             break;
           }
@@ -623,6 +639,72 @@ export default function DevPlayground() {
             break;
           }
           case 17: {
+            // Skulker +3 (East)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[5] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([5]));
+            setSkulkerBoostSide("e");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "skulker",
+              skulker_boost_side: "e",
+            });
+            break;
+          }
+          case 18: {
+            // Skulker +3 (South)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[7] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([7]));
+            setSkulkerBoostSide("s");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "skulker",
+              skulker_boost_side: "s",
+            });
+            break;
+          }
+          case 19: {
+            // Skulker +3 (West)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[3] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([3]));
+            setSkulkerBoostSide("w");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "skulker",
+              skulker_boost_side: "w",
+            });
+            break;
+          }
+          case 20: {
             // Devout Ward — a friendly card is warded
             const board: (BoardCell | null)[] = emptyBoard();
             board[4] = { card_key: "c-strahd", owner: 0 };
@@ -643,7 +725,7 @@ export default function DevPlayground() {
             });
             break;
           }
-          case 18: {
+          case 21: {
             // Waiting state with cancel
             setShowWaiting(true);
             setGame(
@@ -759,6 +841,7 @@ export default function DevPlayground() {
               wardedCell={game.warded_cell ?? null}
               archetypeUsedName={lastMove?.archetype_used_name ?? null}
               martialRotationDirection={martialRotationDirection}
+              skulkerBoostSide={skulkerBoostSide}
               onCellInspect={() => {}}
             />
           </div>

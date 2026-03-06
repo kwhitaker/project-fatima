@@ -41,6 +41,7 @@ export function BoardGrid({
   earlyFinish,
   archetypeUsedName,
   martialRotationDirection,
+  skulkerBoostSide,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -61,6 +62,7 @@ export function BoardGrid({
   earlyFinish?: boolean;
   archetypeUsedName?: string | null;
   martialRotationDirection?: "cw" | "ccw" | null;
+  skulkerBoostSide?: "n" | "e" | "s" | "w" | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -148,6 +150,7 @@ export function BoardGrid({
 
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
           const isMartialSpin = isLastMove && archetypeUsedName === "martial" && !!martialRotationDirection;
+          const isSkulkerBoost = isLastMove && archetypeUsedName === "skulker" && !!skulkerBoostSide;
 
           // Victory glow: staggered delay based on position in victoryCells array
           const victoryIdx = victoryCells?.indexOf(i) ?? -1;
@@ -274,6 +277,40 @@ export function BoardGrid({
                     animate={{ scale: 1.8, opacity: 0, rotate: martialRotate }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
                   />
+                )}
+                {/* Skulker edge glow */}
+                {isSkulkerBoost && (
+                  <>
+                    <motion.div
+                      className={cn(
+                        "absolute pointer-events-none",
+                        skulkerBoostSide === "n" && "top-0 left-0 right-0 h-[3px]",
+                        skulkerBoostSide === "s" && "bottom-0 left-0 right-0 h-[3px]",
+                        skulkerBoostSide === "e" && "top-0 right-0 bottom-0 w-[3px]",
+                        skulkerBoostSide === "w" && "top-0 left-0 bottom-0 w-[3px]",
+                      )}
+                      data-skulker-glow={skulkerBoostSide}
+                      style={{ backgroundColor: "rgb(16, 185, 129)" }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 1, 0.7, 1, 0.7] }}
+                      transition={{ duration: 1.5, ease: "easeInOut" }}
+                    />
+                    <motion.span
+                      className={cn(
+                        "absolute pointer-events-none text-xs font-heading font-bold text-emerald-400 drop-shadow-md z-10",
+                        skulkerBoostSide === "n" && "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
+                        skulkerBoostSide === "s" && "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
+                        skulkerBoostSide === "e" && "right-0 top-1/2 -translate-y-1/2 translate-x-full",
+                        skulkerBoostSide === "w" && "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
+                      )}
+                      data-skulker-particle={skulkerBoostSide}
+                      initial={{ scale: 1.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: [0, 1, 1, 0] }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                    >
+                      +3
+                    </motion.span>
+                  </>
                 )}
               </motion.div>
             ) : isCaptured ? (

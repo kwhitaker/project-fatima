@@ -37,3 +37,12 @@ Started: 2026-03-06
 - Pattern: use `data-skulker-glow` and `data-skulker-particle` data attributes for test assertions on skulker animations
 ---
 
+## 2026-03-06 16:30 - US-PE-004
+- Added `isCasterOmen` detection in BoardGrid; placed card shows purple radial pulse aura (`data-caster-aura`) + persistent shimmer + "+2 all sides" particle (`data-caster-particle`)
+- Updated BoardCallouts to display "Caster Omen!" with violet/purple text + purple text-shadow instead of amber
+- Added DevPlayground scenario (case 22) for Caster activation with omen mists
+- Tests: 354 frontend tests pass, 857 backend tests pass
+- Files: `BoardGrid.tsx`, `BoardCallouts.tsx`, `DevPlayground.tsx`, `sp018.test.tsx`
+- Pattern: use `data-caster-aura` and `data-caster-particle` data attributes for test assertions on caster animations
+---
+

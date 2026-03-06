@@ -60,6 +60,8 @@ class LastMoveInfo(BaseModel):
     elemental_triggered: bool = False  # True when elemental bonus (+1) was applied
     ai_comment: str | None = None  # In-character AI comment (single-player only)
     archetype_used_name: str | None = None  # Archetype name when power was used this move
+    skulker_boost_side: str | None = None  # Which side was boosted (n/e/s/w) for Skulker UI
+    martial_rotation_direction: str | None = None  # Rotation direction (cw/ccw) for Martial UI
     intimidate_target_cell: int | None = None  # Cell targeted by Intimidate (for UI highlight)
     warded_cell: int | None = None  # Cell protected by Devout Ward (for UI highlight)
 

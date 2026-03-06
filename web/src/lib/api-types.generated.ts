@@ -509,6 +509,10 @@ export interface components {
             ai_comment?: string | null;
             /** Archetype Used Name */
             archetype_used_name?: string | null;
+            /** Skulker Boost Side */
+            skulker_boost_side?: string | null;
+            /** Martial Rotation Direction */
+            martial_rotation_direction?: string | null;
             /** Intimidate Target Cell */
             intimidate_target_cell?: number | null;
             /** Warded Cell */

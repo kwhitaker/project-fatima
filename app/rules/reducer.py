@@ -379,6 +379,8 @@ def apply_intent(
             plus_triggered=plus_triggered,
             elemental_triggered=elemental_bonus > 0,
             archetype_used_name=_arch_name,
+            skulker_boost_side=intent.skulker_boost_side if archetype_activated else None,
+            martial_rotation_direction=intent.martial_rotation_direction if archetype_activated else None,
             intimidate_target_cell=intimidate_target if archetype_activated else None,
             warded_cell=devout_ward_cell if archetype_activated else None,
         )

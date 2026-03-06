@@ -153,13 +153,114 @@ class TestLastMoveInfoFields:
         )
         assert lm.archetype_used_name is None
         assert lm.intimidate_target_cell is None
+        assert lm.skulker_boost_side is None
+        assert lm.martial_rotation_direction is None
 
     def test_archetype_used_name_roundtrip(self):
         lm = LastMoveInfo(
             player_index=0, card_key="c1", cell_index=0, mists_roll=3, mists_effect="none",
             archetype_used_name="martial", intimidate_target_cell=5,
+            skulker_boost_side="n", martial_rotation_direction="cw",
         )
         data = lm.model_dump()
         restored = LastMoveInfo.model_validate(data)
         assert restored.archetype_used_name == "martial"
         assert restored.intimidate_target_cell == 5
+        assert restored.skulker_boost_side == "n"
+        assert restored.martial_rotation_direction == "cw"
+
+
+class TestSkulkerBoostSideInLastMove:
+    def test_skulker_boost_side_populated(self):
+        """LastMoveInfo includes skulker_boost_side when Skulker is used."""
+        c1 = make_card("c1", n=5, e=5, s=5, w=5)
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.SKULKER,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=0,
+            use_archetype=True, skulker_boost_side="e",
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.skulker_boost_side == "e"
+
+    @pytest.mark.parametrize("side", ["n", "e", "s", "w"])
+    def test_skulker_boost_side_all_directions(self, side):
+        c1 = make_card("c1", n=3, e=3, s=3, w=3)
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.SKULKER,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=4,
+            use_archetype=True, skulker_boost_side=side,
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.skulker_boost_side == side
+
+    def test_skulker_boost_side_null_without_archetype(self):
+        c1 = make_card("c1")
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.SKULKER,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=0, use_archetype=False,
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.skulker_boost_side is None
+
+
+class TestMartialRotationDirectionInLastMove:
+    def test_martial_rotation_direction_populated(self):
+        """LastMoveInfo includes martial_rotation_direction when Martial is used."""
+        c1 = make_card("c1", n=5, e=5, s=5, w=5)
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.MARTIAL,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=0,
+            use_archetype=True, martial_rotation_direction="ccw",
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.martial_rotation_direction == "ccw"
+
+    @pytest.mark.parametrize("direction", ["cw", "ccw"])
+    def test_martial_rotation_direction_both(self, direction):
+        c1 = make_card("c1", n=3, e=5, s=7, w=1)
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.MARTIAL,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=4,
+            use_archetype=True, martial_rotation_direction=direction,
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.martial_rotation_direction == direction
+
+    def test_martial_rotation_direction_null_without_archetype(self):
+        c1 = make_card("c1")
+        state = make_state(
+            p0_hand=["c1"],
+            p0_archetype=Archetype.MARTIAL,
+            current_player_index=0,
+        )
+        intent = PlacementIntent(
+            player_index=0, card_key="c1", cell_index=0, use_archetype=False,
+        )
+        result = apply_intent(state, intent, _card_lookup(c1), rng=Random(42))
+        assert result.last_move is not None
+        assert result.last_move.martial_rotation_direction is None

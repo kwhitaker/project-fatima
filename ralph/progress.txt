@@ -27,3 +27,13 @@ Started: 2026-03-06
 - Pattern: use `data-martial-spin` data attribute for test assertions on animation state
 ---
 
+## 2026-03-06 16:25 - US-PE-003
+- Added `skulkerBoostSide` prop to BoardGrid; placed card shows emerald edge glow (`data-skulker-glow`) + '+3' particle (`data-skulker-particle`) on boosted side
+- Updated BoardCallouts to display "Skulker +3!" instead of generic "Skulker!"
+- Passed `skulker_boost_side` from ActiveGameView → BoardGrid
+- Added 4 DevPlayground scenarios (Skulker N at case 14, E at 17, S at 18, W at 19); renumbered Devout Ward to 20 and Waiting to 21
+- Tests: 351 frontend tests pass including new parameterized data-attribute tests for all 4 sides
+- Files: `BoardGrid.tsx`, `BoardCallouts.tsx`, `ActiveGameView.tsx`, `DevPlayground.tsx`, `sp018.test.tsx`
+- Pattern: use `data-skulker-glow` and `data-skulker-particle` data attributes for test assertions on skulker animations
+---
+

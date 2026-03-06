@@ -1,23 +1,20 @@
 {
   "project": "project-fatima",
-  "branchName": "feature/draft-rework",
-  "description": "Rework the draft mechanic: deal 8 cards (2xT3, 3xT2, 3xT1) instead of 7. Players pick 5 with a tier constraint: max 1 T3 and max 2 T2 in the final hand. Players get to choose which T3 to keep. AI auto-draft updated to respect tier constraints.",
+  "branchName": "feature/power-effects",
+  "description": "Add dramatic, per-archetype visual effects and animations when powers activate on the board. Each archetype gets a unique visual treatment: Martial (card spin), Skulker (side glow + particle burst), Caster (omen aura wash), Devout (ward shield on protected card), Intimidate (target card shudder + crack). Replaces the current generic amber callout with distinct per-power feedback.",
   "userStories": [
     {
-      "id": "US-DR-001",
-      "title": "Update deal constants and tier-slotted generation",
-      "description": "As a developer, I want deals to contain exactly 2 T3, 3 T2, and 3 T1 cards (8 total) -- so players get a meaningful T3 choice and better composition.",
+      "id": "US-PE-001",
+      "title": "Extend LastMoveInfo with archetype detail fields for frontend",
+      "description": "As a frontend developer, I want the API to return enough detail about archetype usage to drive per-power animations -- so the UI knows which side was boosted, which direction was rotated, etc.",
       "acceptanceCriteria": [
-        "Change `DEAL_SIZE = 8` (from 7) in `app/rules/deck.py`",
-        "Remove `MAX_PER_TIER = 3` constant (replaced by exact tier slots)",
-        "Add `DEAL_TIER_SLOTS: dict[int, int] = {3: 2, 2: 3, 1: 3}` constant",
-        "Rewrite `generate_matched_deals()` to build deals by filling exact tier slots: for each tier, draw from the shuffled pool respecting rarity/copy/named constraints until slots are filled, alternating between deals for balance",
-        "Cost tolerance check still applies after generation",
-        "Update `validate_deal()` to check exact tier slot counts instead of MAX_PER_TIER",
-        "Update `_can_add_to_deal()` to enforce tier slot limits instead of MAX_PER_TIER",
-        "Update all tests in `tests/test_deck.py` that reference DEAL_SIZE=7 or MAX_PER_TIER",
-        "Add test: generated deals have exactly {3:2, 2:3, 1:3} tier distribution",
-        "Add test: both deals in a matched pair have correct tier distribution",
+        "Add `skulker_boost_side: str | None = None` field to `LastMoveInfo` in `app/models/game.py`",
+        "Add `martial_rotation_direction: str | None = None` field to `LastMoveInfo`",
+        "Add `devout_ward_cell: int | None = None` field to `LastMoveInfo` (if not already added in power-refactor sprint)",
+        "In `apply_intent()`, populate these fields from the intent when the corresponding archetype is activated",
+        "Regenerate frontend API types (`api-types.generated.ts`)",
+        "Add test: LastMoveInfo includes skulker_boost_side when Skulker is used",
+        "Add test: LastMoveInfo includes martial_rotation_direction when Martial is used",
         "`uv run pytest` passes",
         "`uv run pyright` passes"
       ],
@@ -25,70 +22,115 @@
       "passes": true
     },
     {
-      "id": "US-DR-002",
-      "title": "Hand tier constraints: max 1 T3, max 2 T2 in selected hand",
-      "description": "As a player, I want my final hand of 5 to be constrained to at most 1 T3 and 2 T2 cards -- so hand composition is balanced and T3 choice matters.",
+      "id": "US-PE-002",
+      "title": "Martial effect: card spin animation",
+      "description": "As a player, I want to see my card visually spin when I use Martial -- so the rotation feels impactful and clear.",
       "acceptanceCriteria": [
-        "Add `HAND_TIER_LIMITS: dict[int, int] = {3: 1, 2: 2}` constant in `app/rules/deck.py` (T1 is unconstrained)",
-        "Add `validate_hand_tiers(selected_keys: list[str], card_lookup: dict[str, CardDefinition]) -> list[str]` function that returns error strings if tier limits are violated",
-        "In `game_service.submit_draft()`: after existing validation, call `validate_hand_tiers` and raise ValueError if any errors",
-        "Add test: selecting 2 T3 cards raises validation error",
-        "Add test: selecting 3 T2 cards raises validation error",
-        "Add test: selecting 1 T3 + 2 T2 + 2 T1 passes validation",
-        "Add test: selecting 0 T3 + 2 T2 + 3 T1 passes validation",
-        "`uv run pytest` passes",
-        "`uv run pyright` passes"
+        "In `BoardGrid.tsx`, when a placed card used Martial: animate a 90-degree rotation (CW or CCW based on `martial_rotation_direction`) before the card settles into its final position",
+        "Animation: card rotates from its pre-rotation orientation to final orientation over ~0.4s with a slight overshoot (spring feel)",
+        "The card values shown are the POST-rotation values (the animation is purely visual -- values update at the end)",
+        "Add a subtle whoosh/sweep ring effect around the card during rotation",
+        "Update BoardCallouts archetype callout to say 'Martial Spin!' instead of generic 'Martial!'",
+        "Add DevPlayground scenario for Martial spin (both CW and CCW)",
+        "`cd web && bun run test --run` passes"
       ],
       "priority": 2,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-003",
-      "title": "AI auto-draft respects tier constraints",
-      "description": "As a developer, I want the AI auto-draft to respect the new hand tier limits -- so AI opponents build legal hands.",
+      "id": "US-PE-003",
+      "title": "Skulker effect: side glow + boost burst",
+      "description": "As a player, I want to see the boosted side glow with a '+3' particle when I use Skulker -- so I can see exactly which edge got stronger.",
       "acceptanceCriteria": [
-        "Update `_ai_auto_draft()` in `game_service.py` to respect `HAND_TIER_LIMITS`",
-        "Easy: random sample of 5 from deal, but re-sample if tier limits violated (retry up to 50 times, then fall back to greedy valid selection)",
-        "Medium: pick top 5 by total side sum, but enforce tier limits (if best 5 violate limits, swap out excess high-tier cards for next-best lower-tier)",
-        "Hard/Nightmare: pick top 5 by coverage score, same tier-limit enforcement",
-        "Add test: AI draft never produces a hand with 2+ T3 cards",
-        "Add test: AI draft never produces a hand with 3+ T2 cards",
-        "`uv run pytest` passes",
-        "`uv run pyright` passes"
+        "In `BoardGrid.tsx` or a new `PowerEffects.tsx` component, when a placed card used Skulker: highlight the boosted edge (N/E/S/W) of the card with a bright glow",
+        "Show a '+3' text particle that pops out from the boosted edge and fades",
+        "The boosted edge glows green/emerald for ~1.5s then fades",
+        "Edge identification: use `skulker_boost_side` from LastMoveInfo to determine which edge (top/right/bottom/left of the card cell)",
+        "Update BoardCallouts to say 'Skulker +3!' instead of generic 'Skulker!'",
+        "Add DevPlayground scenario for Skulker boost on each side",
+        "`cd web && bun run test --run` passes"
       ],
       "priority": 3,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-004",
-      "title": "Frontend: update draft UI for 8-card deal with tier constraints",
-      "description": "As a player, I want the draft screen to show 8 cards and enforce the tier limits visually -- so I understand the constraints while picking.",
+      "id": "US-PE-004",
+      "title": "Caster effect: omen aura wash",
+      "description": "As a player, I want to see a purple omen energy wash over my card when I use Caster -- so the guaranteed +2 feels powerful and mystical.",
       "acceptanceCriteria": [
-        "Update `HAND_SIZE` reference in `DraftingGameView.tsx` (still 5, but deal now shows 8 cards)",
-        "Show tier constraint info: 'Pick 5 cards (max 1 Tier 3, max 2 Tier 2)' in the draft instructions",
-        "When player has already selected 1 T3 card, visually disable remaining T3 cards (opacity + cannot select)",
-        "When player has already selected 2 T2 cards, visually disable remaining T2 cards",
-        "Show tier badge on each card in the draft view (T1/T2/T3 label or color indicator)",
-        "Update draft confirmation text to mention tier constraints if selection is invalid",
-        "Update frontend tests in `web/src/__tests__/drafting.test.tsx` for 8-card deal and tier constraints",
-        "Add test: T3 cards disabled after selecting 1 T3",
-        "Add test: T2 cards disabled after selecting 2 T2",
+        "In `BoardGrid.tsx`, when a placed card used Caster: play an omen-themed aura animation on the placed cell",
+        "Animation: a purple/violet radial pulse expands from the card center, then a persistent subtle purple shimmer for ~2s",
+        "Show '+2 all sides' text callout integrated with the effect",
+        "The Mists callout should still show 'Omen +2' as usual (Caster effect is additive visual, not replacing Mists callout)",
+        "Update BoardCallouts archetype text to 'Caster Omen!' with purple styling instead of amber",
+        "Add DevPlayground scenario for Caster activation",
         "`cd web && bun run test --run` passes"
       ],
       "priority": 4,
-      "passes": true
+      "passes": false
     },
     {
-      "id": "US-DR-005",
-      "title": "Documentation refresh: update deal/draft rules in all docs",
-      "description": "As a developer, I want all documentation to reflect the new 8-card deal and tier-constrained hand -- so docs stay accurate.",
+      "id": "US-PE-005",
+      "title": "Devout effect: ward shield on protected card",
+      "description": "As a player, I want to see a glowing shield/barrier appear on my warded card -- so it's obvious which card is protected and that the protection is active.",
       "acceptanceCriteria": [
-        "Update `CLAUDE.md`: Deal & Draft section to say 'dealt 8 cards (2xT3, 3xT2, 3xT1), picks 5 to keep (max 1 T3, max 2 T2)'",
-        "Update `docs/GAME_RULES_OVERVIEW.md` match setup section",
-        "No stale references to '7-card deal' or 'draw 7' remain in any doc"
+        "In `BoardGrid.tsx`, when `game.warded_cell` is set and owned by the current viewer: render a shield overlay on that cell",
+        "Shield visual: a semi-transparent golden/holy barrier with a subtle breathing pulse animation",
+        "Shield persists until the ward expires (after opponent's next placement) -- use `warded_cell` from GameState",
+        "When the ward is first applied: play a 'shield up' animation (golden ring expanding outward from the card)",
+        "When the ward expires (next state update where warded_cell is null): play a 'shield down' fade-out",
+        "Update BoardCallouts to say 'Ward!' with a golden/holy color scheme",
+        "Add DevPlayground scenario for Devout ward (showing shield on a card)",
+        "`cd web && bun run test --run` passes"
       ],
       "priority": 5,
-      "passes": true
+      "passes": false
+    },
+    {
+      "id": "US-PE-006",
+      "title": "Intimidate effect: target card shudder + debuff flash",
+      "description": "As a player, I want to see the targeted enemy card shudder and flash red when I use Intimidate -- so the debuff feels aggressive and the target is obvious.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx`, when a placement used Intimidate: animate the `intimidate_target_cell` card with a shudder (rapid horizontal shake) and a red flash overlay",
+        "Show a '-3' text particle popping off the debuffed edge of the target card, colored red",
+        "The shudder animation plays before capture resolution animations (so the player sees the debuff THEN the capture)",
+        "Animation timing: shudder ~0.3s, then red flash ~0.2s, then normal capture flow",
+        "Update BoardCallouts to say 'Intimidate -3!' with a red/orange color scheme instead of amber",
+        "Add DevPlayground scenario for Intimidate (showing target shudder + debuff)",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 6,
+      "passes": false
+    },
+    {
+      "id": "US-PE-007",
+      "title": "Archetype sound effects",
+      "description": "As a player, I want each archetype to play a distinct sound when activated -- so the audio feedback matches the visual.",
+      "acceptanceCriteria": [
+        "Add archetype sound functions to `web/src/lib/sounds.ts`: `playMartial()`, `playSkulker()`, `playCaster()`, `playDevout()`, `playIntimidate()`",
+        "Each produces a short, distinct synthesized tone using the existing Web Audio pattern in sounds.ts (no audio file assets needed)",
+        "Martial: quick rising sweep (whoosh feel). Skulker: sharp staccato burst. Caster: deep resonant hum. Devout: gentle chime/bell. Intimidate: low aggressive rumble",
+        "Trigger the appropriate sound when `archetypeUsedName` is detected in the move update",
+        "Respect existing mute toggle",
+        "Update sound mocks in test helpers if needed",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 7,
+      "passes": false
+    },
+    {
+      "id": "US-PE-008",
+      "title": "DevPlayground: complete archetype effects showcase",
+      "description": "As a developer, I want a DevPlayground section that showcases all 5 archetype effects side by side -- so I can quickly iterate on visual tuning.",
+      "acceptanceCriteria": [
+        "Add or update DevPlayground scenarios to cover all 5 archetype effects with proper LastMoveInfo fields",
+        "Each scenario demonstrates the full animation chain: archetype callout + cell effect + capture resolution",
+        "Scenario labels clearly identify which archetype is being demonstrated",
+        "Existing archetype scenario (case 14) is replaced or updated with the new per-archetype variants",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 8,
+      "passes": false
     }
   ]
 }

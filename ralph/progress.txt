@@ -7,47 +7,12 @@
 Started: 2026-03-06
 ---
 
-## 2026-03-06 12:00 - US-DR-001
-- DEAL_SIZE 7→8, removed MAX_PER_TIER, added DEAL_TIER_SLOTS {3:2, 2:3, 1:3}
-- Rewrote generate_matched_deals() to fill tier slots per-tier (3→2→1), validate_deal() checks exact tier counts, _can_add_to_deal() uses DEAL_TIER_SLOTS
-- Updated all deck test files (test_deck_validator, test_deck_generation, test_deck_copy_limits) plus test_api and test_sp002 for 8-card deals
-- Tests: 835 passed, pyright: 0 new errors, ruff: clean
-- Files: app/rules/deck.py, tests/test_deck_validator.py, tests/test_deck_generation.py, tests/test_deck_copy_limits.py, tests/test_draft.py, tests/test_api.py, tests/test_sp002_create_vs_ai.py
-- Learnings: test deals that use _valid_deal() must maintain exact tier distribution (3T1+3T2+2T3); rarity and tier are independent — rare cards can be any tier in tests
----
-
-## 2026-03-06 13:00 - US-DR-002
-- Added HAND_TIER_LIMITS {3:1, 2:2} and validate_hand_tiers() to deck.py
-- Updated submit_draft() to accept card_store and validate tier constraints; updated router to pass card_store
-- Updated all test callers (test_draft, test_sp004, test_sp014, test_api, conftest) to pass card_store and use pick_valid_hand() helper
-- Added 4 tier constraint tests: 2xT3 rejects, 3xT2 rejects, 1T3+2T2+2T1 passes, 0T3+2T2+3T1 passes
-- Tests: 839 passed, pyright: 0 new errors, ruff: clean on changed files
-- Files: app/rules/deck.py, app/services/game_service.py, app/routers/games.py, tests/test_draft.py, tests/test_api.py, tests/conftest.py, tests/test_sp004_ai_turn_trigger.py, tests/test_sp014_archetype_ai_guard.py
-- Learnings: submit_draft signature change ripples to all direct callers; deal[:5] no longer safe since deals are ordered T3-first from generate_matched_deals; added pick_valid_hand helper to conftest for reuse
----
-
-## 2026-03-06 14:00 - US-DR-003
-- Added `_pick_respecting_tiers()` helper for greedy tier-valid selection from ranked card lists
-- Updated `_ai_auto_draft()`: Easy retries random samples (50x) then falls back to greedy; Medium/Hard/Nightmare use `_pick_respecting_tiers` on sorted deals
-- Added parameterized tests: all 4 difficulties checked for max-1-T3 and max-2-T2 (8 test cases, 20 iterations each)
-- Tests: 847 passed, pyright: 0 new errors on changed files, ruff: pre-existing E402 only
-- Files: app/services/game_service.py, tests/test_draft.py
-- Learnings: `validate_hand_tiers` returns errors (empty=valid), so `not errors` means valid — watch the truthiness
----
-
-## 2026-03-06 15:00 - US-DR-004
-- Updated DraftingGameView.tsx: HAND_TIER_LIMITS {3:1, 2:2}, tier badge (T1/T2/T3) on each card, instruction text mentions tier constraints, cards disabled when tier limit reached
-- Updated test deal from 7 all-T1 cards to 8 tier-distributed cards (2xT3, 3xT2, 3xT1); added 4 new tests (instructions, tier badges, T3 disabled after 1, T2 disabled after 2)
-- Tests: 343 frontend passed, 847 backend passed
-- Files: web/src/routes/game-room/DraftingGameView.tsx, web/src/__tests__/drafting.test.tsx
-- Learnings: Test deals must respect tier distribution; selecting cards sequentially in tests must account for tier limits disabling buttons
----
-
-## 2026-03-06 16:00 - US-DR-005
-- Updated CLAUDE.md Deal & Draft section: 8-card deal (2×T3, 3×T2, 3×T1) with tier constraints (max 1 T3, max 2 T2)
-- Updated GAME_RULES_OVERVIEW.md match setup + AI opponent table; updated TECH_DECISIONS.md deal size
-- Verified no stale '7-card deal' references remain in any .md file
-- Files: CLAUDE.md, docs/GAME_RULES_OVERVIEW.md, docs/TECH_DECISIONS.md
-- Learnings: Also fixed US-DR-004 passes flag that was missed in previous progress commit
+## 2026-03-06 14:00 - US-PE-001
+- Added `skulker_boost_side` and `martial_rotation_direction` fields to `LastMoveInfo` model
+- Populated fields from intent in `apply_intent()` (only when archetype activated)
+- Regenerated `api-types.generated.ts` with new fields in both LastMoveInfo and MoveRequest schemas
+- Tests: 21 archetype feedback tests pass (10 new), 857 total tests pass, pyright clean (pre-existing errors only)
+- Files: `app/models/game.py`, `app/rules/reducer.py`, `tests/test_sp018_archetype_feedback.py`, `web/src/lib/api-types.generated.ts`
+- `devout_ward_cell` already covered by existing `warded_cell` field on LastMoveInfo
 ---
 

@@ -86,7 +86,7 @@ Clients subscribe to Supabase Realtime inserts on `game_events` filtered by `gam
 - **Sudden Death**: Tie at board-full → same `game_id`, `round_number++`, each player gets back owned board cards + cards in hand. Cap: 3 Sudden Death rounds, then draw. With hand-in-score, ties are naturally reachable (5-5) and Sudden Death is a real game mechanic.
 - **Deal & Draft**: Each player is dealt 8 cards (`DEAL_SIZE`, 2×T3 + 3×T2 + 3×T1), picks 5 to keep (`HAND_SIZE`) with tier constraints (max 1 T3, max 2 T2). The draft phase (`DRAFTING` status) occurs between joining and the active match. The first player places all 5 cards; the second player places 4, keeping 1 in hand.
 - **Scoring (hand-in-score)**: Final score = cells owned on board + cards remaining in hand. Total points = 10. First player can score 0–9, second player can score 1–10 (always has 1 card in hand).
-- **Deal validation**: Named character uniqueness by `character_key`; rarity slots (ultra≤1, very_rare≤2, rare≤3); copy limits by rarity bucket.
+- **Deal validation**: Named character uniqueness by `character_key`; rarity slots (ultra≤2, very_rare≤2, rare≤3); copy limits by rarity bucket.
 - **Single Player**: Play against AI opponents at four difficulty levels, each themed as a Curse of Strahd character:
   - **Easy / Ireena Kolyana**: Semi-random placement with basic capture instincts and noisy scoring. Archetype use is enthusiastic but clumsy (50% chance on early turns, 20% chance to forget entirely).
   - **Medium / Rahadin**: One-ply greedy evaluation — simulates every legal move via `apply_intent`, picks the one that maximizes owned cells. Evaluates archetype variants per move.

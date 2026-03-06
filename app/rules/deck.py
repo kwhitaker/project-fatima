@@ -21,9 +21,9 @@ DEAL_TIER_SLOTS: dict[int, int] = {3: 2, 2: 3, 1: 3}
 # T1 is unconstrained (no entry needed).
 HAND_TIER_LIMITS: dict[int, int] = {3: 1, 2: 2}
 
-# Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
+# Rarity slot maxima per CARDS_SPEC.md: ultra ≤ 2, very_rare ≤ 2, rare ≤ 3.
 _RARITY_SLOT_LIMITS: dict[str, int] = {
-    "ultra": 1,
+    "ultra": 2,
     "very_rare": 2,
     "rare": 3,
 }
@@ -46,7 +46,7 @@ def validate_deal(cards: list[CardDefinition]) -> list[str]:
     - Exactly DEAL_SIZE (8) cards.
     - Tier slots: exactly {3:2, 2:3, 1:3}.
     - Named uniqueness: at most one card per character_key when is_named is True.
-    - Rarity slots: ultra ≤ 1, very_rare ≤ 2, rare ≤ 3.
+    - Rarity slots: ultra ≤ 2, very_rare ≤ 2, rare ≤ 3.
 
     Returns a list of human-readable error strings (empty = valid).
     """
@@ -172,7 +172,7 @@ def _can_add_to_deal(deal: list[CardDefinition], card: CardDefinition) -> bool:
     if card.is_named and any(c.character_key == card.character_key for c in deal):
         return False
 
-    # Rarity slot limit (ultra ≤ 1, very_rare ≤ 2, rare ≤ 3)
+    # Rarity slot limit (ultra ≤ 2, very_rare ≤ 2, rare ≤ 3)
     bucket = rarity_bucket(card.rarity)
     if bucket in _RARITY_SLOT_LIMITS:
         if sum(1 for c in deal if rarity_bucket(c.rarity) == bucket) >= _RARITY_SLOT_LIMITS[bucket]:

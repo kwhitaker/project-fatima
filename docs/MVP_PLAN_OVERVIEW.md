@@ -68,7 +68,7 @@ Deliverables:
   - size 10
   - named uniqueness by `character_key` when `is_named`
   - copy limits by `card_key` (lookup driven by rarity bucket)
-  - rarity slots: ultra <= 1, very_rare <= 2, rare <= 3
+  - rarity slots: ultra <= 2, very_rare <= 2, rare <= 3
 - Seeded deck generator:
   - uses RNG seed stored in game state/event log
   - generates two legal decks

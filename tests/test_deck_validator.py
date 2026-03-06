@@ -188,15 +188,12 @@ def test_one_ultra_passes() -> None:
     assert validate_deal(deal) == []
 
 
-def test_two_ultra_fails() -> None:
+def test_two_ultra_passes() -> None:
     deal = _valid_deal()
-    # Replace both T3 slots with ultra
+    # Replace both T3 slots with ultra — allowed (limit is 2)
     deal[-1] = _ultra("u1")
     deal[-2] = _ultra("u2")
-    errs = validate_deal(deal)
-    ultra_errs = [e for e in errs if "ultra" in e]
-    assert len(ultra_errs) == 1
-    assert "2" in ultra_errs[0]
+    assert validate_deal(deal) == []
 
 
 def test_two_very_rare_passes() -> None:
@@ -259,7 +256,7 @@ def test_max_rarity_slots_combined_passes() -> None:
 
 
 def test_multiple_slot_violations_reported_independently() -> None:
-    # 2 ultra + 3 very_rare + 4 rare = 9 cards (oversized + all 3 slot violations)
+    # 3 ultra + 3 very_rare + 4 rare = 10 cards (oversized + all 3 slot violations)
     deal = [
         _card("r_t1_0", tier=1, rarity=75, sides=RARE_SIDES),  # T1 rare
         _card("r_t1_1", tier=1, rarity=75, sides=RARE_SIDES),  # T1 rare
@@ -269,7 +266,8 @@ def test_multiple_slot_violations_reported_independently() -> None:
         _very_rare("vr2"),  # T2 very_rare
         _very_rare("vr3"),  # T2 very_rare (3rd → violation)
         _ultra("u1"),  # T3 ultra
-        _ultra("u2"),  # T3 ultra (2nd → violation)
+        _ultra("u2"),  # T3 ultra
+        _ultra("u3"),  # T3 ultra (3rd → violation)
     ]
     errs = validate_deal(deal)
     assert any("ultra" in e for e in errs)
@@ -293,10 +291,11 @@ def test_size_and_named_violation_both_reported() -> None:
 
 
 def test_size_and_rarity_violation_both_reported() -> None:
-    # DEAL_SIZE+2 cards + 2 ultra
+    # DEAL_SIZE+3 cards + 3 ultra
     deal = _valid_deal()
     deal.append(_ultra("u1"))
     deal.append(_ultra("u2"))
+    deal.append(_ultra("u3"))
     errs = validate_deal(deal)
-    assert any(str(DEAL_SIZE + 2) in e for e in errs)
+    assert any(str(DEAL_SIZE + 3) in e for e in errs)
     assert any("ultra" in e for e in errs)

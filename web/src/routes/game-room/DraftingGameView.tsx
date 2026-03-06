@@ -123,7 +123,7 @@ export function DraftingGameView({
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4" aria-label="drafting view">
+    <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4 mx-auto w-full max-w-3xl" aria-label="drafting view">
       <h2 className="text-lg font-heading font-semibold">Draft Phase</h2>
       <p className="text-sm text-muted-foreground text-center max-w-md">
         Select {HAND_SIZE} of your {deal.length} dealt cards to keep (max 1 Tier 3, max 2 Tier 2).
@@ -132,7 +132,7 @@ export function DraftingGameView({
         {selected.size} / {HAND_SIZE} selected
       </p>
 
-      <div className="flex gap-2 flex-wrap justify-center" role="list" aria-label="dealt cards">
+      <div className="grid grid-cols-4 gap-2 justify-items-center" role="list" aria-label="dealt cards">
         {deal.map((cardKey) => {
           const def = cardDefs.get(cardKey);
           const displayName = def?.name ?? cardKey;

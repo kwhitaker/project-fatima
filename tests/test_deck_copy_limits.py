@@ -149,8 +149,8 @@ def test_one_copy_ultra_passes() -> None:
 
 
 def test_two_copies_ultra_fails() -> None:
-    # Normally 2 ultra would also fail the rarity slot check (ultra ≤ 1),
-    # but we verify the copy-limit error is also present.
+    # 2 copies of the same ultra card fails copy limit (ultra allows only 1 copy per card_key).
+    # Rarity slot (ultra ≤ 2) is fine, but the copy-limit error should be present.
     deal = _valid_deal()
     deal[-1] = _card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES)
     deal[-2] = _card("ultra_dup", tier=3, rarity=99, sides=ULTRA_SIDES)

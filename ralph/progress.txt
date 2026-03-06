@@ -52,3 +52,12 @@ Started: 2026-03-06
 - Learnings: MCTS previously didn't evaluate any archetypes. Post-selection 1-ply evaluation is a clean way to add archetype awareness without slowing down MCTS rollouts. Circular import avoided since ai.py imports mcts lazily inside the function.
 ---
 
+## 2026-03-06 16:00 - US-PR-006
+- Updated archetype copy: Caster→"Guaranteed Omen", Devout→"Ward", Intimidate→"-3 debuff"
+- Added Devout Ward two-step cell selection UI (mirrors Intimidate pattern: first click sets placement, second click picks friendly card to ward)
+- Added warded cell visual indicator (shield icon + sky-400 ring), DevPlayground scenario, regenerated OpenAPI types
+- 334 frontend tests pass (10 new), 830 backend tests pass, tsc clean
+- Files changed: archetypesCopy.ts, ActionPanel.tsx, BoardGrid.tsx, GameRoom.tsx, ActiveGameView.tsx, GameRoomContext.tsx, api.ts, api-types.generated.ts, DevPlayground.tsx, helpers.ts, pr006.test.tsx
+- Learnings: Devout Ward follows the Intimidate two-step pattern (pending cell → target selection). GameRulesDialog doesn't need changes since it reads from ArchetypePowerAside which uses ARCHETYPE_COPY. The `canPlace` logic in ActiveGameView needs devout added alongside intimidate for archetypes that don't need powerSide.
+---
+

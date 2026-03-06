@@ -26,3 +26,12 @@ Started: 2026-03-06
 - Learnings: submit_draft signature change ripples to all direct callers; deal[:5] no longer safe since deals are ordered T3-first from generate_matched_deals; added pick_valid_hand helper to conftest for reuse
 ---
 
+## 2026-03-06 14:00 - US-DR-003
+- Added `_pick_respecting_tiers()` helper for greedy tier-valid selection from ranked card lists
+- Updated `_ai_auto_draft()`: Easy retries random samples (50x) then falls back to greedy; Medium/Hard/Nightmare use `_pick_respecting_tiers` on sorted deals
+- Added parameterized tests: all 4 difficulties checked for max-1-T3 and max-2-T2 (8 test cases, 20 iterations each)
+- Tests: 847 passed, pyright: 0 new errors on changed files, ruff: pre-existing E402 only
+- Files: app/services/game_service.py, tests/test_draft.py
+- Learnings: `validate_hand_tiers` returns errors (empty=valid), so `not errors` means valid — watch the truthiness
+---
+

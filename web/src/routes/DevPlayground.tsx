@@ -267,7 +267,7 @@ const SCENARIOS: Scenario[] = [
   },
   {
     label: "Devout Ward",
-    description: "Warded cell with shield icon and sky ring",
+    description: "Warded cell with golden shield barrier and breathing pulse",
   },
   {
     label: "Waiting (creator)",

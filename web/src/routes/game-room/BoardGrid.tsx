@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { playPlace, playCapture, playCombo } from "@/lib/sounds";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
@@ -112,6 +112,40 @@ export function BoardGrid({
       playPlace();
     }
   }, [placedCells]);
+
+  // Track ward state transitions for shield-up / shield-down animations
+  const prevWardedRef = useRef<number | null | undefined>(undefined);
+  const [wardAnim, setWardAnim] = useState<"up" | "steady" | "down" | null>(null);
+  const [wardAnimCell, setWardAnimCell] = useState<number | null>(null);
+  useEffect(() => {
+    const prev = prevWardedRef.current;
+    prevWardedRef.current = wardedCell ?? null;
+    if (prev === undefined) {
+      // First render: if warded, go straight to steady
+      if (wardedCell != null) {
+        setWardAnim("steady");
+        setWardAnimCell(wardedCell);
+      }
+      return;
+    }
+    if (wardedCell != null && prev !== wardedCell) {
+      // Ward just appeared or moved
+      setWardAnim("up");
+      setWardAnimCell(wardedCell);
+      const timer = setTimeout(() => setWardAnim("steady"), 600);
+      return () => clearTimeout(timer);
+    }
+    if (wardedCell == null && prev != null) {
+      // Ward just expired — play shield-down on previous cell
+      setWardAnim("down");
+      setWardAnimCell(prev);
+      const timer = setTimeout(() => {
+        setWardAnim(null);
+        setWardAnimCell(null);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [wardedCell]);
 
   // Micro-shake: derive a key from placed cells so the shake replays on each new placement
   const shakeKey = placedCells && placedCells.size > 0
@@ -434,7 +468,7 @@ export function BoardGrid({
                   "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                   isIntimidateTarget && "ring-2 ring-orange-400 dark:ring-orange-300",
                   isDevoutWardTarget && "ring-2 ring-sky-400 dark:ring-sky-300",
-                  isWardedCell && "ring-2 ring-sky-400 dark:ring-sky-300",
+                  isWardedCell && "ring-2 ring-amber-300 dark:ring-amber-200",
                 )}
                 style={victoryGlowStyle}
                 data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
@@ -453,10 +487,8 @@ export function BoardGrid({
               >
                 {elementBadge}
                 {cardContent}
-                {isWardedCell && (
-                  <span className="absolute top-0 right-0 text-[10px] leading-none p-px select-none pointer-events-none" aria-label="warded">
-                    🛡
-                  </span>
+                {isWardedCell && wardAnim && wardAnimCell === i && (
+                  <WardShieldOverlay anim={wardAnim} />
                 )}
               </button>
             );
@@ -465,7 +497,7 @@ export function BoardGrid({
           return (
             <div
               key={i}
-              className={cn(cellClass, victoryGlowClass, isWardedCell && "ring-2 ring-sky-400 dark:ring-sky-300")}
+              className={cn(cellClass, victoryGlowClass, isWardedCell && "ring-2 ring-amber-300 dark:ring-amber-200")}
               style={victoryGlowStyle}
               data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
@@ -479,15 +511,60 @@ export function BoardGrid({
             >
               {elementBadge}
               {cardContent}
-              {isWardedCell && (
-                <span className="absolute top-0 right-0 text-[10px] leading-none p-px select-none pointer-events-none" aria-label="warded">
-                  🛡
-                </span>
+              {isWardedCell && wardAnim && wardAnimCell === i && (
+                <WardShieldOverlay anim={wardAnim} />
               )}
             </div>
           );
         })}
       </motion.div>
     </div>
+  );
+}
+
+/** Golden ward shield overlay with breathing pulse and shield-up/down transitions. */
+function WardShieldOverlay({ anim }: { anim: "up" | "steady" | "down" }) {
+  return (
+    <>
+      {/* Semi-transparent golden barrier */}
+      <motion.div
+        className="absolute inset-0 pointer-events-none z-10"
+        data-ward-shield={anim}
+        aria-label="warded"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(251,191,36,0.35) 0%, rgba(251,191,36,0.15) 50%, rgba(251,191,36,0) 80%)",
+        }}
+        initial={
+          anim === "up"
+            ? { opacity: 0, scale: 0.5 }
+            : anim === "down"
+              ? { opacity: 0.6 }
+              : { opacity: 0.6 }
+        }
+        animate={
+          anim === "up"
+            ? { opacity: 0.6, scale: 1 }
+            : anim === "down"
+              ? { opacity: 0, scale: 0.8 }
+              : { opacity: [0.5, 0.7, 0.5] }
+        }
+        transition={
+          anim === "steady"
+            ? { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            : { duration: anim === "up" ? 0.5 : 0.4, ease: "easeOut" }
+        }
+      />
+      {/* Shield-up expanding ring */}
+      {anim === "up" && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-10 border-2 border-amber-300/70 rounded-sm"
+          data-ward-ring="true"
+          initial={{ scale: 0.6, opacity: 0.9 }}
+          animate={{ scale: 1.5, opacity: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        />
+      )}
+    </>
   );
 }

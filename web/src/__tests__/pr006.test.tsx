@@ -101,7 +101,7 @@ describe("US-PR-006: Archetype copy and UI updates", () => {
         />,
       );
       const cell = screen.getByTitle("c1");
-      expect(cell.className).toContain("ring-sky-400");
+      expect(cell.className).toContain("ring-amber-300");
     });
 
     it("does not render shield when wardedCell is null", () => {

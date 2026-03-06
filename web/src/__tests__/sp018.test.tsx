@@ -43,7 +43,7 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       ["skulker", "Skulker +3!"],
       ["intimidate", "Intimidate!"],
       ["caster", "Caster Omen!"],
-      ["devout", "Devout!"],
+      ["devout", "Ward!"],
     ])(
       "renders callout for %s archetype",
       (archName, expectedText) => {
@@ -296,6 +296,76 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       );
       const auraEl = container.querySelector("[data-caster-aura]");
       expect(auraEl).not.toBeInTheDocument();
+    });
+
+    it("renders ward shield overlay with data-ward-shield when wardedCell is set", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          wardedCell={0}
+        />,
+      );
+      const shieldEl = container.querySelector("[data-ward-shield]");
+      expect(shieldEl).toBeInTheDocument();
+      expect(shieldEl).toHaveAttribute("aria-label", "warded");
+    });
+
+    it("applies golden ring (ring-amber-300) to warded cell", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          wardedCell={0}
+        />,
+      );
+      const cell = screen.getByTitle("c1");
+      expect(cell.className).toContain("ring-amber-300");
+    });
+
+    it("does not render ward shield when wardedCell is null", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          wardedCell={null}
+        />,
+      );
+      const shieldEl = container.querySelector("[data-ward-shield]");
+      expect(shieldEl).not.toBeInTheDocument();
     });
 
     it("applies standard yellow ring when no archetype used", () => {

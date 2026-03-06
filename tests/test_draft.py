@@ -1,11 +1,13 @@
-"""Tests for draft phase (deal 8, keep 5) and hand tier constraints (US-DR-002)."""
+"""Tests for draft phase (deal 8, keep 5) and hand tier constraints (US-DR-002, US-DR-003)."""
+
+from random import Random
 
 import pytest
 
 from app.models.cards import CardDefinition, CardSides
-from app.models.game import GameState, GameStatus, PlayerState
-from app.rules.deck import HAND_SIZE
-from app.services.game_service import submit_draft
+from app.models.game import AIDifficulty, GameState, GameStatus, PlayerState
+from app.rules.deck import HAND_SIZE, HAND_TIER_LIMITS
+from app.services.game_service import _ai_auto_draft, submit_draft
 from app.store.memory import MemoryCardStore, MemoryGameStore
 
 # ---------------------------------------------------------------------------
@@ -244,3 +246,67 @@ def test_valid_hand_0t3_2t2_3t1_passes() -> None:
             _DEAL_A_KEYS[5], _DEAL_A_KEYS[6], _DEAL_A_KEYS[7]]  # T1, T1, T1
     result = submit_draft(store, _card_store(), "test-draft", "alice", hand)
     assert result.players[0].hand == hand
+
+
+# ---------------------------------------------------------------------------
+# AI auto-draft tier constraints (US-DR-003)
+# ---------------------------------------------------------------------------
+
+# Build a deal where T3 cards have the highest stats (so naive "pick best 5"
+# would grab both T3 cards, violating the max-1-T3 limit).
+def _ai_card(key: str, tier: int, total: int) -> CardDefinition:
+    """Card with specified tier and total side sum (split evenly)."""
+    base = total // 4
+    extra = total % 4
+    return CardDefinition(
+        card_key=key, character_key=key, name=key, version="v1",
+        tier=tier, rarity=15, is_named=False,
+        sides=CardSides(n=base + (1 if extra > 0 else 0),
+                        e=base + (1 if extra > 1 else 0),
+                        s=base + (1 if extra > 2 else 0),
+                        w=base),
+        set="test", element="shadow",
+    )
+
+
+# Deal: 2xT3 (high stats), 3xT2 (medium stats), 3xT1 (low stats)
+_AI_DEAL = [
+    _ai_card("ai_t3_0", 3, 36), _ai_card("ai_t3_1", 3, 34),
+    _ai_card("ai_t2_0", 2, 28), _ai_card("ai_t2_1", 2, 26), _ai_card("ai_t2_2", 2, 24),
+    _ai_card("ai_t1_0", 1, 20), _ai_card("ai_t1_1", 1, 18), _ai_card("ai_t1_2", 1, 16),
+]
+
+
+def _check_tier_limits(hand_keys: list[str]) -> None:
+    """Assert a hand respects HAND_TIER_LIMITS."""
+    lookup = {c.card_key: c for c in _AI_DEAL}
+    tier_counts: dict[int, int] = {}
+    for key in hand_keys:
+        card = lookup[key]
+        tier_counts[card.tier] = tier_counts.get(card.tier, 0) + 1
+    for tier, limit in HAND_TIER_LIMITS.items():
+        assert tier_counts.get(tier, 0) <= limit, (
+            f"Tier {tier}: {tier_counts.get(tier, 0)} > max {limit}"
+        )
+
+
+@pytest.mark.parametrize("difficulty", list(AIDifficulty))
+def test_ai_draft_never_picks_2_or_more_t3(difficulty: AIDifficulty) -> None:
+    """AI draft respects max-1-T3 constraint at every difficulty."""
+    rng = Random(12345)
+    for _ in range(20):  # Run multiple times to catch randomness in Easy
+        hand = _ai_auto_draft(_AI_DEAL, difficulty, rng)
+        assert len(hand) == HAND_SIZE
+        t3_count = sum(1 for k in hand if k.startswith("ai_t3"))
+        assert t3_count <= 1, f"{difficulty}: got {t3_count} T3 cards"
+
+
+@pytest.mark.parametrize("difficulty", list(AIDifficulty))
+def test_ai_draft_never_picks_3_or_more_t2(difficulty: AIDifficulty) -> None:
+    """AI draft respects max-2-T2 constraint at every difficulty."""
+    rng = Random(54321)
+    for _ in range(20):
+        hand = _ai_auto_draft(_AI_DEAL, difficulty, rng)
+        assert len(hand) == HAND_SIZE
+        t2_count = sum(1 for k in hand if k.startswith("ai_t2"))
+        assert t2_count <= 2, f"{difficulty}: got {t2_count} T2 cards"

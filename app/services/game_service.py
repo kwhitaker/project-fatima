@@ -17,7 +17,7 @@ AI_DISPLAY_NAMES: dict[AIDifficulty, str] = {
     AIDifficulty.HARD: "Strahd von Zarovich",
     AIDifficulty.NIGHTMARE: "The Dark Powers",
 }
-from app.rules.deck import HAND_SIZE, generate_matched_deals, validate_hand_tiers
+from app.rules.deck import HAND_SIZE, HAND_TIER_LIMITS, generate_matched_deals, validate_hand_tiers
 from app.rules.errors import ArchetypeNotSelectedError
 from app.rules.reducer import PlacementIntent, apply_intent
 from app.store import CardStore, ConflictError, GameStore
@@ -42,6 +42,24 @@ def _check_no_active_game(game_store: GameStore, player_id: str) -> None:
             raise ActiveGameExistsError(g.game_id)
 
 
+def _pick_respecting_tiers(
+    ranked: list[CardDefinition],
+) -> list[str]:
+    """Pick HAND_SIZE cards from a ranked list, skipping any that would violate tier limits."""
+    tier_counts: dict[int, int] = {}
+    selected: list[str] = []
+    for card in ranked:
+        tier = card.tier
+        limit = HAND_TIER_LIMITS.get(tier, HAND_SIZE)
+        if tier_counts.get(tier, 0) >= limit:
+            continue
+        tier_counts[tier] = tier_counts.get(tier, 0) + 1
+        selected.append(card.card_key)
+        if len(selected) == HAND_SIZE:
+            break
+    return selected
+
+
 def _ai_auto_draft(
     deal: list[CardDefinition],
     difficulty: AIDifficulty,
@@ -49,15 +67,24 @@ def _ai_auto_draft(
 ) -> list[str]:
     """Pick HAND_SIZE cards from the AI's deal based on difficulty strategy."""
     if difficulty == AIDifficulty.EASY:
-        picked = rng.sample(deal, HAND_SIZE)
-        return [c.card_key for c in picked]
+        # Try random samples, retry if tier limits violated
+        for _ in range(50):
+            picked = rng.sample(deal, HAND_SIZE)
+            keys = [c.card_key for c in picked]
+            lookup = {c.card_key: c for c in deal}
+            if not validate_hand_tiers(keys, lookup):
+                return keys
+        # Fallback: greedy valid selection from shuffled deal
+        shuffled = list(deal)
+        rng.shuffle(shuffled)
+        return _pick_respecting_tiers(shuffled)
     elif difficulty == AIDifficulty.MEDIUM:
-        # Pick 5 with highest total side values
+        # Pick 5 with highest total side values, respecting tier limits
         def _total(c: CardDefinition) -> int:
             return c.sides.n + c.sides.e + c.sides.s + c.sides.w
 
         sorted_deal = sorted(deal, key=_total, reverse=True)
-        return [c.card_key for c in sorted_deal[:HAND_SIZE]]
+        return _pick_respecting_tiers(sorted_deal)
     else:
         # Hard/Nightmare: best defensive+offensive coverage (highest min-side sum)
         def _coverage(c: CardDefinition) -> int:
@@ -65,7 +92,7 @@ def _ai_auto_draft(
             return min(s.n, s.e, s.s, s.w) + s.n + s.e + s.s + s.w
 
         sorted_deal = sorted(deal, key=_coverage, reverse=True)
-        return [c.card_key for c in sorted_deal[:HAND_SIZE]]
+        return _pick_respecting_tiers(sorted_deal)
 
 
 def _score_skulker(hand: list[CardDefinition]) -> float:

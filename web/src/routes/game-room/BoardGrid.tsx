@@ -3,7 +3,7 @@ import type { BoardCell, CardDefinition } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { CardFace, tierClass } from "@/routes/game-room/CardFace";
 import { cardTitle } from "@/routes/game-room/cardTitle";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import { playPlace, playCapture, playCombo } from "@/lib/sounds";
 
 export const ELEMENT_SYMBOLS: Record<string, string> = {
@@ -87,7 +87,10 @@ export function BoardGrid({
       emittedRef.current = key;
       // Play combo arpeggio at start if multi-capture
       if (capturedOrder.length > 1) {
-        setTimeout(() => playCombo(capturedOrder.length), CAPTURE_BASE_DELAY * 1000);
+        setTimeout(
+          () => playCombo(capturedOrder.length),
+          CAPTURE_BASE_DELAY * 1000,
+        );
       }
       capturedOrder.forEach((cellIdx, seqIdx) => {
         const delay = (CAPTURE_BASE_DELAY + seqIdx * CAPTURE_STAGGER) * 1000;
@@ -95,8 +98,12 @@ export function BoardGrid({
           playCapture();
           window.dispatchEvent(
             new CustomEvent("capture-step", {
-              detail: { cellIndex: cellIdx, step: seqIdx + 1, total: capturedOrder.length },
-            })
+              detail: {
+                cellIndex: cellIdx,
+                step: seqIdx + 1,
+                total: capturedOrder.length,
+              },
+            }),
           );
         }, delay);
       });
@@ -106,9 +113,10 @@ export function BoardGrid({
   // Play placement sound when new cells appear
   const prevPlacedRef = useRef<string | null>(null);
   useEffect(() => {
-    const key = placedCells && placedCells.size > 0
-      ? Array.from(placedCells).sort().join(",")
-      : null;
+    const key =
+      placedCells && placedCells.size > 0
+        ? Array.from(placedCells).sort().join(",")
+        : null;
     if (key && key !== prevPlacedRef.current) {
       prevPlacedRef.current = key;
       playPlace();
@@ -117,7 +125,9 @@ export function BoardGrid({
 
   // Track ward state transitions for shield-up / shield-down animations
   const prevWardedRef = useRef<number | null | undefined>(undefined);
-  const [wardAnim, setWardAnim] = useState<"up" | "steady" | "down" | null>(null);
+  const [wardAnim, setWardAnim] = useState<"up" | "steady" | "down" | null>(
+    null,
+  );
   const [wardAnimCell, setWardAnimCell] = useState<number | null>(null);
   useEffect(() => {
     const prev = prevWardedRef.current;
@@ -150,32 +160,32 @@ export function BoardGrid({
   }, [wardedCell]);
 
   // Micro-shake: derive a key from placed cells so the shake replays on each new placement
-  const shakeKey = placedCells && placedCells.size > 0
-    ? Array.from(placedCells).sort().join(",")
-    : "none";
+  const shakeKey =
+    placedCells && placedCells.size > 0
+      ? Array.from(placedCells).sort().join(",")
+      : "none";
 
   return (
     <div
       className="mx-auto aspect-square"
-      style={{ width: 'min(100%, 24rem, calc(100dvh - 20rem))' }}
+      style={{ width: "min(100%, 24rem, calc(100dvh - 20rem))" }}
     >
       <motion.div
         key={shakeKey}
         className="grid grid-cols-3 gap-2 sm:gap-3"
         aria-label="game board"
-        animate={shakeKey !== "none"
-          ? { x: [0, -2, 2, -1, 1, 0] }
-          : { x: 0 }
-        }
-        transition={shakeKey !== "none"
-          ? { duration: 0.2, ease: "easeOut" }
-          : { duration: 0 }
+        animate={shakeKey !== "none" ? { x: [0, -2, 2, -1, 1, 0] } : { x: 0 }}
+        transition={
+          shakeKey !== "none"
+            ? { duration: 0.2, ease: "easeOut" }
+            : { duration: 0 }
         }
       >
         {board.map((cell, i) => {
           const isPlaced = placedCells?.has(i) ?? false;
           const isCaptured = capturedCells?.has(i) ?? false;
-          const isLastMove = lastMoveCellIndex != null && i === lastMoveCellIndex;
+          const isLastMove =
+            lastMoveCellIndex != null && i === lastMoveCellIndex;
           const elementLabel = boardElements?.[i];
           const isElementMatch =
             cell === null &&
@@ -185,22 +195,32 @@ export function BoardGrid({
           const isArchetypeCell = isLastMove && !!archetypeUsedName;
 
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
-          const isMartialSpin = isLastMove && archetypeUsedName === "martial" && !!martialRotationDirection;
-          const isSkulkerBoost = isLastMove && archetypeUsedName === "skulker" && !!skulkerBoostSide;
+          const isMartialSpin =
+            isLastMove &&
+            archetypeUsedName === "martial" &&
+            !!martialRotationDirection;
+          const isSkulkerBoost =
+            isLastMove && archetypeUsedName === "skulker" && !!skulkerBoostSide;
           const isCasterOmen = isLastMove && archetypeUsedName === "caster";
-          const isIntimidateEffect = archetypeUsedName === "intimidate" && intimidateTargetCell === i && lastMoveCellIndex != null;
+          const isIntimidateEffect =
+            archetypeUsedName === "intimidate" &&
+            intimidateTargetCell === i &&
+            lastMoveCellIndex != null;
 
           // Compute which side of the intimidate target faces the placed card
-          const intimidateDebuffSide = isIntimidateEffect && lastMoveCellIndex != null
-            ? (() => {
-                const tRow = Math.floor(i / 3), tCol = i % 3;
-                const pRow = Math.floor(lastMoveCellIndex / 3), pCol = lastMoveCellIndex % 3;
-                if (pRow < tRow) return "n" as const;
-                if (pRow > tRow) return "s" as const;
-                if (pCol < tCol) return "w" as const;
-                return "e" as const;
-              })()
-            : null;
+          const intimidateDebuffSide =
+            isIntimidateEffect && lastMoveCellIndex != null
+              ? (() => {
+                  const tRow = Math.floor(i / 3),
+                    tCol = i % 3;
+                  const pRow = Math.floor(lastMoveCellIndex / 3),
+                    pCol = lastMoveCellIndex % 3;
+                  if (pRow < tRow) return "n" as const;
+                  if (pRow > tRow) return "s" as const;
+                  if (pCol < tCol) return "w" as const;
+                  return "e" as const;
+                })()
+              : null;
 
           // Victory glow: staggered delay based on position in victoryCells array
           const victoryIdx = victoryCells?.indexOf(i) ?? -1;
@@ -208,14 +228,21 @@ export function BoardGrid({
           const cellClass = cn(
             "aspect-square w-full border-[3px] border-border rounded-none flex items-center justify-center text-xs text-center relative overflow-hidden",
             cell === null
-              ? earlyFinish ? "bg-muted/50 text-muted-foreground opacity-50 border-dashed" : "bg-muted text-muted-foreground"
+              ? earlyFinish
+                ? "bg-muted/50 text-muted-foreground opacity-50 border-dashed"
+                : "bg-muted text-muted-foreground"
               : cell.owner === myIndex
                 ? "bg-blue-200 text-blue-900 dark:bg-blue-800 dark:text-blue-100"
                 : "bg-red-200 text-red-900 dark:bg-red-800 dark:text-red-100",
-            isElementMatch && !isLastMove && "ring-2 ring-emerald-500 dark:ring-emerald-400",
-            isArchetypeCell && "ring-2 ring-amber-400 dark:ring-amber-300 animate-pulse",
-            isLastMove && !isArchetypeCell && "ring-2 ring-yellow-400 dark:ring-yellow-300",
-            cell && tierClass(def?.tier)
+            isElementMatch &&
+              !isLastMove &&
+              "ring-2 ring-emerald-500 dark:ring-emerald-400",
+            isArchetypeCell &&
+              "ring-2 ring-amber-400 dark:ring-amber-300 animate-pulse",
+            isLastMove &&
+              !isArchetypeCell &&
+              "ring-2 ring-yellow-400 dark:ring-yellow-300",
+            cell && tierClass(def?.tier),
           );
 
           const elementTitle = elementLabel
@@ -234,9 +261,10 @@ export function BoardGrid({
 
           // Compute capture delay for sequential animation
           const captureSeq = captureSeqMap.get(i);
-          const captureDelay = captureSeq != null
-            ? CAPTURE_BASE_DELAY + captureSeq * CAPTURE_STAGGER
-            : 0;
+          const captureDelay =
+            captureSeq != null
+              ? CAPTURE_BASE_DELAY + captureSeq * CAPTURE_STAGGER
+              : 0;
 
           // Should the placed card pulse when captures resolve?
           const shouldPulse = isPlaced && capturedOrder.length > 0;
@@ -249,7 +277,7 @@ export function BoardGrid({
                 onClick={() => onCellClick?.(i)}
                 className={cn(
                   cellClass,
-                  "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  "hover:bg-accent cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 )}
                 data-last-move={isLastMove ? "true" : undefined}
                 title={elementTitle}
@@ -262,53 +290,89 @@ export function BoardGrid({
           }
 
           // Mists tint class for placed card
-          const mistsTintClass = isPlaced && mistsEffect === "fog"
-            ? "animate-mists-fog"
-            : isPlaced && mistsEffect === "omen"
-              ? "animate-mists-omen"
-              : undefined;
+          const mistsTintClass =
+            isPlaced && mistsEffect === "fog"
+              ? "animate-mists-fog"
+              : isPlaced && mistsEffect === "omen"
+                ? "animate-mists-omen"
+                : undefined;
 
           // Card content with appropriate animation
           // Martial spin: rotation angle (CW = +90, CCW = -90), with overshoot
           const martialRotate = isMartialSpin
-            ? martialRotationDirection === "cw" ? 90 : -90
+            ? martialRotationDirection === "cw"
+              ? 90
+              : -90
             : 0;
 
           const cardContent = cell ? (
             isPlaced ? (
               <motion.div
-                className={cn("w-full h-full flex items-center justify-center relative", mistsTintClass)}
-                data-martial-spin={isMartialSpin ? martialRotationDirection : undefined}
-                initial={{ scale: 0, opacity: 0, rotate: isMartialSpin ? 0 : 0 }}
-                animate={shouldPulse
-                  ? { scale: [0, 1, 1.08, 1], opacity: 1, rotate: martialRotate }
-                  : { scale: [0, 1.08, 1], opacity: 1, rotate: martialRotate }
+                className={cn(
+                  "w-full h-full flex items-center justify-center relative",
+                  mistsTintClass,
+                )}
+                data-martial-spin={
+                  isMartialSpin ? martialRotationDirection : undefined
                 }
-                transition={shouldPulse
-                  ? {
-                      scale: {
-                        type: "tween",
-                        ease: "easeOut",
-                        times: [0, 0.6, 0.8, 1],
-                        duration: CAPTURE_BASE_DELAY + 0.2,
-                      },
-                      opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
-                      rotate: isMartialSpin
-                        ? { type: "spring", stiffness: 200, damping: 12, duration: 0.4 }
-                        : { duration: 0 },
-                    }
-                  : {
-                      scale: {
-                        type: "tween",
-                        ease: "easeOut",
-                        times: [0, 0.7, 1],
-                        duration: 0.25,
-                      },
-                      opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
-                      rotate: isMartialSpin
-                        ? { type: "spring", stiffness: 200, damping: 12, duration: 0.4 }
-                        : { duration: 0 },
-                    }
+                initial={{
+                  scale: 0,
+                  opacity: 0,
+                  rotate: isMartialSpin ? 0 : 0,
+                }}
+                animate={
+                  shouldPulse
+                    ? {
+                        scale: [0, 1, 1.08, 1],
+                        opacity: 1,
+                        rotate: martialRotate,
+                      }
+                    : { scale: [0, 1.08, 1], opacity: 1, rotate: martialRotate }
+                }
+                transition={
+                  shouldPulse
+                    ? {
+                        scale: {
+                          type: "tween",
+                          ease: "easeOut",
+                          times: [0, 0.6, 0.8, 1],
+                          duration: CAPTURE_BASE_DELAY + 0.2,
+                        },
+                        opacity: {
+                          type: "tween",
+                          ease: "easeOut",
+                          duration: 0.15,
+                        },
+                        rotate: isMartialSpin
+                          ? {
+                              type: "spring",
+                              stiffness: 200,
+                              damping: 12,
+                              duration: 0.4,
+                            }
+                          : { duration: 0 },
+                      }
+                    : {
+                        scale: {
+                          type: "tween",
+                          ease: "easeOut",
+                          times: [0, 0.7, 1],
+                          duration: 0.25,
+                        },
+                        opacity: {
+                          type: "tween",
+                          ease: "easeOut",
+                          duration: 0.15,
+                        },
+                        rotate: isMartialSpin
+                          ? {
+                              type: "spring",
+                              stiffness: 200,
+                              damping: 12,
+                              duration: 0.4,
+                            }
+                          : { duration: 0 },
+                      }
                 }
               >
                 <CardFace cardKey={cell.card_key} def={def} />
@@ -334,10 +398,14 @@ export function BoardGrid({
                     <motion.div
                       className={cn(
                         "absolute pointer-events-none",
-                        skulkerBoostSide === "n" && "top-0 left-0 right-0 h-[3px]",
-                        skulkerBoostSide === "s" && "bottom-0 left-0 right-0 h-[3px]",
-                        skulkerBoostSide === "e" && "top-0 right-0 bottom-0 w-[3px]",
-                        skulkerBoostSide === "w" && "top-0 left-0 bottom-0 w-[3px]",
+                        skulkerBoostSide === "n" &&
+                          "top-0 left-0 right-0 h-[3px]",
+                        skulkerBoostSide === "s" &&
+                          "bottom-0 left-0 right-0 h-[3px]",
+                        skulkerBoostSide === "e" &&
+                          "top-0 right-0 bottom-0 w-[3px]",
+                        skulkerBoostSide === "w" &&
+                          "top-0 left-0 bottom-0 w-[3px]",
                       )}
                       data-skulker-glow={skulkerBoostSide}
                       style={{ backgroundColor: "rgb(16, 185, 129)" }}
@@ -348,10 +416,14 @@ export function BoardGrid({
                     <motion.span
                       className={cn(
                         "absolute pointer-events-none text-xs font-heading font-bold text-emerald-400 drop-shadow-md z-10",
-                        skulkerBoostSide === "n" && "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
-                        skulkerBoostSide === "s" && "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
-                        skulkerBoostSide === "e" && "right-0 top-1/2 -translate-y-1/2 translate-x-full",
-                        skulkerBoostSide === "w" && "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
+                        skulkerBoostSide === "n" &&
+                          "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
+                        skulkerBoostSide === "s" &&
+                          "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
+                        skulkerBoostSide === "e" &&
+                          "right-0 top-1/2 -translate-y-1/2 translate-x-full",
+                        skulkerBoostSide === "w" &&
+                          "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
                       )}
                       data-skulker-particle={skulkerBoostSide}
                       initial={{ scale: 1.5, opacity: 0 }}
@@ -369,7 +441,8 @@ export function BoardGrid({
                       className="absolute inset-0 pointer-events-none rounded-full"
                       data-caster-aura="true"
                       style={{
-                        background: "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(139,92,246,0) 70%)",
+                        background:
+                          "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(139,92,246,0) 70%)",
                       }}
                       initial={{ scale: 0, opacity: 0 }}
                       animate={{ scale: [0, 1.6, 1.2], opacity: [0, 0.8, 0.4] }}
@@ -378,10 +451,15 @@ export function BoardGrid({
                     <motion.div
                       className="absolute inset-0 pointer-events-none"
                       style={{
-                        background: "radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(167,139,250,0) 60%)",
+                        background:
+                          "radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(167,139,250,0) 60%)",
                       }}
                       animate={{ opacity: [0.3, 0.5, 0.3] }}
-                      transition={{ duration: 1.2, repeat: 1, ease: "easeInOut" }}
+                      transition={{
+                        duration: 1.2,
+                        repeat: 1,
+                        ease: "easeInOut",
+                      }}
                     />
                     <motion.span
                       className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pointer-events-none text-xs font-heading font-bold text-violet-300 drop-shadow-md z-10"
@@ -416,10 +494,14 @@ export function BoardGrid({
                   <motion.span
                     className={cn(
                       "absolute pointer-events-none text-xs font-heading font-bold text-red-400 drop-shadow-md z-10",
-                      intimidateDebuffSide === "n" && "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
-                      intimidateDebuffSide === "s" && "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
-                      intimidateDebuffSide === "e" && "right-0 top-1/2 -translate-y-1/2 translate-x-full",
-                      intimidateDebuffSide === "w" && "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
+                      intimidateDebuffSide === "n" &&
+                        "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
+                      intimidateDebuffSide === "s" &&
+                        "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
+                      intimidateDebuffSide === "e" &&
+                        "right-0 top-1/2 -translate-y-1/2 translate-x-full",
+                      intimidateDebuffSide === "w" &&
+                        "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
                     )}
                     data-intimidate-particle={intimidateDebuffSide}
                     initial={{ scale: 1.5, opacity: 0 }}
@@ -453,7 +535,12 @@ export function BoardGrid({
                 {/* Ownership color wipe at flip midpoint */}
                 <motion.div
                   className="absolute inset-0 pointer-events-none"
-                  style={{ backgroundColor: cell.owner === myIndex ? "rgba(59,130,246,0.3)" : "rgba(239,68,68,0.3)" }}
+                  style={{
+                    backgroundColor:
+                      cell.owner === myIndex
+                        ? "rgba(59,130,246,0.3)"
+                        : "rgba(239,68,68,0.3)",
+                  }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: [0, 1, 0] }}
                   transition={{
@@ -470,7 +557,10 @@ export function BoardGrid({
                     initial={{ scale: 1.5, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    transition={{ delay: captureDelay + CAPTURE_FLIP_DURATION * 0.5, duration: 0.2 }}
+                    transition={{
+                      delay: captureDelay + CAPTURE_FLIP_DURATION * 0.5,
+                      duration: 0.2,
+                    }}
                   >
                     +{captureSeq + 1}
                   </motion.span>
@@ -491,24 +581,39 @@ export function BoardGrid({
               <CardFace cardKey={cell.card_key} def={def} />
             )
           ) : earlyFinish ? (
-            <span className="text-muted-foreground/40 font-heading text-lg select-none" aria-label="unplayed cell">✕</span>
+            <span
+              className="text-muted-foreground/40 font-heading text-lg select-none"
+              aria-label="unplayed cell"
+            >
+              ✕
+            </span>
           ) : (
             ""
           );
 
-          const victoryGlowClass = victoryIdx >= 0 ? "animate-victory-glow" : undefined;
-          const victoryGlowStyle = victoryIdx >= 0
-            ? { animationDelay: `${victoryIdx * 0.2}s` }
-            : undefined;
+          const victoryGlowClass =
+            victoryIdx >= 0 ? "animate-victory-glow" : undefined;
+          const victoryGlowStyle =
+            victoryIdx >= 0
+              ? { animationDelay: `${victoryIdx * 0.2}s` }
+              : undefined;
 
           // When intimidate is pending, clicking an occupied cell selects it as the target
-          const isIntimidateTarget = intimidatePendingCell != null && cell !== null && onCellClick;
+          const isIntimidateTarget =
+            intimidatePendingCell != null && cell !== null && onCellClick;
           // When devout ward is pending, clicking own occupied cell selects it as the ward target
-          const isDevoutWardTarget = devoutWardPendingCell != null && cell !== null && cell.owner === myIndex && onCellClick;
+          const isDevoutWardTarget =
+            devoutWardPendingCell != null &&
+            cell !== null &&
+            cell.owner === myIndex &&
+            onCellClick;
           // Visual indicator for currently warded cell
           const isWardedCell = wardedCell != null && i === wardedCell;
 
-          if (cell !== null && (onCellInspect || isIntimidateTarget || isDevoutWardTarget)) {
+          if (
+            cell !== null &&
+            (onCellInspect || isIntimidateTarget || isDevoutWardTarget)
+          ) {
             return (
               <button
                 key={i}
@@ -516,12 +621,21 @@ export function BoardGrid({
                   cellClass,
                   victoryGlowClass,
                   "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isIntimidateTarget && "ring-2 ring-orange-400 dark:ring-orange-300",
+                  isIntimidateTarget &&
+                    "ring-2 ring-orange-400 dark:ring-orange-300",
                   isDevoutWardTarget && "ring-2 ring-sky-400 dark:ring-sky-300",
                   isWardedCell && "ring-2 ring-amber-300 dark:ring-amber-200",
                 )}
                 style={victoryGlowStyle}
-                data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
+                data-anim={
+                  isPlaced
+                    ? "placed"
+                    : isCaptured
+                      ? "captured"
+                      : victoryIdx >= 0
+                        ? "victory-glow"
+                        : undefined
+                }
                 data-last-move={isLastMove ? "true" : undefined}
                 onClick={() => {
                   if (isIntimidateTarget) {
@@ -532,8 +646,18 @@ export function BoardGrid({
                     onCellInspect(cell.card_key);
                   }
                 }}
-                aria-label={isIntimidateTarget ? `intimidate target cell ${i}` : isDevoutWardTarget ? `ward target cell ${i}` : `inspect ${def?.name ?? cell.card_key}`}
-                title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
+                aria-label={
+                  isIntimidateTarget
+                    ? `intimidate target cell ${i}`
+                    : isDevoutWardTarget
+                      ? `ward target cell ${i}`
+                      : `inspect ${def?.name ?? cell.card_key}`
+                }
+                title={
+                  elementTitle
+                    ? `${cardTitle(cell.card_key, def)} — ${elementTitle}`
+                    : cardTitle(cell.card_key, def)
+                }
               >
                 {elementBadge}
                 {cardContent}
@@ -547,9 +671,21 @@ export function BoardGrid({
           return (
             <div
               key={i}
-              className={cn(cellClass, victoryGlowClass, isWardedCell && "ring-2 ring-amber-300 dark:ring-amber-200")}
+              className={cn(
+                cellClass,
+                victoryGlowClass,
+                isWardedCell && "ring-2 ring-amber-300 dark:ring-amber-200",
+              )}
               style={victoryGlowStyle}
-              data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
+              data-anim={
+                isPlaced
+                  ? "placed"
+                  : isCaptured
+                    ? "captured"
+                    : victoryIdx >= 0
+                      ? "victory-glow"
+                      : undefined
+              }
               data-last-move={isLastMove ? "true" : undefined}
               title={
                 cell

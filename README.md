@@ -36,7 +36,7 @@ I have mixed feelings about gen-AI in software development. Used irresponsibly, 
 
 I also don't love the externalities (power/water costs, and the obvious incentive some leaders have to treat "code gen" as a headcount reduction plan). And I'm especially uneasy about what this does to entry-level and mid-level engineering work. This entire project is the kind of thing a more junior engineer might normally build. If gen-AI can produce this much in 2026, getting started as a software engineer is going to be much, much harder.
 
-I'm not going to litigate all of that here (or try to ward off any "[bean-soup theory](https://suzie81speaks.com/2026/01/06/the-bean-soup-theory/)"). This is just what I tried, what worked, and what didn't.
+I'm not going to litigate all of that here. This is just what I tried, what worked, and what didn't.
 
 ### Approach
 
@@ -52,12 +52,12 @@ I treated this like a PM/Senior Engineer directing a more junior dev:
 - OpenCode: craft stories / PRD-ish prompts
 - Claude CLI: execute the Ralph loop
 
-Costs (very rough): I started on the `Pro` tier of Claude, bought $20 USD of [Zen](https://opencode.ai/docs/zen/) credits, then eventually upgraded to Claude `Max`. Total Zen spend ended up around $40 USD.
+Costs (very rough): ~$40 USD in [Zen](https://opencode.ai/docs/zen/) credits plus a Claude `Max` subscription.
 
 ### The Good
 
 - Generating the initial stories/spec with OpenCode was quick; the first backend + frontend iterations landed surprisingly close.
-- Look, it's just a fact that AI agents "type" faster than you. Even with long iteration cycles, the throughput is real.
+- It's just a fact that AI agents "type" faster than you. Even with long iteration cycles, the throughput is real.
 - End-to-end build time was about 12 hours of my time; manually, it would've easily been 3x.
 - As skeptical as I am, it does feel very cool to kick off a set of tasks, go do my real job, and come back to find a whole new set of features done.
 - It's fantastic for understanding a large API surface area. It could instantly answer any questions I had about the tools I was using.

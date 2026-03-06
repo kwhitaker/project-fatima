@@ -40,6 +40,7 @@ export function BoardGrid({
   wardedCell,
   earlyFinish,
   archetypeUsedName,
+  martialRotationDirection,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -59,6 +60,7 @@ export function BoardGrid({
   wardedCell?: number | null;
   earlyFinish?: boolean;
   archetypeUsedName?: string | null;
+  martialRotationDirection?: "cw" | "ccw" | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -145,6 +147,7 @@ export function BoardGrid({
           const isArchetypeCell = isLastMove && !!archetypeUsedName;
 
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
+          const isMartialSpin = isLastMove && archetypeUsedName === "martial" && !!martialRotationDirection;
 
           // Victory glow: staggered delay based on position in victoryCells array
           const victoryIdx = victoryCells?.indexOf(i) ?? -1;
@@ -213,14 +216,20 @@ export function BoardGrid({
               : undefined;
 
           // Card content with appropriate animation
+          // Martial spin: rotation angle (CW = +90, CCW = -90), with overshoot
+          const martialRotate = isMartialSpin
+            ? martialRotationDirection === "cw" ? 90 : -90
+            : 0;
+
           const cardContent = cell ? (
             isPlaced ? (
               <motion.div
                 className={cn("w-full h-full flex items-center justify-center relative", mistsTintClass)}
-                initial={{ scale: 0, opacity: 0 }}
+                data-martial-spin={isMartialSpin ? martialRotationDirection : undefined}
+                initial={{ scale: 0, opacity: 0, rotate: isMartialSpin ? 0 : 0 }}
                 animate={shouldPulse
-                  ? { scale: [0, 1, 1.08, 1], opacity: 1 }
-                  : { scale: [0, 1.08, 1], opacity: 1 }
+                  ? { scale: [0, 1, 1.08, 1], opacity: 1, rotate: martialRotate }
+                  : { scale: [0, 1.08, 1], opacity: 1, rotate: martialRotate }
                 }
                 transition={shouldPulse
                   ? {
@@ -231,6 +240,9 @@ export function BoardGrid({
                         duration: CAPTURE_BASE_DELAY + 0.2,
                       },
                       opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
+                      rotate: isMartialSpin
+                        ? { type: "spring", stiffness: 200, damping: 12, duration: 0.4 }
+                        : { duration: 0 },
                     }
                   : {
                       scale: {
@@ -240,6 +252,9 @@ export function BoardGrid({
                         duration: 0.25,
                       },
                       opacity: { type: "tween", ease: "easeOut", duration: 0.15 },
+                      rotate: isMartialSpin
+                        ? { type: "spring", stiffness: 200, damping: 12, duration: 0.4 }
+                        : { duration: 0 },
                     }
                 }
               >
@@ -251,6 +266,15 @@ export function BoardGrid({
                   animate={{ scale: 1.6, opacity: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 />
+                {/* Martial sweep ring */}
+                {isMartialSpin && (
+                  <motion.div
+                    className="absolute inset-0 pointer-events-none rounded-full border-2 border-amber-400/60"
+                    initial={{ scale: 0.5, opacity: 0.8, rotate: 0 }}
+                    animate={{ scale: 1.8, opacity: 0, rotate: martialRotate }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                )}
               </motion.div>
             ) : isCaptured ? (
               <motion.div

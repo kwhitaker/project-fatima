@@ -38,9 +38,15 @@ vi.mock("@/lib/sounds", () => ({
 
 describe("US-SP-018: Archetype power visual feedback", () => {
   describe("BoardCallouts — archetype callout", () => {
-    it.each(["martial", "skulker", "intimidate", "caster", "devout"])(
+    it.each([
+      ["martial", "Martial Spin!"],
+      ["skulker", "Skulker!"],
+      ["intimidate", "Intimidate!"],
+      ["caster", "Caster!"],
+      ["devout", "Devout!"],
+    ])(
       "renders callout for %s archetype",
-      (archName) => {
+      (archName, expectedText) => {
         render(
           <BoardCallouts
             mistsEffect={null}
@@ -54,9 +60,7 @@ describe("US-SP-018: Archetype power visual feedback", () => {
         );
         const callout = screen.getByLabelText("board archetype callout");
         expect(callout).toBeInTheDocument();
-        const expected =
-          archName.charAt(0).toUpperCase() + archName.slice(1) + "!";
-        expect(callout.textContent).toBe(expected);
+        expect(callout.textContent).toBe(expectedText);
       },
     );
 
@@ -103,6 +107,60 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       const cell = screen.getByTitle("c1");
       expect(cell.className).toContain("ring-amber-400");
       expect(cell.className).toContain("animate-pulse");
+    });
+
+    it.each(["cw", "ccw"] as const)(
+      "sets data-martial-spin=%s on placed card when martial rotation is %s",
+      (direction) => {
+        const board = [
+          { card_key: "c1", owner: 0 },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+        ];
+        const { container } = render(
+          <BoardGrid
+            board={board}
+            myIndex={0}
+            lastMoveCellIndex={0}
+            placedCells={new Set([0])}
+            archetypeUsedName="martial"
+            martialRotationDirection={direction}
+          />,
+        );
+        const spinEl = container.querySelector(`[data-martial-spin="${direction}"]`);
+        expect(spinEl).toBeInTheDocument();
+      },
+    );
+
+    it("does not set data-martial-spin when archetype is not martial", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          placedCells={new Set([0])}
+          archetypeUsedName="skulker"
+        />,
+      );
+      const spinEl = container.querySelector("[data-martial-spin]");
+      expect(spinEl).not.toBeInTheDocument();
     });
 
     it("applies standard yellow ring when no archetype used", () => {

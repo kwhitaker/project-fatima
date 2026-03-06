@@ -360,6 +360,7 @@ export function ActiveGameView({
               devoutWardPendingCell={devoutWardPendingCell}
               wardedCell={game.warded_cell ?? null}
               archetypeUsedName={game.last_move?.archetype_used_name ?? null}
+              martialRotationDirection={(game.last_move?.martial_rotation_direction as "cw" | "ccw" | null) ?? null}
             />
             <BoardCallouts
               mistsEffect={

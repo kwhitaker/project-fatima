@@ -241,9 +241,11 @@ export function BoardCallouts({
               opacity: { duration: 0.15 },
             }}
           >
-            {archetypeUsedName.charAt(0).toUpperCase() +
-              archetypeUsedName.slice(1)}
-            !
+            {archetypeUsedName === "martial"
+              ? "Martial Spin!"
+              : archetypeUsedName.charAt(0).toUpperCase() +
+                archetypeUsedName.slice(1) +
+                "!"}
           </motion.div>
         )}
       </AnimatePresence>

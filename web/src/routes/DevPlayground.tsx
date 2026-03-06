@@ -246,6 +246,14 @@ const SCENARIOS: Scenario[] = [
     description: "Last move with archetype power feedback",
   },
   {
+    label: "Martial Spin CW",
+    description: "Martial archetype spin clockwise",
+  },
+  {
+    label: "Martial Spin CCW",
+    description: "Martial archetype spin counter-clockwise",
+  },
+  {
     label: "Devout Ward",
     description: "Warded cell with shield icon and sky ring",
   },
@@ -275,6 +283,7 @@ export default function DevPlayground() {
   const [aiComment, setAiComment] = useState<string | null>(null);
   const [aiDifficulty, setAiDifficulty] = useState<AIDifficulty | null>(null);
   const [showWaiting, setShowWaiting] = useState(false);
+  const [martialRotationDirection, setMartialRotationDirection] = useState<"cw" | "ccw" | null>(null);
 
   const reset = useCallback(() => {
     setPlacedCells(new Set());
@@ -288,6 +297,7 @@ export default function DevPlayground() {
     setAiComment(null);
     setAiDifficulty(null);
     setShowWaiting(false);
+    setMartialRotationDirection(null);
     setGame(makeGame());
     setActiveScenario(null);
   }, []);
@@ -569,6 +579,50 @@ export default function DevPlayground() {
             break;
           }
           case 15: {
+            // Martial Spin CW
+            const board = emptyBoard();
+            board[4] = { card_key: "c-wolf", owner: 0 };
+            board[5] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([5]));
+            setMartialRotationDirection("cw");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-wolf",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "martial",
+              martial_rotation_direction: "cw",
+            });
+            break;
+          }
+          case 16: {
+            // Martial Spin CCW
+            const board = emptyBoard();
+            board[4] = { card_key: "c-wolf", owner: 0 };
+            board[3] = { card_key: "c-raven", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([3]));
+            setMartialRotationDirection("ccw");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-wolf",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "martial",
+              martial_rotation_direction: "ccw",
+            });
+            break;
+          }
+          case 17: {
             // Devout Ward — a friendly card is warded
             const board: (BoardCell | null)[] = emptyBoard();
             board[4] = { card_key: "c-strahd", owner: 0 };
@@ -589,7 +643,7 @@ export default function DevPlayground() {
             });
             break;
           }
-          case 16: {
+          case 18: {
             // Waiting state with cancel
             setShowWaiting(true);
             setGame(
@@ -703,6 +757,8 @@ export default function DevPlayground() {
               victoryCells={victoryCells}
               earlyFinish={earlyFinish}
               wardedCell={game.warded_cell ?? null}
+              archetypeUsedName={lastMove?.archetype_used_name ?? null}
+              martialRotationDirection={martialRotationDirection}
               onCellInspect={() => {}}
             />
           </div>

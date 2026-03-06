@@ -43,3 +43,12 @@ Started: 2026-03-06
 - Learnings: Caster and Intimidate overlap on mid-range sides (5-7); differentiate by penalizing Intimidate when no weak (≤3) sides present. Martial needs ≤4 threshold for weak sides to not overlap with Skulker's ≤3 adjacent ≥7 pattern.
 ---
 
+## 2026-03-06 15:00 - US-PR-005
+- Added MCTS post-selection archetype evaluation: after tree search picks best (card, cell), evaluates archetype variants via 1-ply simulation using `_greedy_archetype_variants` and `_simulate_move`
+- Greedy/Expectimax Devout ward and Caster Omen were already wired in from US-PR-003; novice `_novice_archetype_params` also already handles Devout ward
+- Added 14 tests: greedy Devout ward variant generation (5 tests), novice Devout ward activation (3 tests), Caster plain variant (2 tests), MCTS archetype evaluation (3 tests), greedy ward-when-beneficial (1 test)
+- 830 tests pass, 0 pyright errors
+- Files changed: app/rules/mcts.py, tests/test_ai_archetype_usage.py
+- Learnings: MCTS previously didn't evaluate any archetypes. Post-selection 1-ply evaluation is a clean way to add archetype awareness without slowing down MCTS rollouts. Circular import avoided since ai.py imports mcts lazily inside the function.
+---
+

@@ -70,6 +70,8 @@ export const DEFAULT_GAME_ROOM_CTX = {
   onPowerSideToggle: (() => {}) as (side: "n" | "e" | "s" | "w") => void,
   intimidatePendingCell: null as number | null,
   onCancelIntimidatePending: () => {},
+  devoutWardPendingCell: null as number | null,
+  onCancelDevoutWardPending: () => {},
   archetypePending: false,
   archetypeError: null as string | null,
   onSelectArchetype: (() => {}) as (archetype: Archetype) => void | Promise<void>,

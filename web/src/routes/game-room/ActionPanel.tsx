@@ -26,6 +26,8 @@ export function ActionPanel({
     onPowerSideToggle,
     intimidatePendingCell,
     onCancelIntimidatePending,
+    devoutWardPendingCell,
+    onCancelDevoutWardPending,
   } = useGameRoom();
   const hasArchetype = !!myPlayer?.archetype;
   const powerAvailable =
@@ -35,6 +37,7 @@ export function ActionPanel({
   const needsMartialDirection =
     usePower && myPlayer?.archetype === "martial";
   const isIntimidate = usePower && myPlayer?.archetype === "intimidate";
+  const isDevoutWard = usePower && myPlayer?.archetype === "devout";
 
   // Determine step text (shown below the turn label on my turn)
   let stepText: string | null;
@@ -50,6 +53,8 @@ export function ActionPanel({
     stepText = "Choose a direction for your power";
   } else if (isIntimidate && intimidatePendingCell !== null) {
     stepText = "Click an adjacent opponent card to debuff";
+  } else if (isDevoutWard && devoutWardPendingCell !== null) {
+    stepText = "Click one of your cards on the board to ward";
   } else {
     stepText = "Choose a cell";
   }
@@ -162,6 +167,21 @@ export function ActionPanel({
                 size="sm"
                 className="h-6 px-2 text-xs"
                 onClick={onCancelIntimidatePending}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+          {isDevoutWard && devoutWardPendingCell !== null && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                Placing at cell {devoutWardPendingCell}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={onCancelDevoutWardPending}
               >
                 Cancel
               </Button>

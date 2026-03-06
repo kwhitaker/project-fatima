@@ -466,6 +466,8 @@ export interface components {
              */
             seed: number;
             last_move?: components["schemas"]["LastMoveInfo"] | null;
+            /** Warded Cell */
+            warded_cell?: number | null;
             /** Board Elements */
             board_elements?: string[] | null;
             /** Created At */
@@ -509,6 +511,8 @@ export interface components {
             archetype_used_name?: string | null;
             /** Intimidate Target Cell */
             intimidate_target_cell?: number | null;
+            /** Warded Cell */
+            warded_cell?: number | null;
         };
         /** LeaveGameRequest */
         LeaveGameRequest: {
@@ -536,6 +540,8 @@ export interface components {
             intimidate_target_cell?: number | null;
             /** Martial Rotation Direction */
             martial_rotation_direction?: string | null;
+            /** Devout Ward Cell */
+            devout_ward_cell?: number | null;
             /** Idempotency Key */
             idempotency_key?: string | null;
         };

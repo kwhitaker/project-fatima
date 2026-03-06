@@ -15,6 +15,8 @@ interface GameRoomContextValue {
   onPowerSideToggle: (side: string) => void;
   intimidatePendingCell: number | null;
   onCancelIntimidatePending: () => void;
+  devoutWardPendingCell: number | null;
+  onCancelDevoutWardPending: () => void;
 
   // Archetype modal
   archetypePending: boolean;

@@ -57,6 +57,7 @@ export function ActiveGameView({
     usePower,
     powerSide,
     intimidatePendingCell,
+    devoutWardPendingCell,
     onPreviewCard,
     leaving,
     onOpenLeaveConfirm,
@@ -74,6 +75,7 @@ export function ActiveGameView({
     !movePending &&
     (!usePower ||
       myPlayer?.archetype === "intimidate" ||
+      myPlayer?.archetype === "devout" ||
       (myPlayer?.archetype !== "skulker" &&
         myPlayer?.archetype !== "martial") ||
       powerSide !== null);
@@ -355,6 +357,8 @@ export function ActiveGameView({
                   : null
               }
               intimidatePendingCell={intimidatePendingCell}
+              devoutWardPendingCell={devoutWardPendingCell}
+              wardedCell={game.warded_cell ?? null}
               archetypeUsedName={game.last_move?.archetype_used_name ?? null}
             />
             <BoardCallouts

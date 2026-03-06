@@ -37,6 +37,7 @@ export default function GameRoom() {
   const [usePower, setUsePower] = useState(false);
   const [powerSide, setPowerSide] = useState<string | null>(null);
   const [intimidatePendingCell, setIntimidatePendingCell] = useState<number | null>(null);
+  const [devoutWardPendingCell, setDevoutWardPendingCell] = useState<number | null>(null);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [cardDefs, setCardDefs] = useState<Map<string, CardDefinition>>(new Map());
@@ -127,9 +128,15 @@ export default function GameRoom() {
       return;
     }
 
+    // Devout Ward two-step: first click sets pending placement, second click picks friendly card to ward
+    if (usePower && myPlr?.archetype === "devout" && devoutWardPendingCell === null) {
+      setDevoutWardPendingCell(cellIndex);
+      return;
+    }
+
     setMovePending(true);
     setMoveError(null);
-    const placementCell = intimidatePendingCell ?? cellIndex;
+    const placementCell = intimidatePendingCell ?? devoutWardPendingCell ?? cellIndex;
     const idempotencyKey = crypto.randomUUID();
     try {
       let updated: GameState;
@@ -141,6 +148,7 @@ export default function GameRoom() {
             skulkerBoostSide: myPlr?.archetype === "skulker" ? (powerSide ?? undefined) : undefined,
             intimidateTargetCell: myPlr?.archetype === "intimidate" ? cellIndex : undefined,
             martialRotationDirection: myPlr?.archetype === "martial" ? (powerSide as "cw" | "ccw" ?? undefined) : undefined,
+            devoutWardCell: myPlr?.archetype === "devout" ? cellIndex : undefined,
           }
         );
       } else {
@@ -151,6 +159,7 @@ export default function GameRoom() {
       setUsePower(false);
       setPowerSide(null);
       setIntimidatePendingCell(null);
+      setDevoutWardPendingCell(null);
     } catch (e: unknown) {
       const errStatus = (e as { status?: number }).status;
       setMoveError(e instanceof Error ? e.message : "Move failed");
@@ -159,6 +168,7 @@ export default function GameRoom() {
         if (fresh) setGame(fresh);
       }
       setIntimidatePendingCell(null);
+      setDevoutWardPendingCell(null);
     } finally {
       setMovePending(false);
     }
@@ -301,6 +311,7 @@ export default function GameRoom() {
               setUsePower(next);
               setPowerSide(null);
               setIntimidatePendingCell(null);
+              setDevoutWardPendingCell(null);
             },
             powerSide,
             onPowerSideToggle: (side) => {
@@ -308,6 +319,8 @@ export default function GameRoom() {
             },
             intimidatePendingCell,
             onCancelIntimidatePending: () => setIntimidatePendingCell(null),
+            devoutWardPendingCell,
+            onCancelDevoutWardPending: () => setDevoutWardPendingCell(null),
             archetypePending,
             archetypeError,
             onSelectArchetype: (arch) => void handleSelectArchetype(arch),

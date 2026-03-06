@@ -36,6 +36,8 @@ export function BoardGrid({
   mistsEffect,
   victoryCells,
   intimidatePendingCell,
+  devoutWardPendingCell,
+  wardedCell,
   earlyFinish,
   archetypeUsedName,
 }: {
@@ -53,6 +55,8 @@ export function BoardGrid({
   mistsEffect?: "fog" | "omen" | "none" | null;
   victoryCells?: number[];
   intimidatePendingCell?: number | null;
+  devoutWardPendingCell?: number | null;
+  wardedCell?: number | null;
   earlyFinish?: boolean;
   archetypeUsedName?: string | null;
 }) {
@@ -321,8 +325,12 @@ export function BoardGrid({
 
           // When intimidate is pending, clicking an occupied cell selects it as the target
           const isIntimidateTarget = intimidatePendingCell != null && cell !== null && onCellClick;
+          // When devout ward is pending, clicking own occupied cell selects it as the ward target
+          const isDevoutWardTarget = devoutWardPendingCell != null && cell !== null && cell.owner === myIndex && onCellClick;
+          // Visual indicator for currently warded cell
+          const isWardedCell = wardedCell != null && i === wardedCell;
 
-          if (cell !== null && (onCellInspect || isIntimidateTarget)) {
+          if (cell !== null && (onCellInspect || isIntimidateTarget || isDevoutWardTarget)) {
             return (
               <button
                 key={i}
@@ -330,7 +338,9 @@ export function BoardGrid({
                   cellClass,
                   victoryGlowClass,
                   "cursor-pointer hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isIntimidateTarget && "ring-2 ring-orange-400 dark:ring-orange-300"
+                  isIntimidateTarget && "ring-2 ring-orange-400 dark:ring-orange-300",
+                  isDevoutWardTarget && "ring-2 ring-sky-400 dark:ring-sky-300",
+                  isWardedCell && "ring-2 ring-sky-400 dark:ring-sky-300",
                 )}
                 style={victoryGlowStyle}
                 data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
@@ -338,15 +348,22 @@ export function BoardGrid({
                 onClick={() => {
                   if (isIntimidateTarget) {
                     onCellClick!(i);
+                  } else if (isDevoutWardTarget) {
+                    onCellClick!(i);
                   } else if (onCellInspect) {
                     onCellInspect(cell.card_key);
                   }
                 }}
-                aria-label={isIntimidateTarget ? `intimidate target cell ${i}` : `inspect ${def?.name ?? cell.card_key}`}
+                aria-label={isIntimidateTarget ? `intimidate target cell ${i}` : isDevoutWardTarget ? `ward target cell ${i}` : `inspect ${def?.name ?? cell.card_key}`}
                 title={elementTitle ? `${cardTitle(cell.card_key, def)} — ${elementTitle}` : cardTitle(cell.card_key, def)}
               >
                 {elementBadge}
                 {cardContent}
+                {isWardedCell && (
+                  <span className="absolute top-0 right-0 text-[10px] leading-none p-px select-none pointer-events-none" aria-label="warded">
+                    🛡
+                  </span>
+                )}
               </button>
             );
           }
@@ -354,7 +371,7 @@ export function BoardGrid({
           return (
             <div
               key={i}
-              className={cn(cellClass, victoryGlowClass)}
+              className={cn(cellClass, victoryGlowClass, isWardedCell && "ring-2 ring-sky-400 dark:ring-sky-300")}
               style={victoryGlowStyle}
               data-anim={isPlaced ? "placed" : isCaptured ? "captured" : victoryIdx >= 0 ? "victory-glow" : undefined}
               data-last-move={isLastMove ? "true" : undefined}
@@ -368,6 +385,11 @@ export function BoardGrid({
             >
               {elementBadge}
               {cardContent}
+              {isWardedCell && (
+                <span className="absolute top-0 right-0 text-[10px] leading-none p-px select-none pointer-events-none" aria-label="warded">
+                  🛡
+                </span>
+              )}
             </div>
           );
         })}

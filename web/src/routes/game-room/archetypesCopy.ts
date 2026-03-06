@@ -21,20 +21,20 @@ export const ARCHETYPE_COPY: Record<Archetype, ArchetypeCopy> = {
   },
   caster: {
     name: "Caster",
-    powerTitle: "Reroll the Mists",
+    powerTitle: "Guaranteed Omen",
     powerText:
-      "When you roll the Mists, you may roll again. You must use the new roll. Use it once per game.",
+      "Your Mists result is always +2 for this placement. Use it once per game.",
   },
   devout: {
     name: "Devout",
-    powerTitle: "Negate Fog",
+    powerTitle: "Ward",
     powerText:
-      "If you roll a 1 (Fog), ignore it. You do not get -2 for this move. Use it once per game.",
+      "After placing, choose one of your cards on the board. It cannot be captured by the opponent's next placement. Use it once per game.",
   },
   intimidate: {
     name: "Intimidate",
     powerTitle: "Weaken an enemy card",
     powerText:
-      "After you place a card, pick an adjacent opponent card. Its facing side becomes its weakest side for this comparison only. Use it once per game.",
+      "After you place a card, pick an adjacent opponent card. Its facing side is reduced by 3 (min 1) for this comparison only. Use it once per game.",
   },
 };

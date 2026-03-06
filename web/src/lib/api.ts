@@ -115,6 +115,7 @@ export async function placeCard(
     skulkerBoostSide?: string;
     intimidateTargetCell?: number;
     martialRotationDirection?: "cw" | "ccw";
+    devoutWardCell?: number;
   }
 ): Promise<GameState> {
   const headers = await authHeaders();
@@ -130,6 +131,7 @@ export async function placeCard(
       ...(powerOptions?.skulkerBoostSide && { skulker_boost_side: powerOptions.skulkerBoostSide }),
       ...(powerOptions?.intimidateTargetCell != null && { intimidate_target_cell: powerOptions.intimidateTargetCell }),
       ...(powerOptions?.martialRotationDirection && { martial_rotation_direction: powerOptions.martialRotationDirection }),
+      ...(powerOptions?.devoutWardCell != null && { devout_ward_cell: powerOptions.devoutWardCell }),
     }),
   });
   if (!res.ok) {

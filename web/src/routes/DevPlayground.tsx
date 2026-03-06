@@ -246,6 +246,10 @@ const SCENARIOS: Scenario[] = [
     description: "Last move with archetype power feedback",
   },
   {
+    label: "Devout Ward",
+    description: "Warded cell with shield icon and sky ring",
+  },
+  {
     label: "Waiting (creator)",
     description: "Waiting for opponent with cancel button",
   },
@@ -565,6 +569,27 @@ export default function DevPlayground() {
             break;
           }
           case 15: {
+            // Devout Ward — a friendly card is warded
+            const board: (BoardCell | null)[] = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[1] = { card_key: "c-cleric", owner: 0 };
+            board[5] = { card_key: "c-zombie", owner: 1 };
+            setGame(makeGame({ board, warded_cell: 1 }));
+            setPlacedCells(new Set([4]));
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "devout",
+              warded_cell: 1,
+            });
+            break;
+          }
+          case 16: {
             // Waiting state with cancel
             setShowWaiting(true);
             setGame(
@@ -677,6 +702,7 @@ export default function DevPlayground() {
               mistsEffect={mistsEffect}
               victoryCells={victoryCells}
               earlyFinish={earlyFinish}
+              wardedCell={game.warded_cell ?? null}
               onCellInspect={() => {}}
             />
           </div>

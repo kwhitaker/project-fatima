@@ -67,3 +67,12 @@ Started: 2026-03-06
 - Pattern: use `data-intimidate-shudder` and `data-intimidate-particle` data attributes for test assertions; compute debuff side from cell indices (target row/col vs placed row/col)
 ---
 
+## 2026-03-06 16:42 - US-PE-007
+- Added 5 archetype sound functions to `sounds.ts`: `playMartial()` (rising sweep), `playSkulker()` (staccato burst), `playCaster()` (deep hum), `playDevout()` (chime/bell), `playIntimidate()` (low rumble)
+- Added useEffect in `ActiveGameView` to trigger appropriate sound when `archetype_used_name` detected in move update, using soundMap dispatch
+- Updated sound mocks in 4 test files (sp018, pr006, sp012, sp011); updated uxp015 with export/pre-init/oscillator tests for all 5 new functions
+- Tests: 362 frontend tests pass, 857 backend tests pass
+- Files: `sounds.ts`, `ActiveGameView.tsx`, `uxp015.test.tsx`, `sp018.test.tsx`, `pr006.test.tsx`, `sp012.test.tsx`, `sp011.test.tsx`
+- Pattern: use class-style mock for AudioContext in tests (vi.fn() wrapper doesn't work with `new`); sound mocks must include all exported functions to avoid import errors
+---
+

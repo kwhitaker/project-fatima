@@ -116,7 +116,7 @@
         "`cd web && bun run test --run` passes"
       ],
       "priority": 7,
-      "passes": false
+      "passes": true
     },
     {
       "id": "US-PE-008",

@@ -88,12 +88,7 @@ def resolve_captures(
             src_value = getattr(src_card.sides, placed_side) + mist_mod
             neighbor_value = getattr(neighbor_def.sides, neighbor_side)
             if intim_target is not None and neighbor_index == intim_target:
-                neighbor_value = min(
-                    neighbor_def.sides.n,
-                    neighbor_def.sides.e,
-                    neighbor_def.sides.s,
-                    neighbor_def.sides.w,
-                )
+                neighbor_value = max(neighbor_value - 3, 1)
 
             if src_value > neighbor_value:
                 new_board[neighbor_index] = BoardCell(

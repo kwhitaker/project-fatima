@@ -1,7 +1,7 @@
-"""Tests for US-UXP-016: Intimidate archetype — debuff opponent's facing side.
+"""Tests for Intimidate archetype — debuff opponent's facing side by 3 (min 1).
 
 Intimidate power: after placing a card, choose one adjacent opponent card.
-That card's facing side is replaced with min(n,e,s,w) for this comparison only.
+That card's facing side is reduced by 3 (min 1) for this comparison only.
 Once per game per player.
 """
 
@@ -24,15 +24,9 @@ make_state = partial(_make_state, p0_archetype=Archetype.INTIMIDATE)
 
 
 class TestIntimidateDebuff:
-    def test_debuff_enables_capture(self):
-        """Intimidate replaces neighbor's facing side with its min side, enabling capture.
-
-        Setup: placed at cell 4, neighbor at cell 1 (north).
-        Placed N=4, neighbor S=5 (would normally lose: 4 < 5).
-        Neighbor sides: n=1, e=1, s=5, w=1 → min=1.
-        With Intimidate on cell 1: neighbor's S becomes min=1 → 4 > 1 → capture.
-        """
-        placed = make_card("placed", n=4, e=1, s=1, w=1)
+    def test_facing_side_5_debuffed_to_2_enables_capture(self):
+        """Card with facing side 5 is debuffed to 2 (5-3=2), attacker with 3 captures (3>2)."""
+        placed = make_card("placed", n=3, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
@@ -48,18 +42,62 @@ class TestIntimidateDebuff:
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
 
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 0, "Neighbor should be captured via Intimidate debuff"
+        assert next_state.board[1].owner == 0, "5-3=2, attacker 3 > 2 → capture"
+
+    def test_facing_side_2_debuffed_to_floor_1(self):
+        """Card with facing side 2 is debuffed to 1 (floor), not negative.
+
+        Attacker with 2 captures (2>1).
+        """
+        placed = make_card("placed", n=2, e=1, s=1, w=1)
+        neighbor = make_card("neighbor", n=1, e=1, s=2, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+            intimidate_target_cell=1,
+        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
+
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 0, "2-3 floors to 1, attacker 2 > 1 → capture"
+
+    def test_facing_side_10_debuffed_to_7_tie_no_capture(self):
+        """Card with facing side 10 is debuffed to 7, attacker with 7 does NOT capture (tie)."""
+        placed = make_card("placed", n=7, e=1, s=1, w=1)
+        neighbor = make_card("neighbor", n=1, e=1, s=10, w=1)
+        board: list[BoardCell | None] = [None] * 9
+        board[1] = BoardCell(card_key="neighbor", owner=1)
+
+        state = make_state(board=board, p0_hand=["placed"], p1_hand=["neighbor"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="placed",
+            cell_index=4,
+            use_archetype=True,
+            intimidate_target_cell=1,
+        )
+        next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
+
+        assert next_state.board[1] is not None
+        assert next_state.board[1].owner == 1, "10-3=7, attacker 7 == 7 → no capture (tie)"
 
     def test_debuff_only_affects_targeted_neighbor(self):
         """Intimidate only debuffs the targeted neighbor, not others.
 
         Placed at cell 4 with neighbors north (cell 1) and east (cell 5).
-        Placed N=4, E=3.
-        Cell 1 neighbor S=5, min=1. Intimidate targets cell 1: S becomes 1 → 4 > 1 → capture.
-        Cell 5 neighbor W=5, not targeted → 3 < 5 → no capture.
-        Sums differ (4+5=9 vs 3+5=8) so Plus rule does not fire.
+        Placed N=3, E=3.
+        Cell 1 neighbor S=5: debuffed to 2 → 3 > 2 → capture.
+        Cell 5 neighbor W=5: not targeted → 3 < 5 → no capture.
+        Sums differ (3+5=8 vs 3+5=8) — same sum with 2 neighbors means Plus fires.
+        Use different sums to avoid Plus: E=2.
         """
-        placed = make_card("placed", n=4, e=3, s=1, w=1)
+        placed = make_card("placed", n=3, e=2, s=1, w=1)
         neighbor_n = make_card("neighbor_n", n=1, e=1, s=5, w=1)
         neighbor_e = make_card("neighbor_e", n=1, e=1, s=1, w=5)
         board: list[BoardCell | None] = [None] * 9
@@ -88,7 +126,7 @@ class TestIntimidateDebuff:
 
     def test_without_intimidate_no_capture(self):
         """Control: same scenario without Intimidate — placed card loses."""
-        placed = make_card("placed", n=4, e=1, s=1, w=1)
+        placed = make_card("placed", n=3, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
@@ -108,16 +146,16 @@ class TestIntimidateDebuff:
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor})
 
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 1, "Without Intimidate: no capture (4 < 5)"
+        assert next_state.board[1].owner == 1, "Without Intimidate: no capture (3 < 5)"
 
-    def test_debuff_combined_with_mists_modifier(self):
-        """Intimidate debuff and Mists modifier stack (Mists on placed card, debuff on neighbor).
+    def test_debuff_combined_with_fog(self):
+        """Intimidate debuff and Fog stack. Fog (-2) on placed card, -3 on neighbor.
 
-        Placed at cell 4, neighbor at cell 1. Placed N=2, neighbor S=5, min=1.
-        Fog roll (-2): placed side becomes 2-2=0. Intimidate debuffs neighbor S→1.
-        0 < 1 → still no capture (Fog overwhelms).
+        Placed at cell 4, neighbor at cell 1. Placed N=4, neighbor S=5.
+        Fog roll (-2): placed side becomes 4-2=2. Intimidate debuffs neighbor S: 5-3=2.
+        2 == 2 → no capture (tie).
         """
-        placed = make_card("placed", n=2, e=1, s=1, w=1)
+        placed = make_card("placed", n=4, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
@@ -134,15 +172,15 @@ class TestIntimidateDebuff:
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 1, "Fog overwhelms Intimidate debuff: no capture"
+        assert next_state.board[1].owner == 1, "Fog + Intimidate: 2 == 2 → no capture"
 
     def test_debuff_with_omen_enables_capture(self):
         """Intimidate + Omen: placed side boosted, neighbor debuffed.
 
-        Placed N=1, neighbor S=5, min=1. Omen (+2): placed becomes 1+2=3.
-        Intimidate debuffs S→1. 3 > 1 → capture.
+        Placed N=3, neighbor S=5. Omen (+2): placed becomes 3+2=5.
+        Intimidate debuffs S: 5-3=2. 5 > 2 → capture.
         """
-        placed = make_card("placed", n=1, e=1, s=1, w=1)
+        placed = make_card("placed", n=3, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
@@ -159,7 +197,7 @@ class TestIntimidateDebuff:
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 0, "Omen + Intimidate: capture expected"
+        assert next_state.board[1].owner == 0, "Omen + Intimidate: 5 > 2 → capture"
 
     def test_archetype_used_set_after_activation(self):
         placed = make_card("placed", n=1, e=1, s=1, w=1)

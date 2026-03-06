@@ -139,7 +139,7 @@ def begin_sudden_death_round(state: GameState) -> GameState:
 class _ArchetypeResult(NamedTuple):
     card: CardDefinition
     activated: bool
-    caster_reroll: bool
+    caster_force_omen: bool
     devout_negate_fog: bool
     intimidate_target: int | None
 
@@ -147,7 +147,7 @@ class _ArchetypeResult(NamedTuple):
 _NO_ARCHETYPE = _ArchetypeResult(
     card=None,  # type: ignore[arg-type]  # placeholder, replaced by caller
     activated=False,
-    caster_reroll=False,
+    caster_force_omen=False,
     devout_negate_fog=False,
     intimidate_target=None,
 )
@@ -183,7 +183,7 @@ def _apply_archetype(
         return _ArchetypeResult(
             card=rotated,
             activated=True,
-            caster_reroll=False,
+            caster_force_omen=False,
             devout_negate_fog=False,
             intimidate_target=None,
         )
@@ -197,7 +197,7 @@ def _apply_archetype(
         return _ArchetypeResult(
             card=apply_skulker_boost(card, intent.skulker_boost_side),
             activated=True,
-            caster_reroll=False,
+            caster_force_omen=False,
             devout_negate_fog=False,
             intimidate_target=None,
         )
@@ -206,7 +206,7 @@ def _apply_archetype(
         return _ArchetypeResult(
             card=card,
             activated=True,
-            caster_reroll=True,
+            caster_force_omen=True,
             devout_negate_fog=False,
             intimidate_target=None,
         )
@@ -215,7 +215,7 @@ def _apply_archetype(
         return _ArchetypeResult(
             card=card,
             activated=False,  # consumed only when Fog actually rolls
-            caster_reroll=False,
+            caster_force_omen=False,
             devout_negate_fog=True,
             intimidate_target=None,
         )
@@ -247,7 +247,7 @@ def _apply_archetype(
         return _ArchetypeResult(
             card=card,
             activated=True,
-            caster_reroll=False,
+            caster_force_omen=False,
             devout_negate_fog=False,
             intimidate_target=target_cell,
         )
@@ -294,7 +294,7 @@ def apply_intent(
     placed_card = arch.card
     placed_owner = intent.player_index
     archetype_activated = arch.activated
-    caster_reroll = arch.caster_reroll
+    caster_force_omen = arch.caster_force_omen
     devout_negate_fog = arch.devout_negate_fog
     intimidate_target = arch.intimidate_target
 
@@ -303,9 +303,10 @@ def apply_intent(
     mists_modifier = 0
     if rng is not None:
         roll = rng.randint(1, 6)
-        if caster_reroll:
-            roll = max(roll, rng.randint(1, 6))  # best of two rolls
-        mists_modifier = mists_modifier_from_roll(roll)
+        if caster_force_omen:
+            mists_modifier = 2  # guaranteed Omen regardless of roll
+        else:
+            mists_modifier = mists_modifier_from_roll(roll)
         if devout_negate_fog and mists_modifier == -2:
             mists_modifier = 0  # Devout treats Fog as no effect
             archetype_activated = True  # power consumed only on actual Fog

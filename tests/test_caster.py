@@ -1,8 +1,8 @@
-"""Tests for Caster archetype Mists reroll (best of two).
+"""Tests for Caster archetype: guaranteed Omen (+2 all comparisons).
 
-Caster power: roll the Mists die twice and keep the better (higher) result.
-Higher is always better: 1=Fog (−2) is worst, 6=Omen (+2) is best.
-Once per game per player.
+Caster power: when activated, the Mists modifier is forced to +2 (Omen)
+regardless of the actual die roll. The die is still rolled (for display/logging)
+but has no mechanical effect. Once per game per player.
 """
 
 from functools import partial
@@ -19,20 +19,15 @@ make_state = partial(_make_state, p0_archetype=Archetype.CASTER)
 
 
 # ---------------------------------------------------------------------------
-# Best-of-two reroll behaviour
+# Guaranteed Omen behaviour
 # ---------------------------------------------------------------------------
 
 
-class TestCasterReroll:
-    def test_caster_best_of_two_picks_higher_roll(self):
-        """Caster rolls twice and keeps the higher (better) result.
-
-        Setup: placed N=6 vs neighbor S=6.
-        First roll = 1 (Fog, −2): 6−2=4 < 6 → no capture.
-        Second roll = 6 (Omen, +2): 6+2=8 > 6 → capture.
-        max(1, 6) = 6 → Omen used → capture should occur.
-        """
-        placed = make_card("placed", n=6, e=1, s=1, w=1)
+class TestCasterGuaranteedOmen:
+    @pytest.mark.parametrize("die_roll", [1, 2, 3, 4, 5, 6])
+    def test_caster_always_yields_plus_two_modifier(self, die_roll: int):
+        """Caster activation gives +2 modifier regardless of what the die rolls."""
+        placed = make_card("placed", n=5, e=1, s=1, w=1)
         neighbor = make_card("neighbor", n=1, e=1, s=6, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
@@ -44,22 +39,19 @@ class TestCasterReroll:
             cell_index=4,
             use_archetype=True,
         )
-        rng = mock_rng(1, 6)  # first=Fog, second=Omen → max picks Omen
+        rng = mock_rng(die_roll)
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
+        # 5+2=7 > 6 → should always capture
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 0, "Neighbor should be captured (Omen from best-of-two)"
+        assert next_state.board[1].owner == 0, (
+            f"Neighbor should be captured with Omen (+2), die roll was {die_roll}"
+        )
 
-    def test_caster_keeps_first_when_higher(self):
-        """When first roll is better, best-of-two keeps it.
-
-        Setup: placed N=4 vs neighbor S=5.
-        First roll = 6 (Omen, +2): 4+2=6 > 5 → capture.
-        Second roll = 1 (Fog, −2): 4−2=2 < 5 → no capture.
-        max(6, 1) = 6 → Omen kept → capture should occur.
-        """
-        placed = make_card("placed", n=4, e=1, s=1, w=1)
-        neighbor = make_card("neighbor", n=1, e=1, s=5, w=1)
+    def test_caster_fog_roll_still_gives_omen(self):
+        """Even when die rolls 1 (Fog), Caster forces Omen (+2)."""
+        placed = make_card("placed", n=3, e=1, s=1, w=1)
+        neighbor = make_card("neighbor", n=1, e=1, s=4, w=1)
         board: list[BoardCell | None] = [None] * 9
         board[1] = BoardCell(card_key="neighbor", owner=1)
 
@@ -70,12 +62,41 @@ class TestCasterReroll:
             cell_index=4,
             use_archetype=True,
         )
-        rng = mock_rng(6, 1)  # first=Omen, second=Fog → max keeps Omen
+        rng = mock_rng(1)  # Fog roll
         next_state = apply_intent(state, intent, {"placed": placed, "neighbor": neighbor}, rng)
 
+        # 3+2=5 > 4 → capture despite Fog roll
         assert next_state.board[1] is not None
-        assert next_state.board[1].owner == 0, "Neighbor captured (Omen kept from first roll)"
-        assert rng.randint.call_count == 2, "Caster should trigger exactly two die rolls"
+        assert next_state.board[1].owner == 0
+
+    def test_caster_mists_effect_is_omen_regardless_of_roll(self):
+        """last_move.mists_effect is 'omen' even when die rolls 1."""
+        card = make_card("card_a")
+        state = make_state(p0_hand=["card_a"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="card_a",
+            cell_index=0,
+            use_archetype=True,
+        )
+        next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(1))
+
+        assert next_state.last_move is not None
+        assert next_state.last_move.mists_effect == "omen"
+
+    def test_caster_rolls_die_once(self):
+        """Caster still rolls the die once (for display), not twice."""
+        card = make_card("card_a")
+        state = make_state(p0_hand=["card_a"])
+        intent = PlacementIntent(
+            player_index=0,
+            card_key="card_a",
+            cell_index=0,
+            use_archetype=True,
+        )
+        rng = mock_rng(3)
+        apply_intent(state, intent, {"card_a": card}, rng)
+        assert rng.randint.call_count == 1, "Caster should only roll once"
 
     def test_without_caster_uses_only_one_roll(self):
         """Non-Caster placement consumes exactly one Mists roll."""
@@ -87,9 +108,8 @@ class TestCasterReroll:
             cell_index=0,
             use_archetype=False,
         )
-        rng = mock_rng(3, 3)  # provide two values; only one should be consumed
+        rng = mock_rng(3)
         apply_intent(state, intent, {"card_a": card}, rng)
-
         assert rng.randint.call_count == 1, "Non-Caster should only roll once"
 
     def test_caster_without_rng_marks_archetype_used(self):
@@ -114,7 +134,7 @@ class TestCasterReroll:
             cell_index=0,
             use_archetype=True,
         )
-        next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(3, 4))
+        next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(3))
         assert next_state.players[0].archetype_used is True
 
     def test_archetype_used_stays_false_when_not_activated(self):
@@ -142,11 +162,11 @@ class TestCasterReroll:
             cell_index=0,
             use_archetype=True,
         )
-        next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(2, 4))
+        next_state = apply_intent(state, intent, {"card_a": card}, mock_rng(2))
         assert next_state.players[1].archetype_used is False
 
     def test_caster_deterministic_with_seeded_rng(self):
-        """Best-of-two with a real seeded RNG produces deterministic results."""
+        """With a real seeded RNG, results are deterministic."""
         from random import Random
 
         placed = make_card("placed", n=5, e=1, s=1, w=1)
@@ -188,7 +208,7 @@ class TestCasterOncePerGame:
             use_archetype=True,
         )
         with pytest.raises(ArchetypeAlreadyUsedError):
-            apply_intent(state, intent, {"card_a": card}, mock_rng(3, 4))
+            apply_intent(state, intent, {"card_a": card}, mock_rng(3))
 
     def test_sequential_usage_is_rejected_on_second_call(self):
         card_a = make_card("card_a")
@@ -205,7 +225,7 @@ class TestCasterOncePerGame:
         intent1 = PlacementIntent(
             player_index=0, card_key="card_a", cell_index=0, use_archetype=True
         )
-        state2 = apply_intent(state, intent1, lookup, mock_rng(3, 4))
+        state2 = apply_intent(state, intent1, lookup, mock_rng(3))
 
         # Player 1 takes a turn
         intent_p1 = PlacementIntent(
@@ -218,4 +238,4 @@ class TestCasterOncePerGame:
             player_index=0, card_key="card_b", cell_index=2, use_archetype=True
         )
         with pytest.raises(ArchetypeAlreadyUsedError):
-            apply_intent(state3, intent2, lookup, mock_rng(3, 4))
+            apply_intent(state3, intent2, lookup, mock_rng(3))

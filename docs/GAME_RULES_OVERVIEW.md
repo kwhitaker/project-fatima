@@ -37,8 +37,8 @@ MVP balance approach (subject to tuning):
 
 ## Match Setup
 
-- When the second player joins, each player is dealt 7 cards from a balanced pool.
-- Each player drafts (picks) 5 of those 7 cards to keep; the other 2 are discarded.
+- When the second player joins, each player is dealt 8 cards from a balanced pool (2×Tier 3, 3×Tier 2, 3×Tier 1).
+- Each player drafts (picks) 5 of those 8 cards to keep (max 1 Tier 3, max 2 Tier 2); the other 3 are discarded.
 - When both players have drafted, the match begins.
 - 9 board elements are generated deterministically from the game seed (one per cell).
 - The first player places all 5 cards; the second player places 4 and keeps 1 in hand (which counts toward their score).
@@ -208,7 +208,7 @@ Players can start a game against an AI opponent at one of four difficulty levels
 
 | Difficulty | Character | Strategy |
 |---|---|---|
-| **Easy** | Ireena Kolyana | Semi-random placement with basic capture instincts. Scores each (card, cell) pair with +1 per capturable neighbor, +1 for elemental match, plus random noise. Archetype use is enthusiastic but clumsy. Drafts 5 of 7 cards randomly. |
+| **Easy** | Ireena Kolyana | Semi-random placement with basic capture instincts. Scores each (card, cell) pair with +1 per capturable neighbor, +1 for elemental match, plus random noise. Archetype use is enthusiastic but clumsy. Drafts 5 of 8 cards randomly (respecting tier limits). |
 | **Medium** | Rahadin | One-ply greedy evaluation. Simulates every legal move via `apply_intent` and picks the placement that maximizes owned cells. Evaluates archetype variants (Skulker on all 4 sides, Martial CW/CCW, etc.) and picks the best overall. Drafts by highest total side values. |
 | **Hard** | Strahd von Zarovich | Expectimax search with opponent hand inference. Infers possible opponent hands by excluding known cards from the pool, samples ~25 likely hands. Full-depth search when ≤4 empty cells; depth 4 with heuristic eval otherwise. Opponent assumed to play greedily. |
 | **Nightmare** | The Dark Powers | Monte Carlo Tree Search (MCTS) with 2000+ playouts, UCB1 selection, and random rollouts to terminal state. Uses a lightweight `SimBoard` that bypasses Pydantic for ~5-10x faster simulation. Concealment layer prefers mid-strength cards over strongest when move quality is similar (sandbagging). |

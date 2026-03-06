@@ -101,7 +101,7 @@ Card source file for generation/import:
 
 ## Decks (MVP)
 
-- Deal size: 7 cards (players draft 5 to keep).
+- Deal size: 8 cards (2×T3, 3×T2, 3×T1; players draft 5 to keep with max 1 T3, max 2 T2).
 - Deck-building/inventory UI is out of scope for MVP.
 - At game start, server randomly builds both players' decks from the card pool.
 - Fairness constraint: decks should be "even" (avoid one deck rolling the other).

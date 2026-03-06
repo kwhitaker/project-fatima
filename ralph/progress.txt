@@ -16,3 +16,14 @@ Started: 2026-03-06
 - `devout_ward_cell` already covered by existing `warded_cell` field on LastMoveInfo
 ---
 
+## 2026-03-06 16:15 - US-PE-002
+- Added `martialRotationDirection` prop to `BoardGrid`; placed card animates 90° CW/CCW rotation with spring overshoot + sweep ring effect
+- Updated `BoardCallouts` to display "Martial Spin!" instead of generic "Martial!" for martial archetype
+- Passed `martial_rotation_direction` from `ActiveGameView` → `BoardGrid`
+- Added two DevPlayground scenarios (Martial CW at case 15, Martial CCW at case 16)
+- Updated `sp018.test.tsx`: callout text expectations now match per-archetype labels; added `data-martial-spin` attribute tests for CW/CCW
+- Tests: 346 frontend tests pass, 857 backend tests pass
+- Files: `BoardGrid.tsx`, `BoardCallouts.tsx`, `ActiveGameView.tsx`, `DevPlayground.tsx`, `sp018.test.tsx`
+- Pattern: use `data-martial-spin` data attribute for test assertions on animation state
+---
+

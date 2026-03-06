@@ -277,6 +277,10 @@ const SCENARIOS: Scenario[] = [
     label: "Caster Omen",
     description: "Caster archetype omen aura wash with purple pulse",
   },
+  {
+    label: "Intimidate -3",
+    description: "Intimidate target shudder + red flash + debuff particle",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -301,6 +305,7 @@ export default function DevPlayground() {
   const [showWaiting, setShowWaiting] = useState(false);
   const [martialRotationDirection, setMartialRotationDirection] = useState<"cw" | "ccw" | null>(null);
   const [skulkerBoostSide, setSkulkerBoostSide] = useState<"n" | "e" | "s" | "w" | null>(null);
+  const [intimidateTargetCell, setIntimidateTargetCell] = useState<number | null>(null);
 
   const reset = useCallback(() => {
     setPlacedCells(new Set());
@@ -316,6 +321,7 @@ export default function DevPlayground() {
     setShowWaiting(false);
     setMartialRotationDirection(null);
     setSkulkerBoostSide(null);
+    setIntimidateTargetCell(null);
     setGame(makeGame());
     setActiveScenario(null);
   }, []);
@@ -771,6 +777,28 @@ export default function DevPlayground() {
             });
             break;
           }
+          case 23: {
+            // Intimidate — target card shudder + debuff flash
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[1] = { card_key: "c-zombie", owner: 1 }; // opponent card to the north
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([1]));
+            setIntimidateTargetCell(1);
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "intimidate",
+              intimidate_target_cell: 1,
+            });
+            break;
+          }
         }
       }, 50);
     },
@@ -867,6 +895,7 @@ export default function DevPlayground() {
               archetypeUsedName={lastMove?.archetype_used_name ?? null}
               martialRotationDirection={martialRotationDirection}
               skulkerBoostSide={skulkerBoostSide}
+              intimidateTargetCell={intimidateTargetCell}
               onCellInspect={() => {}}
             />
           </div>

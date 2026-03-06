@@ -42,6 +42,7 @@ export function BoardGrid({
   archetypeUsedName,
   martialRotationDirection,
   skulkerBoostSide,
+  intimidateTargetCell,
 }: {
   board: (BoardCell | null)[];
   myIndex: number;
@@ -63,6 +64,7 @@ export function BoardGrid({
   archetypeUsedName?: string | null;
   martialRotationDirection?: "cw" | "ccw" | null;
   skulkerBoostSide?: "n" | "e" | "s" | "w" | null;
+  intimidateTargetCell?: number | null;
 }) {
   // Sort captured cells by index for sequential animation (top-left → bottom-right)
   const capturedOrder = useMemo(() => {
@@ -186,6 +188,19 @@ export function BoardGrid({
           const isMartialSpin = isLastMove && archetypeUsedName === "martial" && !!martialRotationDirection;
           const isSkulkerBoost = isLastMove && archetypeUsedName === "skulker" && !!skulkerBoostSide;
           const isCasterOmen = isLastMove && archetypeUsedName === "caster";
+          const isIntimidateEffect = archetypeUsedName === "intimidate" && intimidateTargetCell === i && lastMoveCellIndex != null;
+
+          // Compute which side of the intimidate target faces the placed card
+          const intimidateDebuffSide = isIntimidateEffect && lastMoveCellIndex != null
+            ? (() => {
+                const tRow = Math.floor(i / 3), tCol = i % 3;
+                const pRow = Math.floor(lastMoveCellIndex / 3), pCol = lastMoveCellIndex % 3;
+                if (pRow < tRow) return "n" as const;
+                if (pRow > tRow) return "s" as const;
+                if (pCol < tCol) return "w" as const;
+                return "e" as const;
+              })()
+            : null;
 
           // Victory glow: staggered delay based on position in victoryCells array
           const victoryIdx = victoryCells?.indexOf(i) ?? -1;
@@ -378,6 +393,41 @@ export function BoardGrid({
                       +2 all sides
                     </motion.span>
                   </>
+                )}
+              </motion.div>
+            ) : isIntimidateEffect ? (
+              <motion.div
+                className="w-full h-full flex items-center justify-center relative"
+                data-intimidate-shudder="true"
+                animate={{ x: [0, -3, 3, -2, 2, -1, 1, 0] }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <CardFace cardKey={cell.card_key} def={def} />
+                {/* Red flash overlay */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ backgroundColor: "rgba(239,68,68,0.4)" }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: [0, 0.8, 0] }}
+                  transition={{ duration: 0.5, delay: 0.3 }}
+                />
+                {/* -3 particle on debuffed edge */}
+                {intimidateDebuffSide && (
+                  <motion.span
+                    className={cn(
+                      "absolute pointer-events-none text-xs font-heading font-bold text-red-400 drop-shadow-md z-10",
+                      intimidateDebuffSide === "n" && "top-0 left-1/2 -translate-x-1/2 -translate-y-full",
+                      intimidateDebuffSide === "s" && "bottom-0 left-1/2 -translate-x-1/2 translate-y-full",
+                      intimidateDebuffSide === "e" && "right-0 top-1/2 -translate-y-1/2 translate-x-full",
+                      intimidateDebuffSide === "w" && "left-0 top-1/2 -translate-y-1/2 -translate-x-full",
+                    )}
+                    data-intimidate-particle={intimidateDebuffSide}
+                    initial={{ scale: 1.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: [0, 1, 1, 0] }}
+                    transition={{ duration: 1.2, ease: "easeOut", delay: 0.1 }}
+                  >
+                    -3
+                  </motion.span>
                 )}
               </motion.div>
             ) : isCaptured ? (

@@ -227,7 +227,9 @@ export function BoardCallouts({
                 ? "text-violet-300"
                 : archetypeUsedName === "devout"
                   ? "text-yellow-200"
-                  : "text-amber-300"
+                  : archetypeUsedName === "intimidate"
+                    ? "text-red-400"
+                    : "text-amber-300"
             }`}
             style={{
               textShadow:
@@ -235,7 +237,9 @@ export function BoardCallouts({
                   ? "0 0 16px rgba(139,92,246,0.7), 0 2px 0 rgba(76,29,149,0.5)"
                   : archetypeUsedName === "devout"
                     ? "0 0 18px rgba(253,224,71,0.8), 0 2px 0 rgba(161,98,7,0.5)"
-                    : "0 0 16px rgba(251,191,36,0.7), 0 2px 0 rgba(146,64,14,0.5)",
+                    : archetypeUsedName === "intimidate"
+                      ? "0 0 16px rgba(239,68,68,0.7), 0 2px 0 rgba(153,27,27,0.5)"
+                      : "0 0 16px rgba(251,191,36,0.7), 0 2px 0 rgba(146,64,14,0.5)",
             }}
             aria-label="board archetype callout"
             initial={{ scale: 0, opacity: 0 }}
@@ -259,9 +263,11 @@ export function BoardCallouts({
                   ? "Caster Omen!"
                   : archetypeUsedName === "devout"
                     ? "Ward!"
-                    : archetypeUsedName.charAt(0).toUpperCase() +
-                      archetypeUsedName.slice(1) +
-                      "!"}
+                    : archetypeUsedName === "intimidate"
+                      ? "Intimidate -3!"
+                      : archetypeUsedName.charAt(0).toUpperCase() +
+                        archetypeUsedName.slice(1) +
+                        "!"}
           </motion.div>
         )}
       </AnimatePresence>

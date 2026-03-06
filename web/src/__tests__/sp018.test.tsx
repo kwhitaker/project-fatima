@@ -41,7 +41,7 @@ describe("US-SP-018: Archetype power visual feedback", () => {
     it.each([
       ["martial", "Martial Spin!"],
       ["skulker", "Skulker +3!"],
-      ["intimidate", "Intimidate!"],
+      ["intimidate", "Intimidate -3!"],
       ["caster", "Caster Omen!"],
       ["devout", "Ward!"],
     ])(
@@ -366,6 +366,102 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       );
       const shieldEl = container.querySelector("[data-ward-shield]");
       expect(shieldEl).not.toBeInTheDocument();
+    });
+
+    it("sets data-intimidate-shudder on target cell when intimidate archetype is used", () => {
+      // Placed at cell 4, intimidate target at cell 1 (north neighbor)
+      const board = [
+        null,
+        { card_key: "c2", owner: 1 },
+        null,
+        null,
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={4}
+          placedCells={new Set([4])}
+          archetypeUsedName="intimidate"
+          intimidateTargetCell={1}
+        />,
+      );
+      const shudderEl = container.querySelector("[data-intimidate-shudder]");
+      expect(shudderEl).toBeInTheDocument();
+    });
+
+    it("shows -3 particle on target cell when intimidate is used", () => {
+      const board = [
+        null,
+        { card_key: "c2", owner: 1 },
+        null,
+        null,
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={4}
+          placedCells={new Set([4])}
+          archetypeUsedName="intimidate"
+          intimidateTargetCell={1}
+        />,
+      );
+      const particleEl = container.querySelector("[data-intimidate-particle]");
+      expect(particleEl).toBeInTheDocument();
+      expect(particleEl?.textContent).toBe("-3");
+    });
+
+    it("does not set data-intimidate-shudder when archetype is not intimidate", () => {
+      const board = [
+        null,
+        { card_key: "c2", owner: 1 },
+        null,
+        null,
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={4}
+          placedCells={new Set([4])}
+          archetypeUsedName="skulker"
+          skulkerBoostSide="n"
+        />,
+      );
+      const shudderEl = container.querySelector("[data-intimidate-shudder]");
+      expect(shudderEl).not.toBeInTheDocument();
+    });
+
+    it("applies red/orange color to intimidate callout", () => {
+      render(
+        <BoardCallouts
+          mistsEffect={null}
+          captureCount={0}
+          plusTriggered={false}
+          elementalTriggered={false}
+          elementKey={null}
+          archetypeUsedName="intimidate"
+          changeKey="0-c1"
+        />,
+      );
+      const callout = screen.getByLabelText("board archetype callout");
+      expect(callout.className).toContain("text-red-400");
     });
 
     it("applies standard yellow ring when no archetype used", () => {

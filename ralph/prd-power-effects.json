@@ -1,0 +1,136 @@
+{
+  "project": "project-fatima",
+  "branchName": "feature/power-effects",
+  "description": "Add dramatic, per-archetype visual effects and animations when powers activate on the board. Each archetype gets a unique visual treatment: Martial (card spin), Skulker (side glow + particle burst), Caster (omen aura wash), Devout (ward shield on protected card), Intimidate (target card shudder + crack). Replaces the current generic amber callout with distinct per-power feedback.",
+  "userStories": [
+    {
+      "id": "US-PE-001",
+      "title": "Extend LastMoveInfo with archetype detail fields for frontend",
+      "description": "As a frontend developer, I want the API to return enough detail about archetype usage to drive per-power animations -- so the UI knows which side was boosted, which direction was rotated, etc.",
+      "acceptanceCriteria": [
+        "Add `skulker_boost_side: str | None = None` field to `LastMoveInfo` in `app/models/game.py`",
+        "Add `martial_rotation_direction: str | None = None` field to `LastMoveInfo`",
+        "Add `devout_ward_cell: int | None = None` field to `LastMoveInfo` (if not already added in power-refactor sprint)",
+        "In `apply_intent()`, populate these fields from the intent when the corresponding archetype is activated",
+        "Regenerate frontend API types (`api-types.generated.ts`)",
+        "Add test: LastMoveInfo includes skulker_boost_side when Skulker is used",
+        "Add test: LastMoveInfo includes martial_rotation_direction when Martial is used",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "US-PE-002",
+      "title": "Martial effect: card spin animation",
+      "description": "As a player, I want to see my card visually spin when I use Martial -- so the rotation feels impactful and clear.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx`, when a placed card used Martial: animate a 90-degree rotation (CW or CCW based on `martial_rotation_direction`) before the card settles into its final position",
+        "Animation: card rotates from its pre-rotation orientation to final orientation over ~0.4s with a slight overshoot (spring feel)",
+        "The card values shown are the POST-rotation values (the animation is purely visual -- values update at the end)",
+        "Add a subtle whoosh/sweep ring effect around the card during rotation",
+        "Update BoardCallouts archetype callout to say 'Martial Spin!' instead of generic 'Martial!'",
+        "Add DevPlayground scenario for Martial spin (both CW and CCW)",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "US-PE-003",
+      "title": "Skulker effect: side glow + boost burst",
+      "description": "As a player, I want to see the boosted side glow with a '+3' particle when I use Skulker -- so I can see exactly which edge got stronger.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx` or a new `PowerEffects.tsx` component, when a placed card used Skulker: highlight the boosted edge (N/E/S/W) of the card with a bright glow",
+        "Show a '+3' text particle that pops out from the boosted edge and fades",
+        "The boosted edge glows green/emerald for ~1.5s then fades",
+        "Edge identification: use `skulker_boost_side` from LastMoveInfo to determine which edge (top/right/bottom/left of the card cell)",
+        "Update BoardCallouts to say 'Skulker +3!' instead of generic 'Skulker!'",
+        "Add DevPlayground scenario for Skulker boost on each side",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "US-PE-004",
+      "title": "Caster effect: omen aura wash",
+      "description": "As a player, I want to see a purple omen energy wash over my card when I use Caster -- so the guaranteed +2 feels powerful and mystical.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx`, when a placed card used Caster: play an omen-themed aura animation on the placed cell",
+        "Animation: a purple/violet radial pulse expands from the card center, then a persistent subtle purple shimmer for ~2s",
+        "Show '+2 all sides' text callout integrated with the effect",
+        "The Mists callout should still show 'Omen +2' as usual (Caster effect is additive visual, not replacing Mists callout)",
+        "Update BoardCallouts archetype text to 'Caster Omen!' with purple styling instead of amber",
+        "Add DevPlayground scenario for Caster activation",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 4,
+      "passes": false
+    },
+    {
+      "id": "US-PE-005",
+      "title": "Devout effect: ward shield on protected card",
+      "description": "As a player, I want to see a glowing shield/barrier appear on my warded card -- so it's obvious which card is protected and that the protection is active.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx`, when `game.warded_cell` is set and owned by the current viewer: render a shield overlay on that cell",
+        "Shield visual: a semi-transparent golden/holy barrier with a subtle breathing pulse animation",
+        "Shield persists until the ward expires (after opponent's next placement) -- use `warded_cell` from GameState",
+        "When the ward is first applied: play a 'shield up' animation (golden ring expanding outward from the card)",
+        "When the ward expires (next state update where warded_cell is null): play a 'shield down' fade-out",
+        "Update BoardCallouts to say 'Ward!' with a golden/holy color scheme",
+        "Add DevPlayground scenario for Devout ward (showing shield on a card)",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 5,
+      "passes": false
+    },
+    {
+      "id": "US-PE-006",
+      "title": "Intimidate effect: target card shudder + debuff flash",
+      "description": "As a player, I want to see the targeted enemy card shudder and flash red when I use Intimidate -- so the debuff feels aggressive and the target is obvious.",
+      "acceptanceCriteria": [
+        "In `BoardGrid.tsx`, when a placement used Intimidate: animate the `intimidate_target_cell` card with a shudder (rapid horizontal shake) and a red flash overlay",
+        "Show a '-3' text particle popping off the debuffed edge of the target card, colored red",
+        "The shudder animation plays before capture resolution animations (so the player sees the debuff THEN the capture)",
+        "Animation timing: shudder ~0.3s, then red flash ~0.2s, then normal capture flow",
+        "Update BoardCallouts to say 'Intimidate -3!' with a red/orange color scheme instead of amber",
+        "Add DevPlayground scenario for Intimidate (showing target shudder + debuff)",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 6,
+      "passes": false
+    },
+    {
+      "id": "US-PE-007",
+      "title": "Archetype sound effects",
+      "description": "As a player, I want each archetype to play a distinct sound when activated -- so the audio feedback matches the visual.",
+      "acceptanceCriteria": [
+        "Add archetype sound functions to `web/src/lib/sounds.ts`: `playMartial()`, `playSkulker()`, `playCaster()`, `playDevout()`, `playIntimidate()`",
+        "Each produces a short, distinct synthesized tone using the existing Web Audio pattern in sounds.ts (no audio file assets needed)",
+        "Martial: quick rising sweep (whoosh feel). Skulker: sharp staccato burst. Caster: deep resonant hum. Devout: gentle chime/bell. Intimidate: low aggressive rumble",
+        "Trigger the appropriate sound when `archetypeUsedName` is detected in the move update",
+        "Respect existing mute toggle",
+        "Update sound mocks in test helpers if needed",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 7,
+      "passes": false
+    },
+    {
+      "id": "US-PE-008",
+      "title": "DevPlayground: complete archetype effects showcase",
+      "description": "As a developer, I want a DevPlayground section that showcases all 5 archetype effects side by side -- so I can quickly iterate on visual tuning.",
+      "acceptanceCriteria": [
+        "Add or update DevPlayground scenarios to cover all 5 archetype effects with proper LastMoveInfo fields",
+        "Each scenario demonstrates the full animation chain: archetype callout + cell effect + capture resolution",
+        "Scenario labels clearly identify which archetype is being demonstrated",
+        "Existing archetype scenario (case 14) is replaced or updated with the new per-archetype variants",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 8,
+      "passes": false
+    }
+  ]
+}

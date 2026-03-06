@@ -1,0 +1,134 @@
+{
+  "project": "project-fatima",
+  "branchName": "feature/power-refactor",
+  "description": "Rebalance archetype powers. Intimidate is nerfed from min-side-debuff to -3 debuff (mirroring Skulker). Caster is reworked from best-of-two-rolls to guaranteed Omen (+2 all sides). Devout is reworked from negate-Fog to Ward (protect one friendly board card from capture for one opponent turn). AI archetype selection is upgraded to evaluate all five powers against hand composition. Docs and rules text updated.",
+  "userStories": [
+    {
+      "id": "US-PR-001",
+      "title": "Intimidate nerf: -3 debuff instead of min-side",
+      "description": "As a player, I want Intimidate to reduce an enemy card's facing side by 3 (min 1) instead of replacing it with the card's minimum side -- so the power is strong but not an auto-capture.",
+      "acceptanceCriteria": [
+        "In `app/rules/captures.py`, change the Intimidate debuff from `min(n,e,s,w)` to `max(facing_side - 3, 1)`",
+        "Update `app/rules/archetypes.py` if any Intimidate logic lives there (currently it doesn't -- debuff is in captures.py)",
+        "Update existing Intimidate tests in `tests/test_intimidate.py` to reflect the new -3 behavior",
+        "Add test: card with facing side 5 is debuffed to 2 (5-3=2), attacker with 3 captures (3>2)",
+        "Add test: card with facing side 2 is debuffed to 1 (floor), not negative",
+        "Add test: card with facing side 10 is debuffed to 7, attacker with 7 does NOT capture (tie, no strict >)",
+        "Intimidate + Mists interactions still work correctly (stacking -3 debuff with mists modifier)",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "US-PR-002",
+      "title": "Caster rework: guaranteed Omen (+2 all sides)",
+      "description": "As a player, I want Caster to guarantee an Omen result (+2 to all comparisons) for one placement -- so the power has real strategic impact instead of a marginal reroll.",
+      "acceptanceCriteria": [
+        "In `app/rules/reducer.py`, change Caster behavior: when Caster is activated, the Mists modifier is always +2 regardless of the actual die roll",
+        "The die is still rolled (for display/logging), but the modifier is forced to +2",
+        "Remove the `caster_reroll` flag from `_ArchetypeResult` and replace with `caster_force_omen: bool`",
+        "Update `_apply_archetype()` CASTER branch to set the new flag",
+        "Update `apply_intent()` Mists section: if `caster_force_omen`, set modifier to +2 and effect label to 'omen'",
+        "Update `tests/test_caster.py`: rewrite tests for guaranteed Omen behavior instead of best-of-two",
+        "Add test: Caster activation always yields +2 modifier even when die rolls 1 (Fog)",
+        "Add test: Caster activation yields mists_effect='omen' in last_move regardless of roll",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "US-PR-003",
+      "title": "Devout rework: Ward (protect one friendly card from capture)",
+      "description": "As a player, I want Devout to let me Ward one of my cards already on the board, making it immune to capture for the opponent's next placement -- so I have a meaningful defensive option.",
+      "acceptanceCriteria": [
+        "Add `devout_ward_cell: int | None = None` field to `PlacementIntent`",
+        "In `_apply_archetype()` DEVOUT branch: validate `devout_ward_cell` is 0-8, occupied, owned by the player (not opponent), and not the cell being placed into. Raise `ArchetypePowerArgumentError` on invalid target",
+        "Return a new flag `devout_ward_cell: int | None` in `_ArchetypeResult` (replace `devout_negate_fog`)",
+        "Add `warded_cell: int | None = None` field to `GameState` -- persists until the opponent completes one placement, then clears",
+        "In `apply_intent()`: if `devout_ward_cell` is set, store it in state as `warded_cell`",
+        "In `apply_intent()`: at the start of the NEXT player's turn, pass `warded_cell` to `resolve_captures()`. After that placement resolves, clear `warded_cell` from state",
+        "In `resolve_captures()`: skip capture of the warded cell during both Plus pre-step and BFS standard captures -- the warded card cannot change ownership",
+        "Add `warded_cell: int | None` to `LastMoveInfo` so the frontend can highlight the warded card",
+        "Devout power is consumed (archetype_used=True) when ward is placed, not conditionally",
+        "Delete all old Devout/Fog-negation tests in `tests/test_devout.py` and replace with Ward tests",
+        "Add test: warded card is not captured even when opponent's attacking side is higher",
+        "Add test: warded card is not captured by Plus rule",
+        "Add test: warded card is not captured by combo chain",
+        "Add test: ward expires after one opponent placement (next turn after that, the card is capturable again)",
+        "Add test: cannot ward an empty cell or opponent's card",
+        "Add test: ward does not protect against the player's own placement (only opponent's)",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "US-PR-004",
+      "title": "AI archetype selection: hand-aware heuristic",
+      "description": "As a developer, I want the AI to evaluate all five archetypes against its hand composition when selecting a power -- so the AI makes intelligent archetype choices across all difficulty levels.",
+      "acceptanceCriteria": [
+        "Rewrite `_ai_auto_archetype(hand, difficulty, rng)` in `game_service.py`",
+        "Easy: still random choice from all 5 archetypes",
+        "Medium: score each archetype against the hand, pick the best (break ties randomly). Scoring heuristics: Skulker scores high when hand has cards with one weak side adjacent to a strong side; Martial scores high when hand has cards with strong sides clustered; Caster scores high when hand has many mid-range sides (5-7); Devout scores high when hand has one high-value card worth protecting; Intimidate scores high when hand has moderate attacking sides (5-7)",
+        "Hard/Nightmare: same scoring as Medium but with tighter evaluation (consider more factors)",
+        "Add tests: verify AI picks Skulker for hands with weak-adjacent-strong pattern, Caster for mid-range hands, Devout for hands with one standout card, etc.",
+        "Add test: Easy AI picks randomly (distribution check over multiple seeds)",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 4,
+      "passes": false
+    },
+    {
+      "id": "US-PR-005",
+      "title": "AI archetype usage: Devout Ward and Caster Omen in AI strategies",
+      "description": "As a developer, I want the AI strategies (novice, greedy, expectimax, MCTS) to correctly use the reworked Caster and Devout powers -- so the AI takes advantage of guaranteed Omen and Ward.",
+      "acceptanceCriteria": [
+        "Update `_greedy_archetype_variants()` in `ai.py`: Devout now generates variants with `devout_ward_cell` for each friendly card on the board adjacent to the placement cell",
+        "Caster variant is unchanged (still `{use_archetype: True}` with no extra params -- the guaranteed Omen is automatic)",
+        "Novice `_novice_archetype_params()`: Devout picks a random friendly board card to ward",
+        "Greedy/Expectimax/MCTS: evaluate Devout ward variants via simulation like other archetypes",
+        "Add test: greedy AI generates Devout ward variants for friendly board cards",
+        "Add test: novice AI can activate Devout ward when friendly cards exist on board",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 5,
+      "passes": false
+    },
+    {
+      "id": "US-PR-006",
+      "title": "Frontend: update archetype copy and power descriptions",
+      "description": "As a player, I want the archetype selection modal and power descriptions to reflect the rebalanced powers -- so I understand what each power does.",
+      "acceptanceCriteria": [
+        "Update `web/src/routes/game-room/archetypesCopy.ts` with new power descriptions: Caster = 'Guaranteed Omen: your Mists result is always +2 for this placement. Use it once per game.'; Devout = 'Ward: after placing, choose one of your cards on the board. It cannot be captured by the opponent's next placement. Use it once per game.'; Intimidate = 'Weaken: after placing, pick an adjacent opponent card. Its facing side is reduced by 3 (min 1) for this comparison. Use it once per game.'",
+        "Update `ArchetypeModal.tsx` if any archetype-specific UI logic needs to change (Devout now needs a cell-selection step like Intimidate)",
+        "Update `ActionPanel.tsx`: Devout power activation should show cell selection UI for picking a friendly card to ward (similar to Intimidate's target selection but for own cards)",
+        "Add visual indicator on the warded cell (e.g., a shield icon or distinct ring color) that persists until the ward expires",
+        "Update `GameRulesDialog.tsx` if it contains archetype descriptions",
+        "Update frontend tests for archetype copy changes",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 6,
+      "passes": false
+    },
+    {
+      "id": "US-PR-007",
+      "title": "Documentation refresh: CLAUDE.md, GAME_RULES_OVERVIEW.md, CARDS_SPEC.md",
+      "description": "As a developer, I want all documentation to reflect the rebalanced archetype powers -- so docs stay accurate.",
+      "acceptanceCriteria": [
+        "Update archetype descriptions in `CLAUDE.md` to reflect new Intimidate (-3 debuff), Caster (guaranteed Omen), and Devout (Ward) mechanics",
+        "Update `docs/GAME_RULES_OVERVIEW.md` archetype section with full rebalanced descriptions",
+        "If `docs/CARDS_SPEC.md` mentions archetypes, update those references too",
+        "No stale references to 'best of two rolls', 'negate Fog', or 'min side debuff' remain in any doc"
+      ],
+      "priority": 7,
+      "passes": false
+    }
+  ]
+}

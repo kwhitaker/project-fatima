@@ -1,0 +1,94 @@
+{
+  "project": "project-fatima",
+  "branchName": "feature/draft-rework",
+  "description": "Rework the draft mechanic: deal 8 cards (2xT3, 3xT2, 3xT1) instead of 7. Players pick 5 with a tier constraint: max 1 T3 and max 2 T2 in the final hand. Players get to choose which T3 to keep. AI auto-draft updated to respect tier constraints.",
+  "userStories": [
+    {
+      "id": "US-DR-001",
+      "title": "Update deal constants and tier-slotted generation",
+      "description": "As a developer, I want deals to contain exactly 2 T3, 3 T2, and 3 T1 cards (8 total) -- so players get a meaningful T3 choice and better composition.",
+      "acceptanceCriteria": [
+        "Change `DEAL_SIZE = 8` (from 7) in `app/rules/deck.py`",
+        "Remove `MAX_PER_TIER = 3` constant (replaced by exact tier slots)",
+        "Add `DEAL_TIER_SLOTS: dict[int, int] = {3: 2, 2: 3, 1: 3}` constant",
+        "Rewrite `generate_matched_deals()` to build deals by filling exact tier slots: for each tier, draw from the shuffled pool respecting rarity/copy/named constraints until slots are filled, alternating between deals for balance",
+        "Cost tolerance check still applies after generation",
+        "Update `validate_deal()` to check exact tier slot counts instead of MAX_PER_TIER",
+        "Update `_can_add_to_deal()` to enforce tier slot limits instead of MAX_PER_TIER",
+        "Update all tests in `tests/test_deck.py` that reference DEAL_SIZE=7 or MAX_PER_TIER",
+        "Add test: generated deals have exactly {3:2, 2:3, 1:3} tier distribution",
+        "Add test: both deals in a matched pair have correct tier distribution",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 1,
+      "passes": false
+    },
+    {
+      "id": "US-DR-002",
+      "title": "Hand tier constraints: max 1 T3, max 2 T2 in selected hand",
+      "description": "As a player, I want my final hand of 5 to be constrained to at most 1 T3 and 2 T2 cards -- so hand composition is balanced and T3 choice matters.",
+      "acceptanceCriteria": [
+        "Add `HAND_TIER_LIMITS: dict[int, int] = {3: 1, 2: 2}` constant in `app/rules/deck.py` (T1 is unconstrained)",
+        "Add `validate_hand_tiers(selected_keys: list[str], card_lookup: dict[str, CardDefinition]) -> list[str]` function that returns error strings if tier limits are violated",
+        "In `game_service.submit_draft()`: after existing validation, call `validate_hand_tiers` and raise ValueError if any errors",
+        "Add test: selecting 2 T3 cards raises validation error",
+        "Add test: selecting 3 T2 cards raises validation error",
+        "Add test: selecting 1 T3 + 2 T2 + 2 T1 passes validation",
+        "Add test: selecting 0 T3 + 2 T2 + 3 T1 passes validation",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 2,
+      "passes": false
+    },
+    {
+      "id": "US-DR-003",
+      "title": "AI auto-draft respects tier constraints",
+      "description": "As a developer, I want the AI auto-draft to respect the new hand tier limits -- so AI opponents build legal hands.",
+      "acceptanceCriteria": [
+        "Update `_ai_auto_draft()` in `game_service.py` to respect `HAND_TIER_LIMITS`",
+        "Easy: random sample of 5 from deal, but re-sample if tier limits violated (retry up to 50 times, then fall back to greedy valid selection)",
+        "Medium: pick top 5 by total side sum, but enforce tier limits (if best 5 violate limits, swap out excess high-tier cards for next-best lower-tier)",
+        "Hard/Nightmare: pick top 5 by coverage score, same tier-limit enforcement",
+        "Add test: AI draft never produces a hand with 2+ T3 cards",
+        "Add test: AI draft never produces a hand with 3+ T2 cards",
+        "`uv run pytest` passes",
+        "`uv run pyright` passes"
+      ],
+      "priority": 3,
+      "passes": false
+    },
+    {
+      "id": "US-DR-004",
+      "title": "Frontend: update draft UI for 8-card deal with tier constraints",
+      "description": "As a player, I want the draft screen to show 8 cards and enforce the tier limits visually -- so I understand the constraints while picking.",
+      "acceptanceCriteria": [
+        "Update `HAND_SIZE` reference in `DraftingGameView.tsx` (still 5, but deal now shows 8 cards)",
+        "Show tier constraint info: 'Pick 5 cards (max 1 Tier 3, max 2 Tier 2)' in the draft instructions",
+        "When player has already selected 1 T3 card, visually disable remaining T3 cards (opacity + cannot select)",
+        "When player has already selected 2 T2 cards, visually disable remaining T2 cards",
+        "Show tier badge on each card in the draft view (T1/T2/T3 label or color indicator)",
+        "Update draft confirmation text to mention tier constraints if selection is invalid",
+        "Update frontend tests in `web/src/__tests__/drafting.test.tsx` for 8-card deal and tier constraints",
+        "Add test: T3 cards disabled after selecting 1 T3",
+        "Add test: T2 cards disabled after selecting 2 T2",
+        "`cd web && bun run test --run` passes"
+      ],
+      "priority": 4,
+      "passes": false
+    },
+    {
+      "id": "US-DR-005",
+      "title": "Documentation refresh: update deal/draft rules in all docs",
+      "description": "As a developer, I want all documentation to reflect the new 8-card deal and tier-constrained hand -- so docs stay accurate.",
+      "acceptanceCriteria": [
+        "Update `CLAUDE.md`: Deal & Draft section to say 'dealt 8 cards (2xT3, 3xT2, 3xT1), picks 5 to keep (max 1 T3, max 2 T2)'",
+        "Update `docs/GAME_RULES_OVERVIEW.md` match setup section",
+        "No stale references to '7-card deal' or 'draw 7' remain in any doc"
+      ],
+      "priority": 5,
+      "passes": false
+    }
+  ]
+}

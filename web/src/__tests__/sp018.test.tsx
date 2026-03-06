@@ -42,7 +42,7 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       ["martial", "Martial Spin!"],
       ["skulker", "Skulker +3!"],
       ["intimidate", "Intimidate!"],
-      ["caster", "Caster!"],
+      ["caster", "Caster Omen!"],
       ["devout", "Devout!"],
     ])(
       "renders callout for %s archetype",
@@ -219,6 +219,83 @@ describe("US-SP-018: Archetype power visual feedback", () => {
       );
       const glowEl = container.querySelector("[data-skulker-glow]");
       expect(glowEl).not.toBeInTheDocument();
+    });
+
+    it("sets data-caster-aura on placed card when caster archetype is used", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          placedCells={new Set([0])}
+          archetypeUsedName="caster"
+        />,
+      );
+      const auraEl = container.querySelector("[data-caster-aura]");
+      expect(auraEl).toBeInTheDocument();
+    });
+
+    it("shows +2 all sides particle when caster archetype is used", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          placedCells={new Set([0])}
+          archetypeUsedName="caster"
+        />,
+      );
+      const particleEl = container.querySelector("[data-caster-particle]");
+      expect(particleEl).toBeInTheDocument();
+      expect(particleEl?.textContent).toBe("+2 all sides");
+    });
+
+    it("does not set data-caster-aura when archetype is not caster", () => {
+      const board = [
+        { card_key: "c1", owner: 0 },
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+      ];
+      const { container } = render(
+        <BoardGrid
+          board={board}
+          myIndex={0}
+          lastMoveCellIndex={0}
+          placedCells={new Set([0])}
+          archetypeUsedName="martial"
+          martialRotationDirection="cw"
+        />,
+      );
+      const auraEl = container.querySelector("[data-caster-aura]");
+      expect(auraEl).not.toBeInTheDocument();
     });
 
     it("applies standard yellow ring when no archetype used", () => {

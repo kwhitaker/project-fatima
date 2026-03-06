@@ -151,6 +151,7 @@ export function BoardGrid({
           const def = cell ? cardDefs?.get(cell.card_key) : undefined;
           const isMartialSpin = isLastMove && archetypeUsedName === "martial" && !!martialRotationDirection;
           const isSkulkerBoost = isLastMove && archetypeUsedName === "skulker" && !!skulkerBoostSide;
+          const isCasterOmen = isLastMove && archetypeUsedName === "caster";
 
           // Victory glow: staggered delay based on position in victoryCells array
           const victoryIdx = victoryCells?.indexOf(i) ?? -1;
@@ -309,6 +310,38 @@ export function BoardGrid({
                       transition={{ duration: 1.2, ease: "easeOut" }}
                     >
                       +3
+                    </motion.span>
+                  </>
+                )}
+                {/* Caster omen aura */}
+                {isCasterOmen && (
+                  <>
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none rounded-full"
+                      data-caster-aura="true"
+                      style={{
+                        background: "radial-gradient(circle, rgba(139,92,246,0.5) 0%, rgba(139,92,246,0) 70%)",
+                      }}
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: [0, 1.6, 1.2], opacity: [0, 0.8, 0.4] }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: "radial-gradient(circle, rgba(167,139,250,0.3) 0%, rgba(167,139,250,0) 60%)",
+                      }}
+                      animate={{ opacity: [0.3, 0.5, 0.3] }}
+                      transition={{ duration: 1.2, repeat: 1, ease: "easeInOut" }}
+                    />
+                    <motion.span
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full pointer-events-none text-xs font-heading font-bold text-violet-300 drop-shadow-md z-10"
+                      data-caster-particle="true"
+                      initial={{ scale: 1.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: [0, 1, 1, 0] }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
+                    >
+                      +2 all sides
                     </motion.span>
                   </>
                 )}

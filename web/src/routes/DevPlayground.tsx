@@ -273,6 +273,10 @@ const SCENARIOS: Scenario[] = [
     label: "Waiting (creator)",
     description: "Waiting for opponent with cancel button",
   },
+  {
+    label: "Caster Omen",
+    description: "Caster archetype omen aura wash with purple pulse",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -744,6 +748,27 @@ export default function DevPlayground() {
                 board: emptyBoard(),
               }),
             );
+            break;
+          }
+          case 22: {
+            // Caster Omen — purple aura wash on placed card
+            const board = emptyBoard();
+            board[4] = { card_key: "c-mage", owner: 0 };
+            board[1] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([1]));
+            setMistsEffect("omen");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-mage",
+              cell_index: 4,
+              mists_roll: 6,
+              mists_effect: "omen",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "caster",
+            });
             break;
           }
         }

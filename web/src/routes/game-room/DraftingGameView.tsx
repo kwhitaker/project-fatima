@@ -9,6 +9,7 @@ import { cardTitle } from "@/routes/game-room/cardTitle";
 import { ForfeitDialog } from "@/routes/game-room/ForfeitDialog";
 
 const HAND_SIZE = 5;
+const HAND_TIER_LIMITS: Record<number, number> = { 3: 1, 2: 2 };
 
 export function DraftingGameView({
   game,
@@ -70,12 +71,37 @@ export function DraftingGameView({
     );
   }
 
+  // Count how many cards of each tier are currently selected
+  const selectedTierCounts = (tier: number): number => {
+    let count = 0;
+    for (const key of selected) {
+      const def = cardDefs.get(key);
+      if (def?.tier === tier) count++;
+    }
+    return count;
+  };
+
+  const isTierLimitReached = (tier: number): boolean => {
+    const limit = HAND_TIER_LIMITS[tier];
+    return limit !== undefined && selectedTierCounts(tier) >= limit;
+  };
+
   const toggleCard = (cardKey: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(cardKey)) {
         next.delete(cardKey);
       } else if (next.size < HAND_SIZE) {
+        // Check tier limit before adding
+        const def = cardDefs.get(cardKey);
+        const tier = def?.tier;
+        if (tier !== undefined && HAND_TIER_LIMITS[tier] !== undefined) {
+          let tierCount = 0;
+          for (const k of next) {
+            if (cardDefs.get(k)?.tier === tier) tierCount++;
+          }
+          if (tierCount >= HAND_TIER_LIMITS[tier]) return prev;
+        }
         next.add(cardKey);
       }
       return next;
@@ -100,7 +126,7 @@ export function DraftingGameView({
     <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4" aria-label="drafting view">
       <h2 className="text-lg font-heading font-semibold">Draft Phase</h2>
       <p className="text-sm text-muted-foreground text-center max-w-md">
-        Select {HAND_SIZE} of your {deal.length} dealt cards to keep for the match.
+        Select {HAND_SIZE} of your {deal.length} dealt cards to keep (max 1 Tier 3, max 2 Tier 2).
       </p>
       <p className="text-xs text-muted-foreground">
         {selected.size} / {HAND_SIZE} selected
@@ -112,13 +138,15 @@ export function DraftingGameView({
           const displayName = def?.name ?? cardKey;
           const isSelected = selected.has(cardKey);
           const isFull = selected.size >= HAND_SIZE;
+          const tierBlocked = !isSelected && def?.tier !== undefined && isTierLimitReached(def.tier);
+          const isDisabled = submitting || (!isSelected && (isFull || tierBlocked));
 
           return (
             <button
               key={cardKey}
               role="listitem"
               onClick={() => toggleCard(cardKey)}
-              disabled={submitting}
+              disabled={isDisabled}
               title={cardTitle(cardKey, def)}
               aria-pressed={isSelected}
               className={cn(
@@ -126,7 +154,7 @@ export function DraftingGameView({
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected
                   ? "border-primary bg-primary/10 ring-2 ring-primary/50 scale-105 -translate-y-1 cursor-pointer"
-                  : isFull
+                  : isDisabled
                     ? "border-border opacity-40 cursor-not-allowed"
                     : "border-border hover:border-primary hover:bg-accent/20 cursor-pointer",
                 tierClass(def?.tier)
@@ -157,6 +185,11 @@ export function DraftingGameView({
                   aria-label={`element ${def.element}`}
                 >
                   {ELEMENT_SYMBOLS[def.element] ?? def.element}
+                </span>
+              )}
+              {def?.tier != null && (
+                <span className="absolute top-0 right-0 text-[8px] sm:text-[9px] leading-none px-0.5 py-px font-bold opacity-80 select-none pointer-events-none">
+                  T{def.tier}
                 </span>
               )}
             </button>

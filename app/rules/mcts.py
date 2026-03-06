@@ -10,6 +10,7 @@ from random import Random
 
 from app.models.cards import CardDefinition
 from app.models.game import GameState
+from app.rules.ai import _greedy_archetype_variants, _simulate_move
 from app.rules.board import ADJACENCY
 from app.rules.reducer import PlacementIntent
 
@@ -357,6 +358,44 @@ def _select_with_concealment(
 # ---------------------------------------------------------------------------
 
 
+def _evaluate_archetype_for_move(
+    state: GameState,
+    ai_index: int,
+    card_key: str,
+    cell_index: int,
+    card_lookup: dict[str, CardDefinition],
+    rng: Random,
+) -> PlacementIntent:
+    """After MCTS selects (card, cell), evaluate archetype variants via 1-ply simulation.
+
+    Compares the base move against all archetype variants and picks the best.
+    """
+    base_intent = PlacementIntent(
+        player_index=ai_index, card_key=card_key, cell_index=cell_index
+    )
+    base_score = _simulate_move(state, base_intent, card_lookup, rng)
+
+    best_intent = base_intent
+    best_score = base_score
+
+    for arch_params in _greedy_archetype_variants(state, ai_index, card_key, cell_index):
+        arch_intent = PlacementIntent(
+            player_index=ai_index,
+            card_key=card_key,
+            cell_index=cell_index,
+            **arch_params,  # type: ignore[arg-type]
+        )
+        try:
+            arch_score = _simulate_move(state, arch_intent, card_lookup, rng)
+        except Exception:
+            continue
+        if arch_score > best_score:
+            best_score = arch_score
+            best_intent = arch_intent
+
+    return best_intent
+
+
 def mcts_move(
     state: GameState,
     ai_index: int,
@@ -367,6 +406,7 @@ def mcts_move(
 
     Runs 2000 simulated playouts, UCB1 selection, random rollouts.
     Concealment layer prefers mid-strength cards when visit counts are close.
+    Post-selection: evaluates archetype variants via 1-ply simulation.
     """
     player = state.players[ai_index]
     empty_cells = [i for i, cell in enumerate(state.board) if cell is None]
@@ -374,4 +414,12 @@ def mcts_move(
     if not player.hand or not empty_cells:
         raise ValueError("AI has no legal moves (empty hand or full board)")
 
-    return _run_mcts(state, ai_index, card_lookup, rng)
+    base = _run_mcts(state, ai_index, card_lookup, rng)
+
+    # Evaluate archetype variants for the MCTS-selected (card, cell)
+    if not player.archetype_used and player.archetype is not None:
+        return _evaluate_archetype_for_move(
+            state, ai_index, base.card_key, base.cell_index, card_lookup, rng
+        )
+
+    return base

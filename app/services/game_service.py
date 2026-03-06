@@ -496,6 +496,7 @@ def submit_move(
     skulker_boost_side: str | None = None,
     intimidate_target_cell: int | None = None,
     martial_rotation_direction: str | None = None,
+    devout_ward_cell: int | None = None,
     idempotency_key: str | None = None,
 ) -> GameState:
     state = game_store.get_game(game_id)
@@ -529,6 +530,7 @@ def submit_move(
         skulker_boost_side=skulker_boost_side,
         intimidate_target_cell=intimidate_target_cell,
         martial_rotation_direction=martial_rotation_direction,
+        devout_ward_cell=devout_ward_cell,
     )
     new_state = apply_intent(state, intent, card_lookup, rng)
 
@@ -731,6 +733,7 @@ async def execute_ai_turn(
             skulker_boost_side=intent.skulker_boost_side,
             intimidate_target_cell=intent.intimidate_target_cell,
             martial_rotation_direction=intent.martial_rotation_direction,
+            devout_ward_cell=intent.devout_ward_cell,
         )
     except Exception:
         logger.exception("AI turn failed for game %s", game_id)

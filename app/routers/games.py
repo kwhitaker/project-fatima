@@ -50,6 +50,7 @@ class MoveRequest(BaseModel):
     skulker_boost_side: str | None = None
     intimidate_target_cell: int | None = None
     martial_rotation_direction: str | None = None
+    devout_ward_cell: int | None = None
     idempotency_key: str | None = None
 
 
@@ -198,6 +199,7 @@ def submit_move(
             body.skulker_boost_side,
             body.intimidate_target_cell,
             body.martial_rotation_direction,
+            body.devout_ward_cell,
             body.idempotency_key,
         )
     except KeyError as exc:

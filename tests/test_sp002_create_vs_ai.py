@@ -162,18 +162,15 @@ class TestAiArchetypeSelection:
         "difficulty",
         [AIDifficulty.MEDIUM, AIDifficulty.HARD, AIDifficulty.NIGHTMARE],
     )
-    def test_strategic_picks_skulker_or_martial(
+    def test_strategic_picks_valid_archetype(
         self,
         game_store: MemoryGameStore,
         card_store: MemoryCardStore,
         difficulty: AIDifficulty,
     ) -> None:
-        """Medium/hard/nightmare pick strategically: Skulker or Martial."""
+        """Medium/hard/nightmare pick strategically from all archetypes."""
         state = _create(game_store, card_store, diff=difficulty)
-        assert state.players[1].archetype in (
-            Archetype.SKULKER,
-            Archetype.MARTIAL,
-        )
+        assert state.players[1].archetype in list(Archetype)
 
 
 class TestAiExemptFromActiveGameCheck:

@@ -68,24 +68,115 @@ def _ai_auto_draft(
         return [c.card_key for c in sorted_deal[:HAND_SIZE]]
 
 
+def _score_skulker(hand: list[CardDefinition]) -> float:
+    """Skulker scores high when hand has cards with a weak side adjacent to a strong side."""
+    score = 0.0
+    for card in hand:
+        sides = [card.sides.n, card.sides.e, card.sides.s, card.sides.w]
+        for i in range(4):
+            adj = sides[(i + 1) % 4]
+            if sides[i] <= 3 and adj >= 7:
+                score += (adj - sides[i])  # bigger gap = more Skulker value
+            if adj <= 3 and sides[i] >= 7:
+                score += (sides[i] - adj)
+    return score
+
+
+def _score_martial(hand: list[CardDefinition]) -> float:
+    """Martial scores high when strong sides are clustered (rotation unlocks value)."""
+    score = 0.0
+    for card in hand:
+        sides = [card.sides.n, card.sides.e, card.sides.s, card.sides.w]
+        # Count how many strong sides (≥7) are adjacent to each other
+        strong = [s >= 7 for s in sides]
+        cluster_count = sum(1 for i in range(4) if strong[i] and strong[(i + 1) % 4])
+        # Also reward when weak sides (≤4) are adjacent (rotation moves them together)
+        weak = [s <= 4 for s in sides]
+        weak_cluster = sum(1 for i in range(4) if weak[i] and weak[(i + 1) % 4])
+        # Cards with clustered strong AND clustered weak benefit most from rotation
+        if cluster_count > 0 and weak_cluster > 0:
+            score += cluster_count * 4 + weak_cluster * 3
+        elif cluster_count > 0:
+            score += cluster_count * 3
+    return score
+
+
+def _score_caster(hand: list[CardDefinition]) -> float:
+    """Caster scores high when hand has many mid-range sides (5-7) that benefit from +2.
+
+    Caster gives +2 to ALL sides, so hands where most sides are mid-range
+    get the biggest overall lift. Penalize hands with many weak sides (≤3)
+    since even +2 only brings them to 5 max.
+    """
+    mid_count = 0
+    weak_count = 0
+    for card in hand:
+        for s in [card.sides.n, card.sides.e, card.sides.s, card.sides.w]:
+            if 5 <= s <= 7:
+                mid_count += 1
+            elif s <= 3:
+                weak_count += 1
+    # Reward density of mid-range sides; penalize weak sides
+    return mid_count * 1.5 - weak_count * 0.5
+
+
+def _score_devout(hand: list[CardDefinition]) -> float:
+    """Devout scores high when hand has one standout high-value card worth protecting."""
+    if not hand:
+        return 0.0
+    averages = [
+        (card.sides.n + card.sides.e + card.sides.s + card.sides.w) / 4.0
+        for card in hand
+    ]
+    best = max(averages)
+    rest_avg = sum(a for a in averages if a != best) / max(len(averages) - 1, 1)
+    # Score based on gap between best card and rest of hand
+    gap = best - rest_avg
+    return gap * 5 if gap > 1.5 else gap
+
+
+def _score_intimidate(hand: list[CardDefinition]) -> float:
+    """Intimidate scores high when hand has moderate attacking sides (5-7).
+
+    A -3 debuff turns opponent's 7→4 or 8→5, letting moderate sides win.
+    Best for hands mixing moderate and weak (≤3) sides.
+    """
+    moderate_count = 0
+    weak_count = 0
+    for card in hand:
+        for s in [card.sides.n, card.sides.e, card.sides.s, card.sides.w]:
+            if 5 <= s <= 7:
+                moderate_count += 1
+            elif s <= 3:
+                weak_count += 1
+    # Intimidate shines when you have moderate sides AND weak (≤3) sides
+    if weak_count >= 4:
+        return moderate_count * 1.2 + weak_count * 0.8
+    return moderate_count * 1.0
+
+
 def _ai_auto_archetype(
     hand: list[CardDefinition],
     difficulty: AIDifficulty,
     rng: Random,
 ) -> Archetype:
-    """Pick an archetype for the AI based on difficulty."""
+    """Pick an archetype for the AI based on difficulty and hand composition."""
     if difficulty == AIDifficulty.EASY:
         return rng.choice(list(Archetype))
-    # Medium/hard/nightmare: Skulker if hand has a card with weak side adjacent to strong side
-    for card in hand:
-        sides = [card.sides.n, card.sides.e, card.sides.s, card.sides.w]
-        for i in range(4):
-            adjacent = sides[(i + 1) % 4]
-            if sides[i] <= 3 and adjacent >= 7:
-                return Archetype.SKULKER
-            if adjacent <= 3 and sides[i] >= 7:
-                return Archetype.SKULKER
-    return Archetype.MARTIAL
+
+    # Score each archetype against the hand
+    scores: dict[Archetype, float] = {
+        Archetype.SKULKER: _score_skulker(hand),
+        Archetype.MARTIAL: _score_martial(hand),
+        Archetype.CASTER: _score_caster(hand),
+        Archetype.DEVOUT: _score_devout(hand),
+        Archetype.INTIMIDATE: _score_intimidate(hand),
+    }
+
+    best_score = max(scores.values())
+    # Break ties randomly
+    best = [a for a, s in scores.items() if s == best_score]
+    return rng.choice(best)
 
 
 def create_game_vs_ai(

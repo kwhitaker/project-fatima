@@ -190,7 +190,14 @@ interface Scenario {
   description: string;
 }
 
+interface ScenarioSection {
+  title: string;
+  scenarios: Scenario[];
+  startIndex: number;
+}
+
 const SCENARIOS: Scenario[] = [
+  // ── Core mechanics (0–7) ──
   {
     label: "Card placement",
     description: "Card placed at center with slam animation",
@@ -217,6 +224,7 @@ const SCENARIOS: Scenario[] = [
   },
   { label: "Fog (Mists)", description: "Fog mists effect on placement" },
   { label: "Omen (Mists)", description: "Omen mists effect on placement" },
+  // ── Game outcomes (8–11) ──
   {
     label: "Victory screen",
     description: "Victory overlay with bats and confetti",
@@ -233,6 +241,7 @@ const SCENARIOS: Scenario[] = [
     label: "Draw result",
     description: "Game ends in a draw (equal scores)",
   },
+  // ── AI (12–13) ──
   {
     label: "AI comment (Easy)",
     description: "Ireena AI comment bubble style",
@@ -241,46 +250,56 @@ const SCENARIOS: Scenario[] = [
     label: "AI comment (Nightmare)",
     description: "Dark Powers AI comment bubble style",
   },
+  // ── Archetype Effects Showcase (14–23) ──
   {
-    label: "Skulker +3 (N)",
-    description: "Skulker boost on north edge with glow + particle",
+    label: "Martial: Spin CW",
+    description: "Martial spin clockwise with whoosh sound + sweep ring",
   },
   {
-    label: "Martial Spin CW",
-    description: "Martial archetype spin clockwise",
+    label: "Martial: Spin CCW",
+    description: "Martial spin counter-clockwise with capture chain",
   },
   {
-    label: "Martial Spin CCW",
-    description: "Martial archetype spin counter-clockwise",
+    label: "Skulker: Boost N",
+    description: "Skulker +3 north edge glow + staccato burst sound",
   },
   {
-    label: "Skulker +3 (E)",
-    description: "Skulker boost on east edge",
+    label: "Skulker: Boost E",
+    description: "Skulker +3 east edge glow + particle",
   },
   {
-    label: "Skulker +3 (S)",
-    description: "Skulker boost on south edge",
+    label: "Skulker: Boost S",
+    description: "Skulker +3 south edge glow + particle",
   },
   {
-    label: "Skulker +3 (W)",
-    description: "Skulker boost on west edge",
+    label: "Skulker: Boost W",
+    description: "Skulker +3 west edge glow + particle",
   },
   {
-    label: "Devout Ward",
-    description: "Warded cell with golden shield barrier and breathing pulse",
+    label: "Caster: Omen Aura",
+    description: "Caster purple aura wash + deep hum sound + omen mists",
   },
+  {
+    label: "Devout: Ward Shield",
+    description: "Devout golden shield barrier + chime sound + breathing pulse",
+  },
+  {
+    label: "Intimidate: Shudder",
+    description: "Intimidate target shudder + red flash + rumble sound",
+  },
+  // ── Misc (24) ──
   {
     label: "Waiting (creator)",
     description: "Waiting for opponent with cancel button",
   },
-  {
-    label: "Caster Omen",
-    description: "Caster archetype omen aura wash with purple pulse",
-  },
-  {
-    label: "Intimidate -3",
-    description: "Intimidate target shudder + red flash + debuff particle",
-  },
+];
+
+const SCENARIO_SECTIONS: ScenarioSection[] = [
+  { title: "Core Mechanics", scenarios: SCENARIOS.slice(0, 8), startIndex: 0 },
+  { title: "Game Outcomes", scenarios: SCENARIOS.slice(8, 12), startIndex: 8 },
+  { title: "AI", scenarios: SCENARIOS.slice(12, 14), startIndex: 12 },
+  { title: "Archetype Effects", scenarios: SCENARIOS.slice(14, 23), startIndex: 14 },
+  { title: "Misc", scenarios: SCENARIOS.slice(23), startIndex: 23 },
 ];
 
 // ---------------------------------------------------------------------------
@@ -582,29 +601,8 @@ export default function DevPlayground() {
             setAiDifficulty("nightmare");
             break;
           }
+          // ── Archetype Effects Showcase (14–22) ──
           case 14: {
-            // Skulker +3 (North)
-            const board = emptyBoard();
-            board[4] = { card_key: "c-strahd", owner: 0 };
-            board[1] = { card_key: "c-zombie", owner: 0 };
-            setGame(makeGame({ board }));
-            setPlacedCells(new Set([4]));
-            setCapturedCells(new Set([1]));
-            setSkulkerBoostSide("n");
-            setLastMove({
-              player_index: 0,
-              card_key: "c-strahd",
-              cell_index: 4,
-              mists_roll: 4,
-              mists_effect: "none",
-              plus_triggered: false,
-              elemental_triggered: false,
-              archetype_used_name: "skulker",
-              skulker_boost_side: "n",
-            });
-            break;
-          }
-          case 15: {
             // Martial Spin CW
             const board = emptyBoard();
             board[4] = { card_key: "c-wolf", owner: 0 };
@@ -626,7 +624,7 @@ export default function DevPlayground() {
             });
             break;
           }
-          case 16: {
+          case 15: {
             // Martial Spin CCW
             const board = emptyBoard();
             board[4] = { card_key: "c-wolf", owner: 0 };
@@ -645,6 +643,28 @@ export default function DevPlayground() {
               elemental_triggered: false,
               archetype_used_name: "martial",
               martial_rotation_direction: "ccw",
+            });
+            break;
+          }
+          case 16: {
+            // Skulker +3 (North)
+            const board = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[1] = { card_key: "c-zombie", owner: 0 };
+            setGame(makeGame({ board }));
+            setPlacedCells(new Set([4]));
+            setCapturedCells(new Set([1]));
+            setSkulkerBoostSide("n");
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 4,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "skulker",
+              skulker_boost_side: "n",
             });
             break;
           }
@@ -715,48 +735,6 @@ export default function DevPlayground() {
             break;
           }
           case 20: {
-            // Devout Ward — a friendly card is warded
-            const board: (BoardCell | null)[] = emptyBoard();
-            board[4] = { card_key: "c-strahd", owner: 0 };
-            board[1] = { card_key: "c-cleric", owner: 0 };
-            board[5] = { card_key: "c-zombie", owner: 1 };
-            setGame(makeGame({ board, warded_cell: 1 }));
-            setPlacedCells(new Set([4]));
-            setLastMove({
-              player_index: 0,
-              card_key: "c-strahd",
-              cell_index: 4,
-              mists_roll: 3,
-              mists_effect: "none",
-              plus_triggered: false,
-              elemental_triggered: false,
-              archetype_used_name: "devout",
-              warded_cell: 1,
-            });
-            break;
-          }
-          case 21: {
-            // Waiting state with cancel
-            setShowWaiting(true);
-            setGame(
-              makeGame({
-                status: "waiting" as GameState["status"],
-                players: [
-                  {
-                    player_id: "me",
-                    archetype: null,
-                    deal: [],
-                    hand: [],
-                    archetype_used: false,
-                    player_type: "human",
-                  },
-                ],
-                board: emptyBoard(),
-              }),
-            );
-            break;
-          }
-          case 22: {
             // Caster Omen — purple aura wash on placed card
             const board = emptyBoard();
             board[4] = { card_key: "c-mage", owner: 0 };
@@ -777,7 +755,28 @@ export default function DevPlayground() {
             });
             break;
           }
-          case 23: {
+          case 21: {
+            // Devout Ward — a friendly card is warded
+            const board: (BoardCell | null)[] = emptyBoard();
+            board[4] = { card_key: "c-strahd", owner: 0 };
+            board[1] = { card_key: "c-cleric", owner: 0 };
+            board[5] = { card_key: "c-zombie", owner: 1 };
+            setGame(makeGame({ board, warded_cell: 1 }));
+            setPlacedCells(new Set([4]));
+            setLastMove({
+              player_index: 0,
+              card_key: "c-strahd",
+              cell_index: 4,
+              mists_roll: 3,
+              mists_effect: "none",
+              plus_triggered: false,
+              elemental_triggered: false,
+              archetype_used_name: "devout",
+              warded_cell: 1,
+            });
+            break;
+          }
+          case 22: {
             // Intimidate — target card shudder + debuff flash
             const board = emptyBoard();
             board[4] = { card_key: "c-strahd", owner: 0 };
@@ -799,6 +798,28 @@ export default function DevPlayground() {
             });
             break;
           }
+          // ── Misc ──
+          case 23: {
+            // Waiting state with cancel
+            setShowWaiting(true);
+            setGame(
+              makeGame({
+                status: "waiting" as GameState["status"],
+                players: [
+                  {
+                    player_id: "me",
+                    archetype: null,
+                    deal: [],
+                    hand: [],
+                    archetype_used: false,
+                    player_type: "human",
+                  },
+                ],
+                board: emptyBoard(),
+              }),
+            );
+            break;
+          }
         }
       }, 50);
     },
@@ -815,21 +836,33 @@ export default function DevPlayground() {
           </p>
         </div>
 
-        {/* Scenario buttons */}
-        <div className="flex flex-wrap gap-2" data-testid="scenario-buttons">
-          {SCENARIOS.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => runScenario(i)}
-              className={`px-3 py-2 border-2 font-body text-sm transition-colors ${
-                activeScenario === i
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-card hover:border-accent"
-              }`}
-              title={s.description}
-            >
-              {s.label}
-            </button>
+        {/* Scenario buttons grouped by section */}
+        <div className="space-y-3" data-testid="scenario-buttons">
+          {SCENARIO_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <p className="text-xs font-heading text-muted-foreground uppercase tracking-wider mb-1">
+                {section.title}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {section.scenarios.map((s, i) => {
+                  const globalIndex = section.startIndex + i;
+                  return (
+                    <button
+                      key={globalIndex}
+                      onClick={() => runScenario(globalIndex)}
+                      className={`px-3 py-2 border-2 font-body text-sm transition-colors ${
+                        activeScenario === globalIndex
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border bg-card hover:border-accent"
+                      }`}
+                      title={s.description}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           ))}
           <button
             onClick={reset}

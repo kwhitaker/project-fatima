@@ -34,6 +34,7 @@ class PlacementIntent:
     skulker_boost_side: str | None = field(default=None)
     intimidate_target_cell: int | None = field(default=None)
     martial_rotation_direction: str | None = field(default=None)
+    devout_ward_cell: int | None = field(default=None)
 
 
 def mists_modifier_from_roll(roll: int) -> int:
@@ -52,8 +53,6 @@ def mists_modifier_from_roll(roll: int) -> int:
 
 def _mists_effect_label(roll: int, modifier: int) -> str:
     """Human-readable effect label for LastMoveInfo."""
-    if roll == 1 and modifier == 0:
-        return "fog_negated"  # Devout negated a Fog
     if modifier == -2:
         return "fog"
     if modifier == 2:
@@ -140,7 +139,7 @@ class _ArchetypeResult(NamedTuple):
     card: CardDefinition
     activated: bool
     caster_force_omen: bool
-    devout_negate_fog: bool
+    devout_ward_cell: int | None
     intimidate_target: int | None
 
 
@@ -148,7 +147,7 @@ _NO_ARCHETYPE = _ArchetypeResult(
     card=None,  # type: ignore[arg-type]  # placeholder, replaced by caller
     activated=False,
     caster_force_omen=False,
-    devout_negate_fog=False,
+    devout_ward_cell=None,
     intimidate_target=None,
 )
 
@@ -184,7 +183,7 @@ def _apply_archetype(
             card=rotated,
             activated=True,
             caster_force_omen=False,
-            devout_negate_fog=False,
+            devout_ward_cell=None,
             intimidate_target=None,
         )
 
@@ -198,7 +197,7 @@ def _apply_archetype(
             card=apply_skulker_boost(card, intent.skulker_boost_side),
             activated=True,
             caster_force_omen=False,
-            devout_negate_fog=False,
+            devout_ward_cell=None,
             intimidate_target=None,
         )
 
@@ -207,16 +206,34 @@ def _apply_archetype(
             card=card,
             activated=True,
             caster_force_omen=True,
-            devout_negate_fog=False,
+            devout_ward_cell=None,
             intimidate_target=None,
         )
 
     if player.archetype == Archetype.DEVOUT:
+        ward_cell = intent.devout_ward_cell
+        if ward_cell is None or not (0 <= ward_cell <= 8):
+            raise ArchetypePowerArgumentError(
+                f"Devout requires devout_ward_cell in 0-8, got {ward_cell!r}"
+            )
+        if ward_cell == intent.cell_index:
+            raise ArchetypePowerArgumentError(
+                f"Cannot ward the cell being placed into ({ward_cell})"
+            )
+        ward_board_cell = state.board[ward_cell]
+        if ward_board_cell is None:
+            raise ArchetypePowerArgumentError(
+                f"Devout ward target cell {ward_cell} is empty"
+            )
+        if ward_board_cell.owner != intent.player_index:
+            raise ArchetypePowerArgumentError(
+                f"Devout ward target cell {ward_cell} contains an opponent's card"
+            )
         return _ArchetypeResult(
             card=card,
-            activated=False,  # consumed only when Fog actually rolls
+            activated=True,
             caster_force_omen=False,
-            devout_negate_fog=True,
+            devout_ward_cell=ward_cell,
             intimidate_target=None,
         )
 
@@ -248,7 +265,7 @@ def _apply_archetype(
             card=card,
             activated=True,
             caster_force_omen=False,
-            devout_negate_fog=False,
+            devout_ward_cell=None,
             intimidate_target=target_cell,
         )
 
@@ -295,7 +312,7 @@ def apply_intent(
     placed_owner = intent.player_index
     archetype_activated = arch.activated
     caster_force_omen = arch.caster_force_omen
-    devout_negate_fog = arch.devout_negate_fog
+    devout_ward_cell = arch.devout_ward_cell
     intimidate_target = arch.intimidate_target
 
     # --- Mists roll ---
@@ -307,9 +324,6 @@ def apply_intent(
             mists_modifier = 2  # guaranteed Omen regardless of roll
         else:
             mists_modifier = mists_modifier_from_roll(roll)
-        if devout_negate_fog and mists_modifier == -2:
-            mists_modifier = 0  # Devout treats Fog as no effect
-            archetype_activated = True  # power consumed only on actual Fog
         mists_roll = roll
 
     # --- Elemental bonus ---
@@ -325,6 +339,11 @@ def apply_intent(
     new_board: list[BoardCell | None] = list(state.board)
     new_board[intent.cell_index] = BoardCell(card_key=intent.card_key, owner=placed_owner)
 
+    # --- Determine active warded cell for this placement ---
+    # Ward set by the previous player protects their card during this placement.
+    # After this placement resolves, the ward is cleared.
+    active_warded_cell = state.warded_cell
+
     new_board, plus_triggered = resolve_captures(
         new_board,
         intent.cell_index,
@@ -333,12 +352,15 @@ def apply_intent(
         card_lookup,
         mists_modifier=mists_modifier + elemental_bonus,
         intimidate_target_cell=intimidate_target,
+        warded_cell=active_warded_cell,
     )
 
     # --- Build state delta ---
     updates: dict[str, object] = {
         "board": new_board,
         "state_version": state.state_version + 1,
+        # Clear previous ward after this placement; set new ward if Devout activated
+        "warded_cell": devout_ward_cell,
     }
 
     if mists_roll is not None:
@@ -358,6 +380,7 @@ def apply_intent(
             elemental_triggered=elemental_bonus > 0,
             archetype_used_name=_arch_name,
             intimidate_target_cell=intimidate_target if archetype_activated else None,
+            warded_cell=devout_ward_cell if archetype_activated else None,
         )
 
     if state.players:

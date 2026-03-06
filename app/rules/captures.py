@@ -23,6 +23,7 @@ def resolve_captures(
     card_lookup: dict[str, CardDefinition],
     mists_modifier: int = 0,
     intimidate_target_cell: int | None = None,
+    warded_cell: int | None = None,
 ) -> tuple[list[BoardCell | None], bool]:
     """Return a new board with ownership flipped for all captured cards (including combos),
     and a bool indicating whether the Plus rule fired.
@@ -68,6 +69,8 @@ def resolve_captures(
         if len(matches) >= 2:
             plus_triggered = True
             for neighbor_index, neighbor_card_key in matches:
+                if neighbor_index == warded_cell:
+                    continue  # warded card immune to Plus capture
                 neighbor_def = card_lookup[neighbor_card_key]
                 new_board[neighbor_index] = BoardCell(
                     card_key=neighbor_card_key,
@@ -90,7 +93,7 @@ def resolve_captures(
             if intim_target is not None and neighbor_index == intim_target:
                 neighbor_value = max(neighbor_value - 3, 1)
 
-            if src_value > neighbor_value:
+            if src_value > neighbor_value and neighbor_index != warded_cell:
                 new_board[neighbor_index] = BoardCell(
                     card_key=neighbor_cell.card_key,
                     owner=placed_owner,

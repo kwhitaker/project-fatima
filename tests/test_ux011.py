@@ -121,7 +121,7 @@ def test_last_move_still_includes_mists_fields(client: TestClient) -> None:
     lm = resp.json()["last_move"]
     assert lm is not None
     assert 1 <= lm["mists_roll"] <= 6
-    assert lm["mists_effect"] in ("fog", "omen", "none", "fog_negated")
+    assert lm["mists_effect"] in ("fog", "omen", "none")
 
 
 def test_last_move_updated_on_second_move(client: TestClient) -> None:

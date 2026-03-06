@@ -136,7 +136,7 @@ def test_full_happy_path(client: TestClient) -> None:
     # last_move should be populated with mists info
     assert data["last_move"] is not None
     assert data["last_move"]["mists_roll"] in range(1, 7)
-    assert data["last_move"]["mists_effect"] in ("fog", "omen", "none", "fog_negated")
+    assert data["last_move"]["mists_effect"] in ("fog", "omen", "none")
     state_version = data["state_version"]
 
     # 6. Second player plays

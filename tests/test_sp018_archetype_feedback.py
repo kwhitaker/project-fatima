@@ -66,26 +66,27 @@ class TestArchetypeUsedName:
         assert result.last_move is not None
         assert result.last_move.archetype_used_name is None
 
-    def test_devout_archetype_used_name_only_on_fog(self):
-        """Devout's power only activates on Fog roll; archetype_used_name should be None otherwise."""
+    def test_devout_archetype_used_name_on_ward(self):
+        """Devout Ward always activates; archetype_used_name is 'devout'."""
         c1 = make_card("c1")
+        friendly = make_card("friendly")
+        board: list[BoardCell | None] = [None] * 9
+        board[5] = BoardCell(card_key="friendly", owner=0)
         state = make_state(
+            board=board,
             p0_hand=["c1"],
             p0_archetype=Archetype.DEVOUT,
             current_player_index=0,
         )
         intent = PlacementIntent(
-            player_index=0, card_key="c1", cell_index=0, use_archetype=True
+            player_index=0, card_key="c1", cell_index=0, use_archetype=True,
+            devout_ward_cell=5,
         )
-        # Use a seed that does NOT roll fog (roll != 1)
         rng = Random(42)
-        result = apply_intent(state, intent, _card_lookup(c1), rng=rng)
+        result = apply_intent(state, intent, {**_card_lookup(c1), "friendly": friendly}, rng=rng)
         assert result.last_move is not None
-        # Devout only activates on fog; if no fog, archetype_used_name should be None
-        if result.last_move.mists_effect == "fog_negated":
-            assert result.last_move.archetype_used_name == "devout"
-        else:
-            assert result.last_move.archetype_used_name is None
+        assert result.last_move.archetype_used_name == "devout"
+        assert result.last_move.warded_cell == 5
 
 
 class TestIntimidateTargetCell:

@@ -102,8 +102,12 @@ def _greedy_archetype_variants(
             cell = state.board[neighbor_index]
             if cell is not None and cell.owner != ai_index:
                 variants.append({"use_archetype": True, "intimidate_target_cell": neighbor_index})
-    elif archetype in (Archetype.CASTER, Archetype.DEVOUT):
+    elif archetype == Archetype.CASTER:
         variants.append({"use_archetype": True})
+    elif archetype == Archetype.DEVOUT:
+        for idx, cell in enumerate(state.board):
+            if cell is not None and cell.owner == ai_index and idx != cell_index:
+                variants.append({"use_archetype": True, "devout_ward_cell": idx})
 
     return variants
 
@@ -242,8 +246,16 @@ def _novice_archetype_params(
         if targets:
             return {"use_archetype": True, "intimidate_target_cell": rng.choice(targets)}
         return {}
-    if archetype in (Archetype.CASTER, Archetype.DEVOUT):
+    if archetype == Archetype.CASTER:
         return {"use_archetype": True}
+    if archetype == Archetype.DEVOUT:
+        friendly_cells = [
+            idx for idx, cell in enumerate(state.board)
+            if cell is not None and cell.owner == ai_index and idx != cell_index
+        ]
+        if friendly_cells:
+            return {"use_archetype": True, "devout_ward_cell": rng.choice(friendly_cells)}
+        return {}
     return {}
 
 

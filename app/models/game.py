@@ -55,12 +55,13 @@ class LastMoveInfo(BaseModel):
     card_key: str
     cell_index: int  # 0-8
     mists_roll: int  # 1-6 die result
-    mists_effect: str  # "fog" | "omen" | "none" | "fog_negated"
+    mists_effect: str  # "fog" | "omen" | "none"
     plus_triggered: bool = False  # True when the Plus rule fired this placement
     elemental_triggered: bool = False  # True when elemental bonus (+1) was applied
     ai_comment: str | None = None  # In-character AI comment (single-player only)
     archetype_used_name: str | None = None  # Archetype name when power was used this move
     intimidate_target_cell: int | None = None  # Cell targeted by Intimidate (for UI highlight)
+    warded_cell: int | None = None  # Cell protected by Devout Ward (for UI highlight)
 
 
 class GameState(BaseModel):
@@ -76,6 +77,7 @@ class GameState(BaseModel):
     result: GameResult | None = None
     seed: int = 0
     last_move: LastMoveInfo | None = None
+    warded_cell: int | None = None  # Devout Ward; cleared after one opponent placement
     board_elements: list[str] | None = None  # one element per cell (0-8); None for old snapshots
     created_at: str | None = None  # ISO-8601 UTC timestamp; None for old snapshots
 

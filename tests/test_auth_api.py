@@ -215,7 +215,7 @@ def test_last_move_populated_after_first_move(client: TestClient) -> None:
     assert data["last_move"] is not None
     lm = data["last_move"]
     assert 1 <= lm["mists_roll"] <= 6
-    assert lm["mists_effect"] in ("fog", "omen", "none", "fog_negated")
+    assert lm["mists_effect"] in ("fog", "omen", "none")
 
 
 def test_last_move_none_before_any_move(client: TestClient) -> None:

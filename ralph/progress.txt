@@ -7,57 +7,12 @@
 Started: 2026-03-06
 ---
 
-## 2026-03-06 12:00 - US-PR-001
-- Changed Intimidate debuff from min(n,e,s,w) to max(facing_side - 3, 1) in captures.py
-- Rewrote all Intimidate tests for -3 behavior: facing side 5→2 capture, side 2→1 floor, side 10→7 tie, Fog/Omen stacking
-- 800 tests pass, 0 pyright errors on changed files
-- Files changed: app/rules/captures.py, tests/test_intimidate.py
-- Learnings: Intimidate logic is entirely in captures.py resolve_captures(); archetypes.py has no Intimidate code
----
-
-## 2026-03-06 12:30 - US-PR-002
-- Replaced `caster_reroll: bool` with `caster_force_omen: bool` in `_ArchetypeResult`
-- Changed Mists section in apply_intent: Caster now forces modifier=+2 regardless of die roll (die still rolled once for display)
-- Rewrote all Caster tests: parametrized test for all 6 die values, fog-roll-still-omen, mists_effect='omen' assertion, single roll count
-- 807 tests pass, 0 pyright errors
-- Files changed: app/rules/reducer.py, tests/test_caster.py
-- Learnings: AI code (ai.py) just passes use_archetype=True for Caster — no AI changes needed for this rework
----
-
-## 2026-03-06 13:00 - US-PR-003
-- Replaced Devout Fog-negation with Ward: player picks a friendly board card to protect from capture for one opponent placement
-- Replaced `devout_negate_fog: bool` with `devout_ward_cell: int | None` in `_ArchetypeResult`; added `warded_cell` to GameState and LastMoveInfo
-- Updated resolve_captures to skip warded cell in Plus pre-step and BFS; updated AI (greedy variants + novice params) to supply devout_ward_cell
-- Removed `fog_negated` mists effect from tests and model comments; rewrote all Devout tests (12 tests covering ward, Plus, combo, expiry, validation)
-- 808 tests pass, 0 pyright errors
-- Files changed: app/models/game.py, app/rules/reducer.py, app/rules/captures.py, app/rules/ai.py, tests/test_devout.py, tests/test_sp018_archetype_feedback.py, tests/test_api.py, tests/test_auth_api.py, tests/test_ux011.py
-- Learnings: Devout now always consumes power on activation (not conditionally). AI needs devout_ward_cell for friendly board cards; no ward possible on first placement (no friendly cards on board yet).
----
-
-## 2026-03-06 14:00 - US-PR-004
-- Rewrote `_ai_auto_archetype` in game_service.py: Easy stays random; Medium/Hard/Nightmare score all 5 archetypes against hand composition and pick the best (ties broken randomly)
-- Added 5 scoring functions: `_score_skulker` (weak-adjacent-strong gap), `_score_martial` (clustered strong+weak sides), `_score_caster` (mid-range 5-7 density), `_score_devout` (standout card gap), `_score_intimidate` (moderate+weak side mix)
-- Updated existing test `test_strategic_picks_skulker_or_martial` → `test_strategic_picks_valid_archetype` (all 5 archetypes valid for strategic AI)
-- 816 tests pass, 0 pyright errors on changed files
-- Files changed: app/services/game_service.py, tests/test_ai_archetype_selection.py, tests/test_sp002_create_vs_ai.py
-- Learnings: Caster and Intimidate overlap on mid-range sides (5-7); differentiate by penalizing Intimidate when no weak (≤3) sides present. Martial needs ≤4 threshold for weak sides to not overlap with Skulker's ≤3 adjacent ≥7 pattern.
----
-
-## 2026-03-06 15:00 - US-PR-005
-- Added MCTS post-selection archetype evaluation: after tree search picks best (card, cell), evaluates archetype variants via 1-ply simulation using `_greedy_archetype_variants` and `_simulate_move`
-- Greedy/Expectimax Devout ward and Caster Omen were already wired in from US-PR-003; novice `_novice_archetype_params` also already handles Devout ward
-- Added 14 tests: greedy Devout ward variant generation (5 tests), novice Devout ward activation (3 tests), Caster plain variant (2 tests), MCTS archetype evaluation (3 tests), greedy ward-when-beneficial (1 test)
-- 830 tests pass, 0 pyright errors
-- Files changed: app/rules/mcts.py, tests/test_ai_archetype_usage.py
-- Learnings: MCTS previously didn't evaluate any archetypes. Post-selection 1-ply evaluation is a clean way to add archetype awareness without slowing down MCTS rollouts. Circular import avoided since ai.py imports mcts lazily inside the function.
----
-
-## 2026-03-06 16:00 - US-PR-006
-- Updated archetype copy: Caster→"Guaranteed Omen", Devout→"Ward", Intimidate→"-3 debuff"
-- Added Devout Ward two-step cell selection UI (mirrors Intimidate pattern: first click sets placement, second click picks friendly card to ward)
-- Added warded cell visual indicator (shield icon + sky-400 ring), DevPlayground scenario, regenerated OpenAPI types
-- 334 frontend tests pass (10 new), 830 backend tests pass, tsc clean
-- Files changed: archetypesCopy.ts, ActionPanel.tsx, BoardGrid.tsx, GameRoom.tsx, ActiveGameView.tsx, GameRoomContext.tsx, api.ts, api-types.generated.ts, DevPlayground.tsx, helpers.ts, pr006.test.tsx
-- Learnings: Devout Ward follows the Intimidate two-step pattern (pending cell → target selection). GameRulesDialog doesn't need changes since it reads from ArchetypePowerAside which uses ARCHETYPE_COPY. The `canPlace` logic in ActiveGameView needs devout added alongside intimidate for archetypes that don't need powerSide.
+## 2026-03-06 12:00 - US-DR-001
+- DEAL_SIZE 7→8, removed MAX_PER_TIER, added DEAL_TIER_SLOTS {3:2, 2:3, 1:3}
+- Rewrote generate_matched_deals() to fill tier slots per-tier (3→2→1), validate_deal() checks exact tier counts, _can_add_to_deal() uses DEAL_TIER_SLOTS
+- Updated all deck test files (test_deck_validator, test_deck_generation, test_deck_copy_limits) plus test_api and test_sp002 for 8-card deals
+- Tests: 835 passed, pyright: 0 new errors, ruff: clean
+- Files: app/rules/deck.py, tests/test_deck_validator.py, tests/test_deck_generation.py, tests/test_deck_copy_limits.py, tests/test_draft.py, tests/test_api.py, tests/test_sp002_create_vs_ai.py
+- Learnings: test deals that use _valid_deal() must maintain exact tier distribution (3T1+3T2+2T3); rarity and tier are independent — rare cards can be any tier in tests
 ---
 
